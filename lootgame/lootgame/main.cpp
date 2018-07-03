@@ -11,6 +11,7 @@
 //#include <glew.h>
 #include <SDL2/SDL.h>
 
+
 int main(int, char**)
 {
    // Setup SDL
