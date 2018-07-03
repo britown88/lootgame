@@ -9,9 +9,6 @@ namespace render{
    typedef u32 TextureSlot;
    typedef u32 VBOHandle;
 
-   // general
-   void init();
-
    void clear(ColorRGBAf const& c);
    void viewport(Recti const& r);
    void enableAlphaBlending(bool enabled);
@@ -22,13 +19,13 @@ namespace render{
    void shaderSetActive(ShaderHandle s);
       
    // textures
-   enum {
+   typedef enum {
       RepeatType_REPEAT,
       RepeatType_CLAMP
    }RepeatType_;
    typedef byte RepeatType;
 
-   enum {
+   typedef enum {
       FilterType_LINEAR,
       FilterType_NEAREST
    }FilterType_;
@@ -52,7 +49,7 @@ namespace render{
    void uSetTextureSlot(const char* u, TextureSlot const& value);
 
    // VBO
-   enum {
+   typedef enum {
       VAttrib_Pos2 = 0,
       VAttrib_Tex2,
       VAttrib_Col4,
@@ -65,8 +62,14 @@ namespace render{
       Float2 pos2, tex2; ColorRGBAf col4;
    };
 
-   VBOHandle vboBuild(Vertex const* vertices, u64 vCount);
-   void vboDestroy(VBOHandle handle);
+   struct Mesh {
+      VBOHandle handle;
+      u32 vCount;
+      i32 vSize;
+   };
 
-   void vboRender(VBOHandle handle, u32 vFirst, u32 vCount);
+   Mesh meshBuild(Vertex const* vertices, u32 vCount);
+   void meshDestroy(Mesh& m);
+
+   void meshRender(Mesh const& m);
 }

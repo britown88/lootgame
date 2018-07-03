@@ -9,9 +9,6 @@ using namespace render;
 static ShaderHandle g_activeShader = 0;
 static VBOHandle g_activeVBO = 0;
 
-void render::init() {
-   glewInit();
-}
 
 void render::clear(ColorRGBAf const& c) {
    glClearColor(c.r, c.g, c.b, c.a);
@@ -178,46 +175,47 @@ void render::uSetTextureSlot(const char* u, TextureSlot const& value) {
    glUniform1i(uHandle, value);
 }
 
-// VBO
-VBOHandle render::vboBuild(Vertex const* vertices, u64 vCount) {
-   VBOHandle out = 0;
+Mesh render::meshBuild(Vertex const* vertices, u32 vCount) {
+   Mesh out;
+   out.vSize = (i32)sizeof(Vertex);
+   out.vCount = vCount;
 
-   glGenBuffers(1, (GLuint*)&out);
-   glBindBuffer(GL_ARRAY_BUFFER, out);
+   glGenBuffers(1, (GLuint*)&out.handle);
+   glBindBuffer(GL_ARRAY_BUFFER, out.handle);
    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vCount, vertices, GL_STATIC_DRAW);
    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
    return out;
 }
-void render::vboDestroy(VBOHandle handle) {
-   glDeleteBuffers(1, &handle);
-   if (g_activeVBO == handle) {
+void render::meshDestroy(Mesh& m) {
+   glDeleteBuffers(1, &m.handle);
+   if (g_activeVBO == m.handle) {
       g_activeVBO = 0;
    }
 }
 
-void render::vboRender(VBOHandle handle, u32 vFirst, u32 vCount) {
-   if (g_activeVBO != handle) {
+void render::meshRender(Mesh const& m) {
+   if (g_activeVBO != m.handle) {
 
-      glBindBuffer(GL_ARRAY_BUFFER, handle);
+      glBindBuffer(GL_ARRAY_BUFFER, m.handle);
 
       for (u32 i = 0; i < VAttrib_COUNT; ++i) {
          glDisableVertexAttribArray(i);
       }
 
       glEnableVertexAttribArray((u32)VAttrib_Pos2);
-      glVertexAttribPointer((u32)VAttrib_Pos2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos2));
+      glVertexAttribPointer((u32)VAttrib_Pos2, 2, GL_FLOAT, GL_FALSE, m.vSize, (void*)offsetof(Vertex, pos2));
 
       glEnableVertexAttribArray((u32)VAttrib_Tex2);
-      glVertexAttribPointer((u32)VAttrib_Tex2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tex2));
+      glVertexAttribPointer((u32)VAttrib_Tex2, 2, GL_FLOAT, GL_FALSE, m.vSize, (void*)offsetof(Vertex, tex2));
 
       glEnableVertexAttribArray((u32)VAttrib_Col4);
-      glVertexAttribPointer((u32)VAttrib_Col4, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, col4));
+      glVertexAttribPointer((u32)VAttrib_Col4, 4, GL_FLOAT, GL_FALSE, m.vSize, (void*)offsetof(Vertex, col4));
 
-      g_activeVBO = handle;
+      g_activeVBO = m.handle;
    }
 
-   glDrawArrays(GL_TRIANGLES, vFirst, vCount);
+   glDrawArrays(GL_TRIANGLES, 0, m.vCount);
 }
 
 
