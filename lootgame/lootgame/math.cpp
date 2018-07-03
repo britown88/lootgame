@@ -190,7 +190,7 @@ Matrix Matrix::translate3f(Float3 const &v) {
 }
 Matrix Matrix::invert(Matrix const &m) {
    Matrix inv;
-   double det;
+   f32 det;
    int i;
 
    inv[0] = m[5] * m[10] * m[15] -
@@ -306,7 +306,7 @@ Matrix Matrix::invert(Matrix const &m) {
       m[8] * m[2] * m[5];
 
    det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
-   det = 1.0 / det;
+   det = 1.0f / det;
 
    Matrix out = { 0 };
    if (det == 0) {
