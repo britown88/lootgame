@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math.h"
+#include "render.h"
 #include <vector>
 #include <string>
 
@@ -27,3 +28,5 @@ void gameUpdate(Game* game, Window* wnd);
 
 void gameDestroy(Game* game);
 void gameDoUI(Window* wnd);
+
+FBO const& gameGetOutputFBO();

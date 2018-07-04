@@ -249,6 +249,68 @@ static void _mainMenu( Window* wnd) {
    }
 }
 
+static void _renderViewerFBO() {
+
+   auto fbo = gameGetOutputFBO();
+
+
+   auto sz = ImGui::GetContentRegionAvail();
+
+   auto rect = getProportionallyFitRect(fbo.sz, { (i32)sz.x, (i32)sz.y });
+
+   ImDrawList* draw_list = ImGui::GetWindowDrawList();
+   const ImVec2 p = ImGui::GetCursorScreenPos();
+
+   draw_list->AddImage(
+      (ImTextureID)fbo.tex,
+      ImVec2(p.x + rect.x, p.y + rect.y), //a
+      ImVec2(p.x + rect.x + rect.w, p.y + rect.y + rect.h)
+   );
+}
+
+static void _showFullScreenViewer(Window* wnd) {
+   auto game = gameGet();
+   auto sz = windowSize(wnd);
+
+   auto &style = ImGui::GetStyle();
+
+   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2());
+   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+
+   ImGui::SetNextWindowPos(ImVec2(), ImGuiCond_Always);
+   ImGui::SetNextWindowSize(ImVec2((float)sz.x, (float)sz.y), ImGuiCond_Always);
+
+   if (ImGui::Begin("GameWindow", nullptr, BorderlessFlags)) {
+      _renderViewerFBO();
+   }
+   ImGui::End();
+
+   ImGui::PopStyleVar(3);
+}
+
+static void _showWindowedViewer(Window* wnd) {
+   auto game = gameGet();
+
+   auto sz = windowSize(wnd);
+   ImGui::SetNextWindowSize(ImVec2(sz.x / 2.0f, sz.y / 2.0f), ImGuiCond_Appearing);
+
+   if (ImGui::Begin("Viewer", nullptr, 0)) {
+
+      if (ImGui::IsWindowFocused()) {
+         if (ImGui::IsKeyPressed(SDL_SCANCODE_ESCAPE)) {
+            windowClose(wnd);
+         }
+      }
+
+      _renderViewerFBO();
+
+
+   }
+   ImGui::End();
+
+}
+
 void gameDoUI(Window* wnd) {
    auto game = gameGet();
    if (ImGui::IsKeyPressed(SDL_SCANCODE_F1)) {
@@ -287,7 +349,7 @@ void gameDoUI(Window* wnd) {
          _mainMenu(wnd);
          
          _doStatsWindow(wnd);
-         //_showWindowedViewer(wnd);
+         _showWindowedViewer(wnd);
 
          ImGui::PopStyleVar(3);
          ImGui::PopStyleColor();
@@ -300,7 +362,7 @@ void gameDoUI(Window* wnd) {
       
    }
    else {
-      //_showFullScreenViewer(wnd);
+      _showFullScreenViewer(wnd);
 
       if (ImGui::IsKeyPressed(SDL_SCANCODE_ESCAPE)) {
          windowClose(wnd);
@@ -310,4 +372,5 @@ void gameDoUI(Window* wnd) {
    }
    
 }
+
 

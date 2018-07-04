@@ -20,9 +20,9 @@ struct Game {
    FBO fbo;
 };
 
-static GameData* g_gameData = nullptr;
+static Game* g_game = nullptr;
 GameData* gameGet() {
-   return g_gameData;
+   return &g_game->data;
 }
 
 static void _gameDataInit(GameData* game, StringView assetsFolder) {
@@ -33,7 +33,7 @@ static void _gameDataInit(GameData* game, StringView assetsFolder) {
 Game* gameCreate(StringView assetsFolder) {
    auto out = new Game();
    _gameDataInit(&out->data, assetsFolder);
-   g_gameData = &out->data;
+   g_game = out;
    return out;
 }
 
@@ -74,15 +74,6 @@ void gameBegin(Game* game, Window* wnd) {
    free(fragment);
    free(mem);
    free(png);
-
-   windowAddGUI(wnd, "viewer", [=](Window*wnd) {
-      if (ImGui::Begin("Viewer")) {
-         ImGui::Image((ImTextureID)game->fbo.tex, { 100, 100 });
-      }
-      ImGui::End();
-
-      return true;
-   });
 }
 
 void gameUpdate(Game* game, Window* wnd) {
@@ -130,4 +121,8 @@ void gameUpdate(Game* game, Window* wnd) {
 
 void gameDestroy(Game* game) {
    delete game;
+}
+
+FBO const& gameGetOutputFBO() {
+   return g_game->fbo;
 }
