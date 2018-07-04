@@ -18,6 +18,7 @@
 #include "fa_merged.cpp"
 
 #include "render.h"
+#include "game.h"
 
 struct Window {
    SDL_Window* sdlWnd = nullptr;
@@ -40,14 +41,18 @@ struct App {
    bool running = false;
    Window* wnd = nullptr;
    ImFontAtlas* fontAtlas;
+
+   Game* game;
 };
 
 App* appCreate(AppConfig const& config) {
    auto out = new App();
+   out->game = gameCreate(config.assetFolder);
    return out;
 }
 
 void appDestroy(App* app) {
+   gameDestroy(app->game);
 
    ImGui_ImplOpenGL3_Shutdown();
    ImGui_ImplSDL2_Shutdown();
@@ -98,7 +103,7 @@ static Window* _windowCreate(App* app, WindowConfig const& info) {
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
    SDL_DisplayMode current;
    SDL_GetCurrentDisplayMode(0, &current);
-   SDL_Window* window = SDL_CreateWindow("ImGui SDL2+OpenGL3 example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+   SDL_Window* window = SDL_CreateWindow(info.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, info.w, info.h, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
    SDL_GLContext gl_context = SDL_GL_CreateContext(window);
    SDL_GL_SetSwapInterval(1); // Enable vsync
    glewInit();
@@ -197,19 +202,23 @@ static void _beginFrame(App* app) {
 }
 
 static void _updateGame(App* app) {
+   gameUpdate(app->game, app->wnd);
+
    if (app->wnd->shouldClose) {
       app->running = false;
    }
 }
 
 static void _renderFrame(App* app) {
+   auto data = gameData(app->game);
+   auto ccolor = data->imgui.bgClearColor;
 
    auto& io = ImGui::GetIO();
    ImGui::Render();
    SDL_GL_MakeCurrent(app->wnd->sdlWnd, app->wnd->sdlCtx);
 
    render::viewport({ 0, 0, (int)io.DisplaySize.x , (int)io.DisplaySize.y });
-   render::clear(DkGray);
+   render::clear(ccolor);
 
    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
    SDL_GL_SwapWindow(app->wnd->sdlWnd);
