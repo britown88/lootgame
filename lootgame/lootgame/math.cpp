@@ -162,12 +162,11 @@ Matrix Matrix::lookAt(Float3 const &eye, Float3 const &center, Float3 const &up)
    return out;
 }
 
-Matrix Matrix::rotate2D(float degrees) {
+Matrix Matrix::rotate2D(float rads) {
    Matrix out = Matrix::identity();
-   auto rad = DEG2RAD * degrees;
 
-   out[0] = out[5] = cosf(rad);
-   out[1] = sinf(rad);
+   out[0] = out[5] = cosf(rads);
+   out[1] = sinf(rads);
    out[4] = -out[1];
 
    return out;

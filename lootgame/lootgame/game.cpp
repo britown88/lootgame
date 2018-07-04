@@ -10,14 +10,25 @@
 #include "win.h"
 #include "render.h"
 
+struct Dude {
+   Float2 size = {};
+   Float2 pos = {};
+   float rotationAngle = 0.0f;
+
+   TextureHandle texture = 0;
+   Mesh const* mesh = nullptr;
+};
+
 
 struct Game {
    GameData data;
 
    ShaderHandle shader = 0;
-   TextureHandle texture = 0;
+   TextureHandle gokuTex = 0;
    Mesh mesh;
    FBO fbo;
+
+   Dude dude = {};
 };
 
 static Game* g_game = nullptr;
@@ -39,22 +50,11 @@ Game* gameCreate(StringView assetsFolder) {
 
 GameData* gameData(Game* game) { return &game->data; }
 
-void gameBegin(Game* game, Window* wnd) {
-   
-
+static void _createGraphicsObjects(Game* game){
    auto vertex = fileReadString("assets/vertex.glsl");
    auto fragment = fileReadString("assets/fragment.glsl");
 
    game->shader = render::shaderBuild(vertex, fragment);
-
-   u64 sz = 0;
-   i32 x, y, comp;
-   x = y = comp = 0;
-
-   auto mem = fileReadBinary("assets/goku.png", &sz);
-   auto png = stbi_load_from_memory(mem, (i32)sz, &x, &y, &comp, 4);
-
-   game->texture = render::textureBuild((ColorRGBA*)png, { x, y }, {});
 
    Vertex vbo[] = { 
       { { 0.0f, 0.0f },{ 0.0f, 0.0f } },
@@ -68,54 +68,83 @@ void gameBegin(Game* game, Window* wnd) {
 
    game->mesh = render::meshBuild(vbo, 6);
 
-   game->fbo = render::fboBuild({ 100, 100 });
+   auto& res = game->data.constants.resolution;
+   game->fbo = render::fboBuild({ res.x, res.y });
 
-   free(vertex);
-   free(fragment);
+   u64 sz = 0;
+   i32 x, y, comp;
+   x = y = comp = 0;
+   auto mem = fileReadBinary("assets/goku.png", &sz);
+   auto png = stbi_load_from_memory(mem, (i32)sz, &x, &y, &comp, 4);
+   game->gokuTex = render::textureBuild((ColorRGBA*)png, { x, y }, {});
+
    free(mem);
    free(png);
+   free(vertex);
+   free(fragment);
 }
 
-void gameUpdate(Game* game, Window* wnd) {
+static Dude _createDude(Game* game) {
+   Dude out;
+   out.pos = { 50,50 };
+   out.size = { 205,250 };
+   out.texture = game->gokuTex;
+   out.mesh = &game->mesh;
+   return out;
+}
+
+
+
+void gameBegin(Game* game, Window* wnd) {
+   
+   _createGraphicsObjects(game);
+   game->dude = _createDude(game);
+
+}
+
+static void _renderDude(Dude const& dude) {
+   auto model = Matrix::identity();
+   auto texmat = Matrix::identity();
+
+   model *= Matrix::translate2f(dude.pos);
+   model *= Matrix::translate2f({ dude.size.x / 2, dude.size.y / 2 });
+   model *= Matrix::rotate2D(dude.rotationAngle);
+   model *= Matrix::translate2f({ -dude.size.x / 2, -dude.size.y / 2 });
+   model *= Matrix::scale2f(dude.size);
+
+   render::uSetMatrix("uTexMatrix", texmat);
+   render::uSetMatrix("uModelMatrix", model);
+   
+   render::uSetTextureSlot("uDiffuse", 0);
+   render::textureBind(dude.texture, 0);
+
+   render::meshRender(*dude.mesh);
+}
+
+static void _renderScene(Game* game) {
+   auto& res = game->data.constants.resolution;
 
    render::fboBind(game->fbo);
 
    render::enableAlphaBlending(true);
-   render::viewport({ 0,0,100,100 });
+   render::viewport({ 0,0, res.x, res.y });
    render::clear(DkGreen);
 
-   auto model = Matrix::identity();
-   auto texmat = Matrix::identity();
-
-   auto view = Matrix::ortho(0, 100, 0, 100, -1, 1);
-   
-   
-   model *= Matrix::translate2f({ 25,25 });
-
-   static float angle = 0.0f;
-   angle = (int)(angle + 1) % 360;
-
-   model *= Matrix::translate2f({ 25,25 });
-   model *= Matrix::rotate2D(angle);
-   model *= Matrix::translate2f({ -25,-25 });
-
-   model *= Matrix::scale2f({ 50.0f,50.0f });
-   
-
+   auto view = Matrix::ortho(0, (float)res.x, 0, (float)res.y, -1, 1);
    render::shaderSetActive(game->shader);
 
-   render::uSetMatrix("uTexMatrix", texmat);
-   render::uSetMatrix("uModelMatrix", model);
    render::uSetMatrix("uViewMatrix", view);
-   render::uSetTextureSlot("uDiffuse", 0);
 
-   render::textureBind(game->texture, 0);
-
-   render::meshRender(game->mesh);
+   _renderDude(game->dude);
 
    render::fboBind({});
+}
+
+void gameUpdate(Game* game, Window* wnd) {   
 
 
+
+   _renderScene(game);
    gameDoUI(wnd);
 }
 

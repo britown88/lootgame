@@ -72,7 +72,7 @@ public:
    static Matrix ortho(float left, float right, float bottom, float top, float near, float far);
    static Matrix perspective(float fovy, float aspect, float zNear, float zFar);
    static Matrix lookAt(Float3 const &eye, Float3 const &center, Float3 const &up);
-   static Matrix rotate2D(float degrees);
+   static Matrix rotate2D(float rads);
    static Matrix scale2f(Float2 const &v);
    static Matrix scale3f(Float3 const &v);
    static Matrix translate2f(Float2 const &v);
