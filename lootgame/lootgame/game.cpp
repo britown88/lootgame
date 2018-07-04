@@ -96,10 +96,19 @@ void gameUpdate(Game* game, Window* wnd) {
    auto model = Matrix::identity();
    auto texmat = Matrix::identity();
 
-   auto view = Matrix::ortho(0, 100, 100, 0, -1, 1);
+   auto view = Matrix::ortho(0, 100, 0, 100, -1, 1);
    
-   model *= Matrix::scale2f({50.0f,50.0f});
-   //model *= Matrix::translate2f({ 100,100 });
+   
+   model *= Matrix::translate2f({ 25,25 });
+
+   static float angle = 0.0f;
+   angle = (int)(angle + 1) % 360;
+
+   model *= Matrix::translate2f({ 25,25 });
+   model *= Matrix::rotate2D(angle);
+   model *= Matrix::translate2f({ -25,-25 });
+
+   model *= Matrix::scale2f({ 50.0f,50.0f });
    
 
    render::shaderSetActive(game->shader);
