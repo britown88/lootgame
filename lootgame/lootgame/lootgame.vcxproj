@@ -99,7 +99,9 @@
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y "$(glew)bin" "$(OutDir)"
-xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
+xcopy /y "$(sdl2)bin" "$(OutDir)"
+mkdir "$(OutDir)assets/"
+xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -137,7 +139,9 @@ xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y "$(glew)bin" "$(OutDir)"
-xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
+xcopy /y "$(sdl2)bin" "$(OutDir)"
+mkdir "$(OutDir)assets/"
+xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -147,6 +151,7 @@ xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="app.cpp" />
+    <ClCompile Include="win.cpp" />
     <ClCompile Include="colors.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="imgui_impl_opengl3.cpp" />
@@ -162,6 +167,7 @@ xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h" />
+    <ClInclude Include="win.h" />
     <ClInclude Include="defs.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="IconsFontAwesome.h" />
@@ -170,6 +176,10 @@ xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
     <ClInclude Include="math.h" />
     <ClInclude Include="render.h" />
     <ClInclude Include="scf.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="fragment.glsl" />
+    <None Include="vertex.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

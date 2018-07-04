@@ -117,6 +117,10 @@ static Window* _windowCreate(App* app, WindowConfig const& info) {
    ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
    ImGui_ImplOpenGL3_Init();
 
+   GLuint vao;
+   glGenVertexArrays(1, &vao);
+   glBindVertexArray(vao);
+
    // Setup style
    ImGui::StyleColorsDark();
    //ImGui::StyleColorsClassic();
@@ -132,6 +136,7 @@ static Window* _windowCreate(App* app, WindowConfig const& info) {
 
 void appCreateWindow(App* app, WindowConfig const& info) {
    app->wnd = _windowCreate(app, info);
+   gameBegin(app->game, app->wnd);
    app->running = true;
 }
 

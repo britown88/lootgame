@@ -3,11 +3,54 @@
 #include "defs.h"
 #include "math.h"
 
+typedef u32 ShaderHandle;
+typedef u32 TextureHandle;
+typedef u32 TextureSlot;
+typedef u32 VBOHandle;
+typedef u32 FBOHandle;
+
+typedef enum {
+   RepeatType_REPEAT,
+   RepeatType_CLAMP
+}RepeatType_;
+typedef byte RepeatType;
+
+typedef enum {
+   FilterType_LINEAR,
+   FilterType_NEAREST
+}FilterType_;
+typedef byte FilterType;
+
+struct TextureConfig {
+   RepeatType repeatType = RepeatType_CLAMP;
+   FilterType filterType = FilterType_NEAREST;
+};
+
+struct FBO {
+   Int2 sz;
+   TextureHandle tex;
+   FBOHandle fbo;
+};
+
+typedef enum {
+   VAttrib_Pos2 = 0,
+   VAttrib_Tex2,
+
+   VAttrib_COUNT
+}VAttrib_;
+typedef u16 VAttrib;
+
+struct Vertex {
+   Float2 pos2, tex2;
+};
+
+struct Mesh {
+   VBOHandle handle;
+   u32 vCount;
+   i32 vSize;
+};
+
 namespace render{
-   typedef u32 ShaderHandle;
-   typedef u32 TextureHandle;
-   typedef u32 TextureSlot;
-   typedef u32 VBOHandle;
 
    void clear(ColorRGBAf const& c);
    void viewport(Recti const& r);
@@ -19,23 +62,6 @@ namespace render{
    void shaderSetActive(ShaderHandle s);
       
    // textures
-   typedef enum {
-      RepeatType_REPEAT,
-      RepeatType_CLAMP
-   }RepeatType_;
-   typedef byte RepeatType;
-
-   typedef enum {
-      FilterType_LINEAR,
-      FilterType_NEAREST
-   }FilterType_;
-   typedef byte FilterType;
-
-   typedef struct {
-      RepeatType repeatType = RepeatType_CLAMP;
-      FilterType filterType = FilterType_NEAREST;
-   } TextureConfig;
-
    TextureHandle textureBuild(ColorRGBA const* pixels, Int2 const& sz, TextureConfig const& cfg);
    void textureDestroy(TextureHandle t);
    void textureBind(TextureHandle t, TextureSlot slot);
@@ -48,26 +74,13 @@ namespace render{
    void uSetColor(const char* u, ColorRGBAf const& value);
    void uSetTextureSlot(const char* u, TextureSlot const& value);
 
+   // FBO
+   FBO fboBuild(Int2 sz);
+   void fboDestroy(FBO& fbo);
+
+   void fboBind(FBO const& fbo);
+
    // VBO
-   typedef enum {
-      VAttrib_Pos2 = 0,
-      VAttrib_Tex2,
-      VAttrib_Col4,
-
-      VAttrib_COUNT
-   }VAttrib_;
-   typedef u16 VAttrib;
-
-   struct Vertex {
-      Float2 pos2, tex2; ColorRGBAf col4;
-   };
-
-   struct Mesh {
-      VBOHandle handle;
-      u32 vCount;
-      i32 vSize;
-   };
-
    Mesh meshBuild(Vertex const* vertices, u32 vCount);
    void meshDestroy(Mesh& m);
 

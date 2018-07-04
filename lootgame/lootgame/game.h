@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 
+typedef struct Window Window;
 
 struct GameData {
    struct {
@@ -17,6 +18,9 @@ GameData* gameGet();
 typedef struct Game Game;
 Game* gameCreate(StringView assetsFolder);
 GameData* gameData(Game* game);
+
+// called after the window and context are created
+void gameBegin(Game* game, Window* wnd);
 
 typedef struct Window Window;
 void gameUpdate(Game* game, Window* wnd);

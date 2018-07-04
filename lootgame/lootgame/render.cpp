@@ -7,7 +7,6 @@
 using namespace render;
 
 static ShaderHandle g_activeShader = 0;
-static VBOHandle g_activeVBO = 0;
 
 
 void render::clear(ColorRGBAf const& c) {
@@ -62,7 +61,6 @@ static ShaderHandle _link(u32 vertex, u32 fragment) {
 
       glBindAttribLocation(handle, (GLuint)VAttrib_Pos2, "aPos");
       glBindAttribLocation(handle, (GLuint)VAttrib_Tex2, "aTex");
-      glBindAttribLocation(handle, (GLuint)VAttrib_Col4, "aCol");
 
       glAttachShader(handle, vertex);
       glAttachShader(handle, fragment);
@@ -94,9 +92,9 @@ void render::shaderDestroy(ShaderHandle s) {
    glDeleteProgram(s);
 }
 void render::shaderSetActive(ShaderHandle s) {
-   if (g_activeShader == s) {
-      return;
-   }
+   //if (g_activeShader == s) {
+   //   return;
+   //}
    glUseProgram(s);
    g_activeShader = s;
 }
@@ -149,6 +147,51 @@ void render::textureBind(TextureHandle t, TextureSlot slot) {
    glBindTexture(GL_TEXTURE_2D, t);
 }
 
+// FBO
+FBO render::fboBuild(Int2 sz) {
+   FBO out;
+
+   out.sz = sz;
+
+   glGenTextures(1, &out.tex);
+   glBindTexture(GL_TEXTURE_2D, out.tex);
+
+   //todo: format ops?
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, sz.x, sz.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+   glGenFramebuffers(1, &out.fbo);
+   glBindFramebuffer(GL_FRAMEBUFFER, out.fbo);
+   //Attach 2D texture to this FBO
+
+   int textureType = GL_TEXTURE_2D;
+   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textureType, out.tex, 0);
+
+   GLenum status;
+   status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+   if (GL_FRAMEBUFFER_COMPLETE != status)
+   {
+      //handle this error on the outside
+      return {};
+   }
+   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+   return out;
+}
+void render::fboDestroy(FBO& fbo) {
+   glDeleteTextures(1, &fbo.tex);
+   glDeleteFramebuffers(1, &fbo.fbo);
+}
+
+void render::fboBind(FBO const& fbo) {
+   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo.fbo);
+   glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo.tex, 0);
+}
+
 // uniform sets
 void render::uSetBool(const char* u, bool value) {
    auto uHandle = glGetUniformLocation(g_activeShader, u);
@@ -189,33 +232,28 @@ Mesh render::meshBuild(Vertex const* vertices, u32 vCount) {
 }
 void render::meshDestroy(Mesh& m) {
    glDeleteBuffers(1, &m.handle);
-   if (g_activeVBO == m.handle) {
-      g_activeVBO = 0;
-   }
 }
 
 void render::meshRender(Mesh const& m) {
-   if (g_activeVBO != m.handle) {
 
-      glBindBuffer(GL_ARRAY_BUFFER, m.handle);
+   glBindBuffer(GL_ARRAY_BUFFER, m.handle);
 
-      for (u32 i = 0; i < VAttrib_COUNT; ++i) {
-         glDisableVertexAttribArray(i);
-      }
-
-      glEnableVertexAttribArray((u32)VAttrib_Pos2);
-      glVertexAttribPointer((u32)VAttrib_Pos2, 2, GL_FLOAT, GL_FALSE, m.vSize, (void*)offsetof(Vertex, pos2));
-
-      glEnableVertexAttribArray((u32)VAttrib_Tex2);
-      glVertexAttribPointer((u32)VAttrib_Tex2, 2, GL_FLOAT, GL_FALSE, m.vSize, (void*)offsetof(Vertex, tex2));
-
-      glEnableVertexAttribArray((u32)VAttrib_Col4);
-      glVertexAttribPointer((u32)VAttrib_Col4, 4, GL_FLOAT, GL_FALSE, m.vSize, (void*)offsetof(Vertex, col4));
-
-      g_activeVBO = m.handle;
+   for (u32 i = 0; i < VAttrib_COUNT; ++i) {
+      glDisableVertexAttribArray(i);
    }
+
+   auto p = (void*)offsetof(Vertex, pos2);
+   auto t = (void*)offsetof(Vertex, tex2);
+
+   glEnableVertexAttribArray((u32)VAttrib_Pos2);
+   glVertexAttribPointer((u32)VAttrib_Pos2, 2, GL_FLOAT, GL_FALSE, m.vSize, (void*)offsetof(Vertex, pos2));
+
+   glEnableVertexAttribArray((u32)VAttrib_Tex2);
+   glVertexAttribPointer((u32)VAttrib_Tex2, 2, GL_FLOAT, GL_FALSE, m.vSize, (void*)offsetof(Vertex, tex2));
 
    glDrawArrays(GL_TRIANGLES, 0, m.vCount);
 }
+
+
 
 
