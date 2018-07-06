@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <SDL2/SDL.h>
 #include <stb/stb_image.h>
 #include "win.h"
 #include "render.h"
@@ -32,7 +33,7 @@ struct Game {
 };
 
 static Game* g_game = nullptr;
-GameData* gameGet() {
+GameData* gameDataGet() {
    return &g_game->data;
 }
 
@@ -40,19 +41,16 @@ static void _gameDataInit(GameData* game, StringView assetsFolder) {
    
 }
 
-
-Game* gameCreate(StringView assetsFolder) {
-   auto out = new Game();
-   _gameDataInit(&out->data, assetsFolder);
-   g_game = out;
-   return out;
+void gameCreate(StringView assetsFolder) {
+   g_game = new Game();
+   _gameDataInit(&g_game->data, assetsFolder);
+   
 }
 
-GameData* gameData(Game* game) { return &game->data; }
-
-static void _createGraphicsObjects(Game* game){
+static void _createGraphicsObjects(){
    auto vertex = fileReadString("assets/vertex.glsl");
    auto fragment = fileReadString("assets/fragment.glsl");
+   auto game = g_game;
 
    game->shader = render::shaderBuild(vertex, fragment);
 
@@ -84,21 +82,23 @@ static void _createGraphicsObjects(Game* game){
    free(fragment);
 }
 
-static Dude _createDude(Game* game) {
+static Dude _createDude() {
    Dude out;
    out.pos = { 50,50 };
-   out.size = { 205,250 };
-   out.texture = game->gokuTex;
-   out.mesh = &game->mesh;
+   out.size = { 150,250 };
+   out.texture = g_game->gokuTex;
+   out.mesh = &g_game->mesh;
    return out;
 }
 
+bool gameProcessEvent(SDL_Event* event) {
+   return true;
+}
 
-
-void gameBegin(Game* game, Window* wnd) {
+void gameBegin() {
    
-   _createGraphicsObjects(game);
-   game->dude = _createDude(game);
+   _createGraphicsObjects();
+   g_game->dude = _createDude();
 
 }
 
@@ -121,7 +121,8 @@ static void _renderDude(Dude const& dude) {
    render::meshRender(*dude.mesh);
 }
 
-static void _renderScene(Game* game) {
+static void _renderScene() {
+   auto game = g_game;
    auto& res = game->data.constants.resolution;
 
    render::fboBind(game->fbo);
@@ -140,16 +141,53 @@ static void _renderScene(Game* game) {
    render::fboBind({});
 }
 
-void gameUpdate(Game* game, Window* wnd) {   
+void gameUpdate(Window* wnd) {   
+   auto game = g_game;
 
+   auto& res = game->data.constants.resolution;
+   auto& vpScreen = game->data.imgui.vpScreenArea;
+   auto& mPos = ImGui::GetIO().MousePos;
 
+   game->data.io.mousePos = {
+      (mPos.x - vpScreen.x) / vpScreen.w * res.x,
+      (mPos.y - vpScreen.y) / vpScreen.h * res.y
+   };
 
-   _renderScene(game);
+   auto&m = game->data.io.mousePos;
+   auto&dp = game->dude.pos;
+   auto&dsz = game->dude.size;
+
+   Float2 rotPos = { dp.x + dsz.x / 2, dp.y + dsz.y / 2 };
+
+   game->dude.rotationAngle = -atan2f(m.x - rotPos.x, m.y - rotPos.y);
+
+   auto up = ImGui::IsKeyDown(SDL_SCANCODE_W);
+   auto down = ImGui::IsKeyDown(SDL_SCANCODE_S);
+   auto left = ImGui::IsKeyDown(SDL_SCANCODE_A);
+   auto right = ImGui::IsKeyDown(SDL_SCANCODE_D);
+
+   float mvSpeed = 5.0f;
+
+   if (up) {
+      dp.y -= mvSpeed;
+   }
+   else if (down) {
+      dp.y += mvSpeed;
+   }
+
+   if (left) {
+      dp.x -= mvSpeed;
+   }
+   else if (right) {
+      dp.x += mvSpeed;
+   }
+
+   _renderScene();
    gameDoUI(wnd);
 }
 
-void gameDestroy(Game* game) {
-   delete game;
+void gameDestroy() {
+   delete g_game;
 }
 
 FBO const& gameGetOutputFBO() {

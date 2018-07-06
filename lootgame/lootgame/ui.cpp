@@ -190,7 +190,7 @@ static bool _doSCFTest(Window* wnd, SCFTestState& state) {
 }
 
 static void _mainMenu( Window* wnd) {
-   auto game = gameGet();
+   auto game = gameDataGet();
    if (ImGui::BeginMenuBar()) {
       if (ImGui::BeginMenu("Debug")) {
 
@@ -260,16 +260,16 @@ static void _renderViewerFBO() {
 
    ImDrawList* draw_list = ImGui::GetWindowDrawList();
    const ImVec2 p = ImGui::GetCursorScreenPos();
+   auto a = ImVec2(p.x + rect.x, p.y + rect.y);
+   auto b = ImVec2(p.x + rect.x + rect.w, p.y + rect.y + rect.h);
 
-   draw_list->AddImage(
-      (ImTextureID)fbo.tex,
-      ImVec2(p.x + rect.x, p.y + rect.y), //a
-      ImVec2(p.x + rect.x + rect.w, p.y + rect.y + rect.h)
-   );
+   gameDataGet()->imgui.vpScreenArea = { a.x, a.y, b.x - a.x, b.y - a.y };
+
+   draw_list->AddImage( (ImTextureID)fbo.tex, a, b );
 }
 
 static void _showFullScreenViewer(Window* wnd) {
-   auto game = gameGet();
+   auto game = gameDataGet();
    auto sz = windowSize(wnd);
 
    auto &style = ImGui::GetStyle();
@@ -290,7 +290,7 @@ static void _showFullScreenViewer(Window* wnd) {
 }
 
 static void _showWindowedViewer(Window* wnd) {
-   auto game = gameGet();
+   auto game = gameDataGet();
 
    auto sz = windowSize(wnd);
    ImGui::SetNextWindowSize(ImVec2(sz.x / 2.0f, sz.y / 2.0f), ImGuiCond_Appearing);
@@ -312,14 +312,14 @@ static void _showWindowedViewer(Window* wnd) {
 }
 
 void gameDoUI(Window* wnd) {
-   auto game = gameGet();
+   auto game = gameDataGet();
    if (ImGui::IsKeyPressed(SDL_SCANCODE_F1)) {
       game->imgui.showUI = !game->imgui.showUI;
    }
    
 
    if (game->imgui.showUI) {
-      auto game = gameGet();
+      auto game = gameDataGet();
       auto sz = windowSize(wnd);
       auto &style = ImGui::GetStyle();
 

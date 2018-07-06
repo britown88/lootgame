@@ -41,18 +41,16 @@ struct App {
    bool running = false;
    Window* wnd = nullptr;
    ImFontAtlas* fontAtlas;
-
-   Game* game;
 };
 
 App* appCreate(AppConfig const& config) {
    auto out = new App();
-   out->game = gameCreate(config.assetFolder);
+   gameCreate(config.assetFolder);
    return out;
 }
 
 void appDestroy(App* app) {
-   gameDestroy(app->game);
+   gameDestroy();
 
    ImGui_ImplOpenGL3_Shutdown();
    ImGui_ImplSDL2_Shutdown();
@@ -136,7 +134,7 @@ static Window* _windowCreate(App* app, WindowConfig const& info) {
 
 void appCreateWindow(App* app, WindowConfig const& info) {
    app->wnd = _windowCreate(app, info);
-   gameBegin(app->game, app->wnd);
+   gameBegin();
    app->running = true;
 }
 
@@ -207,7 +205,7 @@ static void _beginFrame(App* app) {
 }
 
 static void _updateGame(App* app) {
-   gameUpdate(app->game, app->wnd);
+   gameUpdate(app->wnd);
 
    if (app->wnd->shouldClose) {
       app->running = false;
@@ -215,7 +213,7 @@ static void _updateGame(App* app) {
 }
 
 static void _renderFrame(App* app) {
-   auto data = gameData(app->game);
+   auto data = gameDataGet();
    auto ccolor = data->imgui.bgClearColor;
 
    auto& io = ImGui::GetIO();

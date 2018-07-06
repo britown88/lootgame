@@ -33,6 +33,10 @@ typedef struct {
    i32 x, y, w, h;
 } Recti;
 
+typedef struct {
+   f32 x, y, w, h;
+} Rectf;
+
 static void rectiOffset(Recti *r, i32 x, i32 y) {
    r->x += x;
    r->y += y;
