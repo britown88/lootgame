@@ -37,8 +37,8 @@ struct GameData {
    struct {
       Float2 mousePos;
 
-      Float2 moveVector;   // unit vector of left stick
-      Float2 aimVector;    // unit vector of right stick
+      Float2 leftStick;   // unit vector of left stick
+      Float2 rightStick;  // unit vector of right stick
 
       f32 leftTrigger = 0.0f; // 0-1 analog trigger
       f32 rightTrigger = 0.0f;// 0-1 analog trigger

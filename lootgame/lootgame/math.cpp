@@ -24,6 +24,68 @@ Float3 vNormalized(Float3 v) {
    return vScale(v, sqrtf(vDot(v, v)));
 }
 
+f32 v2Dot(Float2 v1, Float2 v2) {
+   return (v1.x * v2.x) + (v1.y * v2.y);
+}
+f32 v2Dist(Float2 a, Float2 b) {
+   return v2Len(b - a);
+}
+f32 v2Len(Float2 v) {
+   return sqrtf(v2Dot(v, v));
+}
+Float2 v2Subtract(Float2 a, Float2 b) {
+   return { a.x - b.x, a.y - b.y };
+}
+Float2 v2Add(Float2 a, Float2 b) {
+   return { a.x + b.x, a.y + b.y };
+}
+Float2 v2Scale(Float2 a, f32 s) {
+   return { a.x * s, a.y * s };
+}
+Float2 v2Normalized(Float2 v) {
+   return v / v2Len(v);
+}
+
+//helper.  determines orientation of two vectors, positive vs. negative means clockwise/counterclockwise orientation
+f32 v2Determinant(Float2 a, Float2 b) {
+   return a.x * b.y - a.y * b.x;
+}
+//complex number rotation!!
+Float2 v2Rotate(Float2 direction, Float2 rotation) {
+   //first - last
+   float x = direction.x * rotation.x - direction.y * rotation.y;
+   //outside + inside 
+   float y = direction.x * rotation.y + direction.y * rotation.x;
+   return Float2{ x,y };
+}
+Float2 v2FromAngle(f32 radians) {
+   return { cosf(radians), sinf(radians) };
+}
+
+Float2 v2RotateTowards(Float2 direction, Float2 target, Float2 perFrame) {
+   int det = SIGN(v2Determinant(direction, target));
+   if (det == 0) return target; //they are exactly aligned to start with, nothing to do
+   if (det < 0) perFrame.y = -perFrame.y;  //this is being treated like a complex number and this is the conjugate.
+   direction = v2Rotate(direction, perFrame);
+   if (det != SIGN(v2Determinant(direction, target))) {
+      //if this is true we overshot our target
+      return target;
+   }
+   return direction;
+}
+
+Float2 v2MoveTowards(Float2 position, Float2 target, f32 speed) {
+   auto dir = target - position;
+   f32 length = sqrtf(v2Dot(dir, dir));
+
+   if (length < speed) {
+      return target;
+   }
+
+   return position + dir * (speed / length);
+}
+
+
 
 
 i32 int2Dot(Int2 v1, Int2 v2) {

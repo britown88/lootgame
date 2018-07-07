@@ -317,8 +317,8 @@ static void _doUIDebugger() {
       
       auto&io = gameDataGet()->io;
 
-      ImGui::Text("Move: (%f, %f)", io.moveVector.x, io.moveVector.y);
-      ImGui::Text("Aim: (%f, %f)", io.aimVector.x, io.aimVector.y);
+      ImGui::Text("Left Stick: (%f, %f)", io.leftStick.x, io.leftStick.y);
+      ImGui::Text("Right Stick: (%f, %f)", io.rightStick.x, io.rightStick.y);
       ImGui::Text("Left Trigger: %f", io.leftTrigger);
       ImGui::Text("Right Trigger: %f", io.rightTrigger);
 

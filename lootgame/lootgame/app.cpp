@@ -41,6 +41,8 @@ struct App {
    };
 
    std::unordered_map<std::string, Dialog> dlgs;
+
+   u64 timerStart, timerFreq;
 };
 
 static App* g_app = nullptr;
@@ -95,6 +97,11 @@ static void _windowCreate(App* app, WindowConfig const& info) {
 
    auto mappings = SDL_GameControllerAddMappingsFromFile("assets/gamecontrollerdb.txt");
 
+   auto winFlags =
+      SDL_WINDOW_OPENGL |
+      SDL_WINDOW_RESIZABLE |
+      SDL_WINDOW_MAXIMIZED;
+
    // Setup window
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -105,7 +112,7 @@ static void _windowCreate(App* app, WindowConfig const& info) {
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
    SDL_DisplayMode current;
    SDL_GetCurrentDisplayMode(0, &current);
-   SDL_Window* window = SDL_CreateWindow(info.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, info.w, info.h, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_FULLSCREEN_DESKTOP);
+   SDL_Window* window = SDL_CreateWindow(info.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, info.w, info.h, winFlags);
    SDL_GLContext gl_context = SDL_GL_CreateContext(window);
    SDL_GL_SetSwapInterval(1); // Enable vsync
    glewInit();
@@ -118,6 +125,9 @@ static void _windowCreate(App* app, WindowConfig const& info) {
 
    ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
    ImGui_ImplOpenGL3_Init();
+
+   app->timerStart = SDL_GetPerformanceCounter();
+   app->timerFreq = SDL_GetPerformanceFrequency();
 
    GLuint vao;
    glGenVertexArrays(1, &vao);
@@ -278,4 +288,9 @@ void appAddGUI(StringView label, std::function<bool()> gui) {
 
 void appClose() {
    g_app->shouldClose = true;
+}
+
+Time appGetTime() {
+   auto dt = SDL_GetPerformanceCounter() - g_app->timerStart;
+   return { (dt * 1000000) / g_app->timerFreq };
 }

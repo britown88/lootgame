@@ -12,12 +12,18 @@
 #include "render.h"
 
 struct Dude {
-   Float2 size = {};
-   Float2 pos = {};
-   float rotationAngle = 0.0f;
+   Float2 size;
+   Float2 pos;
+
+   Float2 moveVector;
+   Float2 velocity;
+
+   Float2 faceVector;
+   Float2 facing = { 0, -1 };
+
 
    TextureHandle texture = 0;
-   Mesh const* mesh = nullptr;
+   Time lastUpdated;
 };
 
 
@@ -25,7 +31,9 @@ struct Game {
    GameData data;
 
    ShaderHandle shader = 0;
-   TextureHandle gokuTex = 0;
+   TextureHandle dudeTex = 0;
+   TextureHandle targetTex = 0;
+
    Mesh mesh;
    FBO fbo;
 
@@ -45,6 +53,19 @@ Game* gameCreate(StringView assetsFolder) {
    g_game = new Game();
    _gameDataInit(&g_game->data, assetsFolder);
    return g_game;
+}
+
+static TextureHandle _textureBuildFromFile(const char* path) {
+   u64 sz = 0;
+   i32 x, y, comp;
+   x = y = comp = 0;
+   auto mem = fileReadBinary(path, &sz);
+   auto png = stbi_load_from_memory(mem, (i32)sz, &x, &y, &comp, 4);
+   auto out = render::textureBuild((ColorRGBA*)png, { x, y }, {});
+
+   free(mem);
+   free(png);
+   return out;
 }
 
 static void _createGraphicsObjects(Game* game){
@@ -68,15 +89,10 @@ static void _createGraphicsObjects(Game* game){
    auto& res = game->data.constants.resolution;
    game->fbo = render::fboBuild({ res.x, res.y });
 
-   u64 sz = 0;
-   i32 x, y, comp;
-   x = y = comp = 0;
-   auto mem = fileReadBinary("assets/dude.png", &sz);
-   auto png = stbi_load_from_memory(mem, (i32)sz, &x, &y, &comp, 4);
-   game->gokuTex = render::textureBuild((ColorRGBA*)png, { x, y }, {});
+   game->dudeTex = _textureBuildFromFile("assets/dude.png");
+   game->targetTex = _textureBuildFromFile("assets/target.png");
 
-   free(mem);
-   free(png);
+   
    free(vertex);
    free(fragment);
 }
@@ -85,8 +101,8 @@ static Dude _createDude(Game* game) {
    Dude out;
    out.pos = { 50,50 };
    out.size = { 150, 90 };
-   out.texture = game->gokuTex;
-   out.mesh = &game->mesh;
+   out.texture = game->dudeTex;
+   out.lastUpdated = appGetTime();
    return out;
 }
 
@@ -108,10 +124,10 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
       }
 
       switch (event->caxis.axis) {
-      case SDL_CONTROLLER_AXIS_LEFTX: io.moveVector.x = value; break;
-      case SDL_CONTROLLER_AXIS_LEFTY: io.moveVector.y = value; break;
-      case SDL_CONTROLLER_AXIS_RIGHTX: io.aimVector.x = value; break;
-      case SDL_CONTROLLER_AXIS_RIGHTY: io.aimVector.y = value; break;
+      case SDL_CONTROLLER_AXIS_LEFTX: io.leftStick.x = value; break;
+      case SDL_CONTROLLER_AXIS_LEFTY: io.leftStick.y = value; break;
+      case SDL_CONTROLLER_AXIS_RIGHTX: io.rightStick.x = value; break;
+      case SDL_CONTROLLER_AXIS_RIGHTY: io.rightStick.y = value; break;
       case SDL_CONTROLLER_AXIS_TRIGGERLEFT: io.leftTrigger = value; break;
       case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: io.rightTrigger = value; break;
       default: return false;
@@ -134,16 +150,32 @@ static void _renderDude(Dude const& dude) {
    auto texmat = Matrix::identity();
 
    model *= Matrix::translate2f(dude.pos);
-   model *= Matrix::rotate2D(dude.rotationAngle);
+   model *= Matrix::rotate2D(atan2f(dude.facing.x, -dude.facing.y));
    model *= Matrix::scale2f(dude.size);
 
+   render::uSetColor("uColor", White);
    render::uSetMatrix("uTexMatrix", texmat);
    render::uSetMatrix("uModelMatrix", model);
    
    render::uSetTextureSlot("uDiffuse", 0);
    render::textureBind(dude.texture, 0);
 
-   render::meshRender(*dude.mesh);
+   render::meshRender(g_game->mesh);
+}
+
+static void _renderTarget(Float2 pos, ColorRGBAf color, f32 sz) {
+   auto model = Matrix::identity();
+   auto texmat = Matrix::identity();
+
+   model *= Matrix::translate2f(pos);
+   model *= Matrix::scale2f({ sz,sz });
+
+   render::uSetColor("uColor", color);
+   render::uSetMatrix("uTexMatrix", texmat);
+   render::uSetMatrix("uModelMatrix", model);
+   render::uSetTextureSlot("uDiffuse", 0);
+   render::textureBind(g_game->targetTex, 0);
+   render::meshRender(g_game->mesh);
 }
 
 static void _renderScene(Game* game) {
@@ -153,7 +185,7 @@ static void _renderScene(Game* game) {
 
    render::enableAlphaBlending(true);
    render::viewport({ 0,0, res.x, res.y });
-   render::clear(DkGreen);
+   render::clear(DkBlue);
 
    auto view = Matrix::ortho(0, (float)res.x, 0, (float)res.y, -1, 1);
    render::shaderSetActive(game->shader);
@@ -162,10 +194,26 @@ static void _renderScene(Game* game) {
 
    _renderDude(game->dude);
 
+   const static f32 moveTargetDist = 100.0f;
+   const static f32 aimTargetDist = 200.0f;
+   auto &io = game->data.io;
+   auto &dude = game->dude;
+
+   
+   _renderTarget(dude.pos + dude.velocity * moveTargetDist, Cyan, 25);
+   _renderTarget(dude.pos + v2Normalized(dude.facing) * aimTargetDist, Red, 25);
+
+   _renderTarget(dude.pos + io.leftStick * moveTargetDist, DkGreen, 15);
+   _renderTarget(dude.pos + dude.moveVector * moveTargetDist, Magenta, 15);   
+
+   _renderTarget(dude.pos + io.rightStick * aimTargetDist, Yellow, 15);
+   _renderTarget(dude.pos + dude.faceVector * aimTargetDist, Magenta, 15);
+   
+
    render::fboBind({});
 }
 
-static void _updateMouse(Game* game) {
+void gameHandleInput(Game*game) {
    auto& res = game->data.constants.resolution;
    auto& vpScreen = game->data.imgui.vpScreenArea;
    auto& mPos = ImGui::GetIO().MousePos;
@@ -176,31 +224,100 @@ static void _updateMouse(Game* game) {
    };
 }
 
-void gameHandleInput(Game*game) {
-   _updateMouse(game);
-}
-
 void gameRender(Game*game) {
    _renderScene(game);
 }
 
-void gameUpdate(Game* game) {   
-   
+static void _updateDude(Game* game) {
+   auto dt = appGetTime() - game->dude.lastUpdated;
+   if (dt.toMilliseconds() == 0) {
+      return;
+   }
+
    auto&m = game->data.io.mousePos;
    auto&dp = game->dude.pos;
    auto &io = game->data.io;
+   auto &dude = game->dude;
 
-   if (fabs(io.aimVector.x) > AXIS_DEADZONE || fabs(io.aimVector.y) > AXIS_DEADZONE) {
-      game->dude.rotationAngle = atan2f(io.aimVector.x, -io.aimVector.y);
+   const f32 trackingSpeed = 0.1f;
+   const f32 acceleration = 0.005f;
+   const f32 mvSpeed = 5.0f;
+   const f32 rotSpeed = 0.01f;
+
+   auto moveTrackDist = v2Dist(dude.moveVector, io.leftStick);
+   if (moveTrackDist > 0.0001f) {
+      //scale speed to distance
+      auto speed = trackingSpeed * (moveTrackDist / 2.0f);
+      dude.moveVector = v2MoveTowards(dude.moveVector, io.leftStick, speed * dt.toMilliseconds());
    }
-   else if (fabs(io.moveVector.x) > AXIS_DEADZONE || fabs(io.moveVector.y) > AXIS_DEADZONE) {
-      game->dude.rotationAngle = atan2f(io.moveVector.x, -io.moveVector.y);
+
+   Float2 aimStick;
+   bool aiming = false;
+   if (fabs(io.rightStick.x) > AXIS_DEADZONE || fabs(io.rightStick.y) > AXIS_DEADZONE) {
+      aimStick = io.rightStick;
+      aiming = true;
+   }
+   else if (fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE) {
+      aimStick = io.leftStick;
+      aiming = true;
    }
 
-   float mvSpeed = 5.0f;
+   if (aiming) {
+      auto aimTrackDist = v2Dist(dude.faceVector, aimStick);
+      if (aimTrackDist > 0.0001f) {
+         //scale speed to distance
+         auto speed = trackingSpeed * (aimTrackDist / 2.0f);
+         dude.faceVector = v2MoveTowards(dude.faceVector, aimStick, speed * dt.toMilliseconds());
+      }
 
-   dp.y += mvSpeed * game->data.io.moveVector.y;
-   dp.x += mvSpeed * game->data.io.moveVector.x;
+      dude.facing = v2RotateTowards(dude.facing, dude.faceVector, v2FromAngle(rotSpeed * dt.toMilliseconds()));
+   }
+
+   dude.velocity = v2MoveTowards(dude.velocity, dude.moveVector, acceleration * dt.toMilliseconds());
+
+   // scale half of mvspeed based on facing;
+   f32 facing = 0.0f;
+   if (v2Len(dude.velocity) > 0.0001f) {
+      facing = v2Dot(v2Normalized(dude.velocity), v2Normalized(dude.facing));
+   }
+
+   auto scaledSpeed = (mvSpeed * 0.75f) + (mvSpeed * 0.25f * facing);
+
+   dp += dude.velocity * scaledSpeed;
+
+   game->dude.lastUpdated = appGetTime();
+
+   //Float2 targetFace = {};
+
+   //if (fabs(io.rightStick.x) > AXIS_DEADZONE || fabs(io.rightStick.y) > AXIS_DEADZONE) {
+   //   targetFace = v2Normalized({ io.rightStick.x, io.rightStick.y });
+   //}
+   //else if (fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE) {
+   //   targetFace = v2Normalized({ io.leftStick.x, io.leftStick.y });
+
+   //}
+   //else {
+   //   //targetFace = dude.facing;
+   //}
+
+   //f32 angleinc = 0.1f;
+   ////dude.facing = v2RotateTowards(dude.facing, targetFace, v2FromAngle(0.1f));
+   ////dude.rotationAngle = atan2f(dude.facing.x, -dude.facing.y);
+
+
+   //const float mvSpeed = 5.0f;
+
+   //dp.y += mvSpeed * io.leftStick.y;
+   //dp.x += mvSpeed * io.leftStick.x;
+
+
+}
+
+void gameUpdate(Game* game) {   
+   
+   
+   _updateDude(game);
+   
 
 
    gameDoUI(game);

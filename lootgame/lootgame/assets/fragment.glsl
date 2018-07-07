@@ -3,11 +3,12 @@
 // uniform float uAlpha;
 // uniform vec4 uColor;
 
+uniform vec4 uColor;
 uniform sampler2D uDiffuse;
 in vec2 vTexCoords;
 
 out vec4 outputColor;
 
 void main() {
-   outputColor = texture(uDiffuse, vTexCoords);
+   outputColor = texture(uDiffuse, vTexCoords) * uColor;
 }

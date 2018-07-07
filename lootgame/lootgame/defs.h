@@ -53,8 +53,15 @@ typedef u64 Milliseconds;
 typedef u32 Seconds;
 
 #pragma pack(push, 1)
-typedef struct {
+typedef struct Time {
    Microseconds t;
+
+   Microseconds toMicroseconds() { return t; };
+   Milliseconds toMilliseconds() { return t / 1000; };
+   Seconds toSeconds() { return (Seconds)(t / 1000000); };
+
+   Time operator-(Time const&lhs) { return { t - lhs.t }; }
+   Time operator+(Time const&lhs) { return { t + lhs.t }; }
 } Time;
 #pragma pack(pop)
 

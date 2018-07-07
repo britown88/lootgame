@@ -39,3 +39,4 @@ void appStep(App* app);
 // label must be unique or this call is ignored
 void appAddGUI(StringView label, std::function<bool()> gui);
 void appClose();
+Time appGetTime();

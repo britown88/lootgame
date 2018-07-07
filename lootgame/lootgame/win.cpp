@@ -54,7 +54,7 @@ std::string pathGetFilename(StringView path) {
    std::string pathStr = path;
    auto len = pathStr.size();
 
-   auto begin = 0;
+   size_t begin = 0;
    
    auto slash = pathStr.find_last_of("\\/");
    if (slash != std::string::npos) {

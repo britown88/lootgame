@@ -109,10 +109,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="fragment.glsl">
+    <None Include="assets\fragment.glsl">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="vertex.glsl">
+    <None Include="assets\vertex.glsl">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

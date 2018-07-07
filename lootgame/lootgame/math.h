@@ -13,8 +13,18 @@ typedef struct {
    i32 x, y, z;
 } Int3;
 
-typedef struct {
-   f32 x, y;
+typedef struct Float2 {
+   f32 x = 0, y = 0;
+
+   Float2 operator-(Float2 const& lhs) { return { x - lhs.x, y - lhs.y }; }
+   Float2 operator+(Float2 const& lhs) { return { x + lhs.x, y + lhs.y }; }
+   Float2 operator*(f32 s) { return { x * s, y * s }; }
+   Float2 operator/(f32 s) { return { x / s, y /s }; }
+
+   Float2& operator-=(Float2 const& lhs) { x -= lhs.x; y -= lhs.y; return *this; }
+   Float2& operator+=(Float2 const& lhs) { x += lhs.x; y += lhs.y; return *this; }
+   Float2& operator/=(f32 s) { x /= s; y /= s; return *this; }
+   Float2& operator*=(f32 s) { x *= s; y *= s; return *this; }
 } Float2;
 
 typedef struct {
@@ -27,7 +37,23 @@ Float3 vSubtract(Float3 a, Float3 b);
 Float3 vAdd(Float3 a, Float3 b);
 Float3 vNormalized(Float3 v);
 Float3 vScale(Float3 v, f32 s);
+f32 v2Dot(Float2 a, Float2 b);
+f32 v2Dist(Float2 a, Float2 b);
+f32 v2Len(Float2 v);
+Float2 v2Subtract(Float2 a, Float2 b);
+Float2 v2Add(Float2 a, Float2 b);
+Float2 v2Normalized(Float2 v);
+Float2 v2Scale(Float2 v, f32 s);
 f32 vDistSquared(Float3 const& a, Float3 const& b);
+
+f32 v2Determinant(Float2 a, Float2 b); //helper.  determines orientation of two vectors, positive vs. negative means clockwise/counterclockwise orientation
+Float2 v2Rotate(Float2 direction, Float2 rotation); //complex number rotation!!
+Float2 v2FromAngle(f32 radians);
+
+//direction is the current direction, target is the target direction
+//perFrame is Float2{cos(anglePerFrame), sin(anglePerFrame)} - this can be precalculated, to avoid runtime trig
+Float2 v2RotateTowards(Float2 direction, Float2 target, Float2 perFrame);
+Float2 v2MoveTowards(Float2 position, Float2 target, f32 speed);
 
 typedef struct {
    i32 x, y, w, h;
