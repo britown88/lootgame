@@ -32,13 +32,10 @@ void appDestroy(App* app);
 bool appRunning(App* app);
 void appStep(App* app);
 
-// Window
-typedef struct Window Window;
-void windowRefreshSize(Window* wnd);
-Int2 windowSize(Window* wnd);
-void windowClose(Window*wnd);
+// these function work off a global App* (the last created one, create/switch potential later
 
 // gui(wnd) is called every frame during the imgui update until it returns false
 // do your one-off imgui::begin()s here, use lambda capture for state
 // label must be unique or this call is ignored
-void windowAddGUI(Window* wnd, StringView label, std::function<bool(Window*)> gui);
+void appAddGUI(StringView label, std::function<bool()> gui);
+void appClose();

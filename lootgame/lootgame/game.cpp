@@ -41,16 +41,15 @@ static void _gameDataInit(GameData* game, StringView assetsFolder) {
    
 }
 
-void gameCreate(StringView assetsFolder) {
+Game* gameCreate(StringView assetsFolder) {
    g_game = new Game();
    _gameDataInit(&g_game->data, assetsFolder);
-   
+   return g_game;
 }
 
-static void _createGraphicsObjects(){
+static void _createGraphicsObjects(Game* game){
    auto vertex = fileReadString("assets/vertex.glsl");
    auto fragment = fileReadString("assets/fragment.glsl");
-   auto game = g_game;
 
    game->shader = render::shaderBuild(vertex, fragment);
 
@@ -82,23 +81,23 @@ static void _createGraphicsObjects(){
    free(fragment);
 }
 
-static Dude _createDude() {
+static Dude _createDude(Game* game) {
    Dude out;
    out.pos = { 50,50 };
    out.size = { 150,250 };
-   out.texture = g_game->gokuTex;
-   out.mesh = &g_game->mesh;
+   out.texture = game->gokuTex;
+   out.mesh = &game->mesh;
    return out;
 }
 
-bool gameProcessEvent(SDL_Event* event) {
+bool gameProcessEvent(Game*game, SDL_Event* event) {
    return true;
 }
 
-void gameBegin() {
+void gameBegin(Game*game) {
    
-   _createGraphicsObjects();
-   g_game->dude = _createDude();
+   _createGraphicsObjects(game);
+   game->dude = _createDude(game);
 
 }
 
@@ -121,8 +120,7 @@ static void _renderDude(Dude const& dude) {
    render::meshRender(*dude.mesh);
 }
 
-static void _renderScene() {
-   auto game = g_game;
+static void _renderScene(Game* game) {
    auto& res = game->data.constants.resolution;
 
    render::fboBind(game->fbo);
@@ -141,9 +139,7 @@ static void _renderScene() {
    render::fboBind({});
 }
 
-void gameUpdate(Window* wnd) {   
-   auto game = g_game;
-
+static void _updateMouse(Game* game) {
    auto& res = game->data.constants.resolution;
    auto& vpScreen = game->data.imgui.vpScreenArea;
    auto& mPos = ImGui::GetIO().MousePos;
@@ -152,7 +148,19 @@ void gameUpdate(Window* wnd) {
       (mPos.x - vpScreen.x) / vpScreen.w * res.x,
       (mPos.y - vpScreen.y) / vpScreen.h * res.y
    };
+}
 
+void gameHandleInput(Game*game) {
+   _updateMouse(game);
+}
+
+void gameRender(Game*game) {
+   _renderScene(game);
+}
+
+void gameUpdate(Game* game) {   
+   
+   
    auto&m = game->data.io.mousePos;
    auto&dp = game->dude.pos;
    auto&dsz = game->dude.size;
@@ -181,15 +189,14 @@ void gameUpdate(Window* wnd) {
    else if (right) {
       dp.x += mvSpeed;
    }
-
-   _renderScene();
-   gameDoUI(wnd);
+   
+   gameDoUI(game);
 }
 
-void gameDestroy() {
-   delete g_game;
+void gameDestroy(Game* game) {
+   delete game;
 }
 
-FBO const& gameGetOutputFBO() {
-   return g_game->fbo;
+FBO const& gameGetOutputFBO(Game* game) {
+   return game->fbo;
 }

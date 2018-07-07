@@ -8,6 +8,7 @@
 typedef struct Window Window;
 
 struct GameData {
+   GameData() {}
    struct {
       ColorRGBAf bgClearColor = { 0.45f, 0.55f, 0.60f, 1.0f };  // clear color behond all imgui windows
       bool showUI = true;                               // whether to show the ui or just a fullscreen viewer
@@ -26,18 +27,22 @@ struct GameData {
 
 GameData* gameDataGet();
 
-void gameCreate(StringView assetsFolder);
+typedef struct Game Game;
+
+Game* gameCreate(StringView assetsFolder);
 
 // called after the window and context are created
-void gameBegin();
+void gameBegin(Game*game);
 
 typedef union SDL_Event SDL_Event;
-bool gameProcessEvent(SDL_Event* event);
+bool gameProcessEvent(Game*game, SDL_Event* event);
 
-typedef struct Window Window;
-void gameUpdate(Window* wnd);
+void gameHandleInput(Game*game);
 
-void gameDestroy();
-void gameDoUI(Window* wnd);
+void gameRender(Game*game);
+void gameUpdate(Game*game);
 
-FBO const& gameGetOutputFBO();
+void gameDestroy(Game*game);
+void gameDoUI(Game*game);
+
+FBO const& gameGetOutputFBO(Game*game);

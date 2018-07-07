@@ -16,8 +16,8 @@ static ImGuiWindowFlags BorderlessFlags =
       ImGuiWindowFlags_NoTitleBar |
       ImGuiWindowFlags_NoSavedSettings;
 
-static void _doStatsWindow(Window* wnd) {
-   auto sz = windowSize(wnd);
+static void _doStatsWindow(Game* g) {
+   auto sz = ImGui::GetIO().DisplaySize;
 
    ImGui::SetNextWindowPos(ImVec2((float)sz.x, ImGui::GetFrameHeightWithSpacing()), ImGuiCond_Always, ImVec2(1, 0));
    if (ImGui::Begin("Stats", nullptr, BorderlessFlags | ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -90,7 +90,7 @@ static void _uiDoSCFReader(SCFReader &view) {
    }
 }
 
-static bool _doSCFTest(Window* wnd, SCFTestState& state) {
+static bool _doSCFTest(SCFTestState& state) {
    bool p_open = true;
 
    if (ImGui::Begin("SCF Testing", &p_open, 0)) {
@@ -152,7 +152,7 @@ static bool _doSCFTest(Window* wnd, SCFTestState& state) {
 
             auto lbl = format("SCF Result##%p", result.data);
 
-            windowAddGUI(wnd, lbl.c_str(), [=](Window*wnd) mutable {
+            appAddGUI(lbl.c_str(), [=]() mutable {
                bool p_open = true;
 
                ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_Appearing);
@@ -189,7 +189,7 @@ static bool _doSCFTest(Window* wnd, SCFTestState& state) {
    return p_open;
 }
 
-static void _mainMenu( Window* wnd) {
+static void _mainMenu( Game* g) {
    auto game = gameDataGet();
    if (ImGui::BeginMenuBar()) {
       if (ImGui::BeginMenu("Debug")) {
@@ -197,7 +197,7 @@ static void _mainMenu( Window* wnd) {
          ImGui::ColorEdit4("Clear Color", (float*)&game->imgui.bgClearColor);
 
          if (ImGui::MenuItem("Dialog Stats")) {
-            windowAddGUI(wnd, "DialogStats", [=](Window*wnd) {
+            appAddGUI("DialogStats", [=]() {
 
                bool p_open = true;
                if (ImGui::Begin("Dialog Stats", &p_open, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -207,7 +207,7 @@ static void _mainMenu( Window* wnd) {
                      static int testest = 0;
                      auto label = format("Dialog Test##%d", testest++);
 
-                     windowAddGUI(wnd, label.c_str(), [=](Window*wnd) {
+                     appAddGUI(label.c_str(), [=]() {
                         bool p_open = true;
                         if (ImGui::Begin(label.c_str(), &p_open, ImGuiWindowFlags_AlwaysAutoResize)) {
                            ImGui::Text("Hi!");
@@ -222,7 +222,7 @@ static void _mainMenu( Window* wnd) {
             });
          }
          if (ImGui::MenuItem("ImGui Demo")) {
-            windowAddGUI(wnd, "imguidemo", [=](Window*wnd) mutable {
+            appAddGUI("imguidemo", [=]() mutable {
                bool p_open = true;
                ImGui::ShowDemoWindow(&p_open);
                return p_open;
@@ -231,8 +231,8 @@ static void _mainMenu( Window* wnd) {
 
          if (ImGui::MenuItem("SCF Testing")) {
             SCFTestState state;
-            windowAddGUI(wnd, "SCF Testing", [=](Window*wnd) mutable {
-               return _doSCFTest(wnd, state);
+            appAddGUI("SCF Testing", [=]() mutable {
+               return _doSCFTest(state);
             });
          }
 
@@ -249,9 +249,9 @@ static void _mainMenu( Window* wnd) {
    }
 }
 
-static void _renderViewerFBO() {
+static void _renderViewerFBO(Game* game) {
 
-   auto fbo = gameGetOutputFBO();
+   auto fbo = gameGetOutputFBO(game);
 
 
    auto sz = ImGui::GetContentRegionAvail();
@@ -265,12 +265,12 @@ static void _renderViewerFBO() {
 
    gameDataGet()->imgui.vpScreenArea = { a.x, a.y, b.x - a.x, b.y - a.y };
 
-   draw_list->AddImage( (ImTextureID)fbo.tex, a, b );
+   draw_list->AddImage( (ImTextureID)(iPtr)fbo.tex, a, b );
 }
 
-static void _showFullScreenViewer(Window* wnd) {
+static void _showFullScreenViewer(Game* g) {
    auto game = gameDataGet();
-   auto sz = windowSize(wnd);
+   auto sz = ImGui::GetIO().DisplaySize;
 
    auto &style = ImGui::GetStyle();
 
@@ -282,28 +282,28 @@ static void _showFullScreenViewer(Window* wnd) {
    ImGui::SetNextWindowSize(ImVec2((float)sz.x, (float)sz.y), ImGuiCond_Always);
 
    if (ImGui::Begin("GameWindow", nullptr, BorderlessFlags)) {
-      _renderViewerFBO();
+      _renderViewerFBO(g);
    }
    ImGui::End();
 
    ImGui::PopStyleVar(3);
 }
 
-static void _showWindowedViewer(Window* wnd) {
+static void _showWindowedViewer(Game* g) {
    auto game = gameDataGet();
 
-   auto sz = windowSize(wnd);
+   auto sz = ImGui::GetIO().DisplaySize;
    ImGui::SetNextWindowSize(ImVec2(sz.x / 2.0f, sz.y / 2.0f), ImGuiCond_Appearing);
 
    if (ImGui::Begin("Viewer", nullptr, 0)) {
 
       if (ImGui::IsWindowFocused()) {
          if (ImGui::IsKeyPressed(SDL_SCANCODE_ESCAPE)) {
-            windowClose(wnd);
+            appClose();
          }
       }
 
-      _renderViewerFBO();
+      _renderViewerFBO(g);
 
 
    }
@@ -311,7 +311,7 @@ static void _showWindowedViewer(Window* wnd) {
 
 }
 
-void gameDoUI(Window* wnd) {
+void gameDoUI(Game* g) {
    auto game = gameDataGet();
    if (ImGui::IsKeyPressed(SDL_SCANCODE_F1)) {
       game->imgui.showUI = !game->imgui.showUI;
@@ -320,7 +320,7 @@ void gameDoUI(Window* wnd) {
 
    if (game->imgui.showUI) {
       auto game = gameDataGet();
-      auto sz = windowSize(wnd);
+      auto sz = ImGui::GetIO().DisplaySize;
       auto &style = ImGui::GetStyle();
 
       auto bgColor = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
@@ -346,10 +346,10 @@ void gameDoUI(Window* wnd) {
          ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, borderSize);
          ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, rounding);
 
-         _mainMenu(wnd);
+         _mainMenu(g);
          
-         _doStatsWindow(wnd);
-         _showWindowedViewer(wnd);
+         _doStatsWindow(g);
+         _showWindowedViewer(g);
 
          ImGui::PopStyleVar(3);
          ImGui::PopStyleColor();
@@ -362,13 +362,11 @@ void gameDoUI(Window* wnd) {
       
    }
    else {
-      _showFullScreenViewer(wnd);
+      _showFullScreenViewer(g);
 
       if (ImGui::IsKeyPressed(SDL_SCANCODE_ESCAPE)) {
-         windowClose(wnd);
+         appClose();
       }
-
-
    }
    
 }

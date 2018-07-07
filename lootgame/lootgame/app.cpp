@@ -20,7 +20,13 @@
 #include "render.h"
 #include "game.h"
 
-struct Window {
+
+struct App {
+   bool running = false;
+   Game* game = nullptr;
+
+   ImFontAtlas* fontAtlas;
+
    SDL_Window* sdlWnd = nullptr;
    SDL_GLContext sdlCtx = nullptr;
    ImGuiContext* imguiContext = nullptr;
@@ -30,37 +36,33 @@ struct Window {
    bool shouldClose = false;
 
    struct Dialog {
-      std::function<bool(Window*)> dlg;
+      std::function<bool()> dlg;
       bool bringToFront = true;
    };
 
    std::unordered_map<std::string, Dialog> dlgs;
 };
 
-struct App {
-   bool running = false;
-   Window* wnd = nullptr;
-   ImFontAtlas* fontAtlas;
-};
+static App* g_app = nullptr;
 
 App* appCreate(AppConfig const& config) {
    auto out = new App();
-   gameCreate(config.assetFolder);
+   out->game = gameCreate(config.assetFolder);
+   g_app = out;
    return out;
 }
 
 void appDestroy(App* app) {
-   gameDestroy();
+   gameDestroy(app->game);
 
    ImGui_ImplOpenGL3_Shutdown();
    ImGui_ImplSDL2_Shutdown();
    ImGui::DestroyContext();
 
-   SDL_GL_DeleteContext(app->wnd->sdlCtx);
-   SDL_DestroyWindow(app->wnd->sdlWnd);
+   SDL_GL_DeleteContext(app->sdlCtx);
+   SDL_DestroyWindow(app->sdlWnd);
    SDL_Quit();
 
-   delete app->wnd;
    delete app->fontAtlas;
    delete app;
 }
@@ -84,11 +86,11 @@ static void _initFontAtlas(App* app) {
       13.0f, &config, range_merged);
 }
 
-static Window* _windowCreate(App* app, WindowConfig const& info) {
+static void _windowCreate(App* app, WindowConfig const& info) {
    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
    {
       printf("Error: %s\n", SDL_GetError());
-      return nullptr;
+      return;
    }
 
    // Setup window
@@ -123,18 +125,16 @@ static Window* _windowCreate(App* app, WindowConfig const& info) {
    ImGui::StyleColorsDark();
    //ImGui::StyleColorsClassic();
 
-   Window* out = new Window();
-   out->sdlCtx = gl_context;
-   out->sdlWnd = window;
-   out->imguiContext = imCtx;
-   windowRefreshSize(out);
+   app->sdlCtx = gl_context;
+   app->sdlWnd = window;
+   app->imguiContext = imCtx;
 
-   return out;
 }
 
 void appCreateWindow(App* app, WindowConfig const& info) {
-   app->wnd = _windowCreate(app, info);
-   gameBegin();
+   _windowCreate(app, info);
+   gameBegin(app->game);
+
    app->running = true;
 }
 
@@ -146,32 +146,29 @@ void appPollEvents(App* app) {
    {
       ImGui_ImplSDL2_ProcessEvent(&event);
 
-      // handle non-imgui-handled mouse things here
+      bool gameHandled = false;
+
+      // only allow mouserelated events to pass to game if imgui's not using the mouse
       if (!io.WantCaptureMouse) {
          switch (event.type) {
-         case SDL_MOUSEBUTTONUP: {
-            break; }
-         case SDL_MOUSEBUTTONDOWN: {
-            break; }
-         case SDL_MOUSEMOTION: {
-            break; }
-         case SDL_MOUSEWHEEL: {
-            break; }
+         case SDL_MOUSEBUTTONUP:
+         case SDL_MOUSEBUTTONDOWN:
+         case SDL_MOUSEMOTION:
+         case SDL_MOUSEWHEEL:
+            gameHandled = gameHandled || gameProcessEvent(app->game, &event);
+            break;
          }
       }
 
+      // only allow keyelated events to pass to game if imgui's not using the keyboad
       if (!io.WantCaptureKeyboard) {
          switch (event.type) {
-         case SDL_KEYDOWN: {
-            break; }
-         case SDL_KEYUP: {
-            // switch (event.key.keysym.scancode) {
-            // }
-            break; }
-         case SDL_TEXTEDITING: {
-            break; }
-         case SDL_TEXTINPUT: {
-            break; }
+         case SDL_KEYDOWN:
+         case SDL_KEYUP:
+         case SDL_TEXTEDITING:
+         case SDL_TEXTINPUT:
+            gameHandled = gameHandled || gameProcessEvent(app->game, &event);
+            break;
          }
       }
 
@@ -184,10 +181,17 @@ void appPollEvents(App* app) {
          switch (event.window.event) {
          case SDL_WINDOWEVENT_EXPOSED:
          case SDL_WINDOWEVENT_RESIZED:
-            windowRefreshSize(app->wnd);
+            SDL_GetWindowSize(app->sdlWnd, &app->size.x, &app->size.y);
+            SDL_GL_GetDrawableSize(app->sdlWnd, &app->clientSize.x, &app->clientSize.y);
+            app->scale = app->clientSize.x / (float)app->size.x;
             break;
          }
          break;
+      }
+
+      // finally pass everything else through to the game to handle as it will
+      if (!gameHandled) {
+         gameProcessEvent(app->game, &event);
       }
    }
 }
@@ -196,83 +200,80 @@ void appPollEvents(App* app) {
 
 static void _pollEvents(App* app) {
    appPollEvents(app);
+   gameHandleInput(app->game);
 }
 
 static void _beginFrame(App* app) {
    ImGui_ImplOpenGL3_NewFrame();
-   ImGui_ImplSDL2_NewFrame(app->wnd->sdlWnd);
+   ImGui_ImplSDL2_NewFrame(app->sdlWnd);
    ImGui::NewFrame();
 }
 
-static void _updateGame(App* app) {
-   gameUpdate(app->wnd);
-
-   if (app->wnd->shouldClose) {
-      app->running = false;
-   }
-}
-
 static void _renderFrame(App* app) {
+   SDL_GL_MakeCurrent(app->sdlWnd, app->sdlCtx);
+
+   gameRender(app->game);
+
    auto data = gameDataGet();
    auto ccolor = data->imgui.bgClearColor;
 
    auto& io = ImGui::GetIO();
    ImGui::Render();
-   SDL_GL_MakeCurrent(app->wnd->sdlWnd, app->wnd->sdlCtx);
 
    render::viewport({ 0, 0, (int)io.DisplaySize.x , (int)io.DisplaySize.y });
    render::clear(ccolor);
 
    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-   SDL_GL_SwapWindow(app->wnd->sdlWnd);
+   SDL_GL_SwapWindow(app->sdlWnd);
 }
 
 static void _updateDialogs(App* app) {
    std::vector<std::string> deleted;
-   for (auto &dlg : app->wnd->dlgs) {
+   for (auto &dlg : app->dlgs) {
 
       if (dlg.second.bringToFront) {
          ImGui::SetNextWindowFocus();
          dlg.second.bringToFront = false;
       }
 
-      if (!dlg.second.dlg(app->wnd)) {
+      if (!dlg.second.dlg()) {
          deleted.push_back(dlg.first);
       }
    }
    for (auto&d : deleted) {
-      app->wnd->dlgs.erase(d);
+      app->dlgs.erase(d);
    }
+}
+
+static void _updateFrame(App* app) {
+   gameUpdate(app->game);
+   _updateDialogs(app);
 }
 
 void appStep(App* app) {
    _pollEvents(app);
    _beginFrame(app);
-   _updateGame(app);
-   _updateDialogs(app);
+
+   _updateFrame(app);
    _renderFrame(app);
+
+   if (app->shouldClose) {
+      app->running = false;
+   }
 }
 
 
-// Window
-Int2 windowSize(Window* wnd) { return wnd->size; }
-Int2 windowClientArea(Window* wnd) { return wnd->clientSize; }
-float windowScale(Window* wnd) { return wnd->scale; }
-void windowClose(Window*wnd) { wnd->shouldClose = true; }
+void appAddGUI(StringView label, std::function<bool()> gui) {
 
-void windowRefreshSize(Window* wnd) {
-   SDL_GetWindowSize(wnd->sdlWnd, &wnd->size.x, &wnd->size.y);
-   SDL_GL_GetDrawableSize(wnd->sdlWnd, &wnd->clientSize.x, &wnd->clientSize.y);
-   wnd->scale = wnd->clientSize.x / (float)wnd->size.x;
-}
-
-void windowAddGUI(Window* wnd, StringView label, std::function<bool(Window*)> gui) {
-
-   auto dlg = wnd->dlgs.find(label);
-   if (dlg != wnd->dlgs.end()) {
+   auto dlg = g_app->dlgs.find(label);
+   if (dlg != g_app->dlgs.end()) {
       dlg->second.bringToFront = true;
       return;
    }
 
-   wnd->dlgs.insert({ label,{ gui } });
+   g_app->dlgs.insert({ label,{ gui } });
+}
+
+void appClose() {
+   g_app->shouldClose = true;
 }

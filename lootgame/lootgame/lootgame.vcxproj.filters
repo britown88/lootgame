@@ -13,81 +13,99 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\app">
+      <UniqueIdentifier>{45a98937-78e9-4a91-bf74-1771a4fdaa42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\game">
+      <UniqueIdentifier>{a9311cf7-7c6e-4403-bd14-7fe5ace9ee90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\utility">
+      <UniqueIdentifier>{14656380-3ac2-4f82-a5c7-30a1c1e7a7f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\app">
+      <UniqueIdentifier>{ebfdc64b-360c-40f6-a8c0-15da3d577139}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\game">
+      <UniqueIdentifier>{907ea0d5-1aa8-47a6-b0ee-e81be0f95e03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\utility">
+      <UniqueIdentifier>{3e7f9165-2857-4903-8baf-721ffbc61568}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="app.cpp">
+      <Filter>Source Files\app</Filter>
+    </ClCompile>
     <ClCompile Include="imgui_impl_opengl3.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\app</Filter>
     </ClCompile>
     <ClCompile Include="imgui_impl_sdl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="colors.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="implementations.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="math.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="scf.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="stringformat.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="symbol.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\app</Filter>
     </ClCompile>
     <ClCompile Include="render.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="app.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\app</Filter>
     </ClCompile>
     <ClCompile Include="game.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\game</Filter>
     </ClCompile>
     <ClCompile Include="ui.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\game</Filter>
     </ClCompile>
     <ClCompile Include="win.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="colors.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="implementations.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="math.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="scf.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="stringformat.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="symbol.cpp">
+      <Filter>Source Files\utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="imgui_impl_opengl3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui_impl_sdl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="render.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="defs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="math.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="app.h">
+      <Filter>Header Files\app</Filter>
     </ClInclude>
     <ClInclude Include="IconsFontAwesome.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\app</Filter>
     </ClInclude>
-    <ClInclude Include="scf.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="imgui_impl_opengl3.h">
+      <Filter>Header Files\app</Filter>
     </ClInclude>
-    <ClInclude Include="app.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="imgui_impl_sdl.h">
+      <Filter>Header Files\app</Filter>
+    </ClInclude>
+    <ClInclude Include="render.h">
+      <Filter>Header Files\app</Filter>
     </ClInclude>
     <ClInclude Include="game.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="scf.h">
+      <Filter>Header Files\utility</Filter>
     </ClInclude>
     <ClInclude Include="win.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="defs.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="math.h">
+      <Filter>Header Files\utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
