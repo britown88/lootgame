@@ -5,7 +5,22 @@
 #include <vector>
 #include <string>
 
-typedef struct Window Window;
+typedef enum {
+   GameButton_LEFT = 0,
+   GameButton_RIGHT,
+   GameButton_UP,
+   GameButton_DOWN,
+   GameButton_A,
+   GameButton_B,
+   GameButton_X,
+   GameButton_Y,
+   GameButton_LB,
+   GameButton_LT,
+   GameButton_RB,
+   GameButton_RT,
+
+   GameButton_COUNT
+} GameButton;
 
 struct GameData {
    GameData() {}
@@ -21,6 +36,16 @@ struct GameData {
 
    struct {
       Float2 mousePos;
+
+      Float2 moveVector;   // unit vector of left stick
+      Float2 aimVector;    // unit vector of right stick
+
+      f32 leftTrigger = 0.0f; // 0-1 analog trigger
+      f32 rightTrigger = 0.0f;// 0-1 analog trigger
+
+      bool buttonDown[GameButton_COUNT];
+      bool buttonPressed[GameButton_COUNT];
+      bool buttonReleased[GameButton_COUNT];      
 
    } io;
 };

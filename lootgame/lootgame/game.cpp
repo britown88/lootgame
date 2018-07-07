@@ -54,13 +54,13 @@ static void _createGraphicsObjects(Game* game){
    game->shader = render::shaderBuild(vertex, fragment);
 
    Vertex vbo[] = { 
-      { { 0.0f, 0.0f },{ 0.0f, 0.0f } },
-      { { 1.0f, 0.0f },{ 1.0f, 0.0f } },
-      { { 0.0f, 1.0f },{ 0.0f, 1.0f } },
+      { { -0.5f, -0.5f },{ 0.0f, 0.0f } },
+      { {  0.5f, -0.5f },{ 1.0f, 0.0f } },
+      { { -0.5f,  0.5f },{ 0.0f, 1.0f } },
 
-      { { 1.0f, 0.0f },{ 1.0f, 0.0f } },
-      { { 1.0f, 1.0f },{ 1.0f, 1.0f } },
-      { { 0.0f, 1.0f },{ 0.0f, 1.0f } },
+      { {  0.5f, -0.5f },{ 1.0f, 0.0f } },
+      { {  0.5f,  0.5f },{ 1.0f, 1.0f } },
+      { { -0.5f,  0.5f },{ 0.0f, 1.0f } },
    };
 
    game->mesh = render::meshBuild(vbo, 6);
@@ -71,7 +71,7 @@ static void _createGraphicsObjects(Game* game){
    u64 sz = 0;
    i32 x, y, comp;
    x = y = comp = 0;
-   auto mem = fileReadBinary("assets/goku.png", &sz);
+   auto mem = fileReadBinary("assets/dude.png", &sz);
    auto png = stbi_load_from_memory(mem, (i32)sz, &x, &y, &comp, 4);
    game->gokuTex = render::textureBuild((ColorRGBA*)png, { x, y }, {});
 
@@ -84,14 +84,42 @@ static void _createGraphicsObjects(Game* game){
 static Dude _createDude(Game* game) {
    Dude out;
    out.pos = { 50,50 };
-   out.size = { 150,250 };
+   out.size = { 150, 90 };
    out.texture = game->gokuTex;
    out.mesh = &game->mesh;
    return out;
 }
 
+#define AXIS_DEADZONE 0.15f
+
 bool gameProcessEvent(Game*game, SDL_Event* event) {
-   return true;
+   auto &io = game->data.io;
+   
+   switch (event->type) {
+   case SDL_CONTROLLERDEVICEADDED:
+      SDL_GameControllerOpen(0);
+      return true;
+
+   case SDL_CONTROLLERAXISMOTION:
+   {  
+      auto value = event->caxis.value / (float)(INT16_MAX + 1);
+      if (fabs(value) < AXIS_DEADZONE) {
+         value = 0.0f;
+      }
+
+      switch (event->caxis.axis) {
+      case SDL_CONTROLLER_AXIS_LEFTX: io.moveVector.x = value; break;
+      case SDL_CONTROLLER_AXIS_LEFTY: io.moveVector.y = value; break;
+      case SDL_CONTROLLER_AXIS_RIGHTX: io.aimVector.x = value; break;
+      case SDL_CONTROLLER_AXIS_RIGHTY: io.aimVector.y = value; break;
+      case SDL_CONTROLLER_AXIS_TRIGGERLEFT: io.leftTrigger = value; break;
+      case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: io.rightTrigger = value; break;
+      default: return false;
+      }
+   } return true;;
+   }
+
+   return false;
 }
 
 void gameBegin(Game*game) {
@@ -106,9 +134,7 @@ static void _renderDude(Dude const& dude) {
    auto texmat = Matrix::identity();
 
    model *= Matrix::translate2f(dude.pos);
-   model *= Matrix::translate2f({ dude.size.x / 2, dude.size.y / 2 });
    model *= Matrix::rotate2D(dude.rotationAngle);
-   model *= Matrix::translate2f({ -dude.size.x / 2, -dude.size.y / 2 });
    model *= Matrix::scale2f(dude.size);
 
    render::uSetMatrix("uTexMatrix", texmat);
@@ -160,36 +186,23 @@ void gameRender(Game*game) {
 
 void gameUpdate(Game* game) {   
    
-   
    auto&m = game->data.io.mousePos;
    auto&dp = game->dude.pos;
-   auto&dsz = game->dude.size;
+   auto &io = game->data.io;
 
-   Float2 rotPos = { dp.x + dsz.x / 2, dp.y + dsz.y / 2 };
-
-   game->dude.rotationAngle = -atan2f(m.x - rotPos.x, m.y - rotPos.y);
-
-   auto up = ImGui::IsKeyDown(SDL_SCANCODE_W);
-   auto down = ImGui::IsKeyDown(SDL_SCANCODE_S);
-   auto left = ImGui::IsKeyDown(SDL_SCANCODE_A);
-   auto right = ImGui::IsKeyDown(SDL_SCANCODE_D);
+   if (fabs(io.aimVector.x) > AXIS_DEADZONE || fabs(io.aimVector.y) > AXIS_DEADZONE) {
+      game->dude.rotationAngle = atan2f(io.aimVector.x, -io.aimVector.y);
+   }
+   else if (fabs(io.moveVector.x) > AXIS_DEADZONE || fabs(io.moveVector.y) > AXIS_DEADZONE) {
+      game->dude.rotationAngle = atan2f(io.moveVector.x, -io.moveVector.y);
+   }
 
    float mvSpeed = 5.0f;
 
-   if (up) {
-      dp.y -= mvSpeed;
-   }
-   else if (down) {
-      dp.y += mvSpeed;
-   }
+   dp.y += mvSpeed * game->data.io.moveVector.y;
+   dp.x += mvSpeed * game->data.io.moveVector.x;
 
-   if (left) {
-      dp.x -= mvSpeed;
-   }
-   else if (right) {
-      dp.x += mvSpeed;
-   }
-   
+
    gameDoUI(game);
 }
 

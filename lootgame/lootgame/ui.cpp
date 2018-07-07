@@ -292,8 +292,8 @@ static void _showFullScreenViewer(Game* g) {
 static void _showWindowedViewer(Game* g) {
    auto game = gameDataGet();
 
-   auto sz = ImGui::GetIO().DisplaySize;
-   ImGui::SetNextWindowSize(ImVec2(sz.x / 2.0f, sz.y / 2.0f), ImGuiCond_Appearing);
+   //auto sz = ImGui::GetIO().DisplaySize;
+   //ImGui::SetNextWindowSize(ImVec2(sz.x / 2.0f, sz.y / 2.0f), ImGuiCond_Appearing);
 
    if (ImGui::Begin("Viewer", nullptr, 0)) {
 
@@ -309,6 +309,22 @@ static void _showWindowedViewer(Game* g) {
    }
    ImGui::End();
 
+}
+
+static void _doUIDebugger() {
+   if (ImGui::Begin("UI Debugger", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+
+      
+      auto&io = gameDataGet()->io;
+
+      ImGui::Text("Move: (%f, %f)", io.moveVector.x, io.moveVector.y);
+      ImGui::Text("Aim: (%f, %f)", io.aimVector.x, io.aimVector.y);
+      ImGui::Text("Left Trigger: %f", io.leftTrigger);
+      ImGui::Text("Right Trigger: %f", io.rightTrigger);
+
+
+   }
+   ImGui::End();
 }
 
 void gameDoUI(Game* g) {
@@ -349,6 +365,8 @@ void gameDoUI(Game* g) {
          _mainMenu(g);
          
          _doStatsWindow(g);
+
+         _doUIDebugger();
          _showWindowedViewer(g);
 
          ImGui::PopStyleVar(3);

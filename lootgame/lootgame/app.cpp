@@ -87,11 +87,13 @@ static void _initFontAtlas(App* app) {
 }
 
 static void _windowCreate(App* app, WindowConfig const& info) {
-   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
+   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
    {
       printf("Error: %s\n", SDL_GetError());
       return;
    }
+
+   auto mappings = SDL_GameControllerAddMappingsFromFile("assets/gamecontrollerdb.txt");
 
    // Setup window
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
@@ -103,7 +105,7 @@ static void _windowCreate(App* app, WindowConfig const& info) {
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
    SDL_DisplayMode current;
    SDL_GetCurrentDisplayMode(0, &current);
-   SDL_Window* window = SDL_CreateWindow(info.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, info.w, info.h, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+   SDL_Window* window = SDL_CreateWindow(info.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, info.w, info.h, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_FULLSCREEN_DESKTOP);
    SDL_GLContext gl_context = SDL_GL_CreateContext(window);
    SDL_GL_SetSwapInterval(1); // Enable vsync
    glewInit();
