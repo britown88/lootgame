@@ -325,6 +325,10 @@ static void _doUIDebugger() {
          ImGui::Text("Right Stick: (%f, %f)", io.rightStick.x, io.rightStick.y);
          ImGui::Text("Left Trigger: %f", io.leftTrigger);
          ImGui::Text("Right Trigger: %f", io.rightTrigger);
+
+         ImGui::Text("LeftTrigger: %s", io.buttonDown[GameButton_LT] ? "Down" : "Up");
+         ImGui::Text("Pressed: %s", io.buttonPressed[GameButton_LT] ? "true" : "false");
+         ImGui::Text("Released: %s", io.buttonReleased[GameButton_LT] ? "true" : "false");
       }
 
       ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);

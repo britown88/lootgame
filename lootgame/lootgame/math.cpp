@@ -33,6 +33,9 @@ f32 v2Dist(Float2 a, Float2 b) {
 f32 v2Len(Float2 v) {
    return sqrtf(v2Dot(v, v));
 }
+f32 v2LenSquared(Float2 v) {
+   return v2Dot(v, v);
+}
 Float2 v2Subtract(Float2 a, Float2 b) {
    return { a.x - b.x, a.y - b.y };
 }

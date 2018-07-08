@@ -40,6 +40,7 @@ Float3 vScale(Float3 v, f32 s);
 f32 v2Dot(Float2 a, Float2 b);
 f32 v2Dist(Float2 a, Float2 b);
 f32 v2Len(Float2 v);
+f32 v2LenSquared(Float2 v);
 Float2 v2Subtract(Float2 a, Float2 b);
 Float2 v2Add(Float2 a, Float2 b);
 Float2 v2Normalized(Float2 v);

@@ -211,8 +211,10 @@ void appPollEvents(App* app) {
 
 
 static void _pollEvents(App* app) {
-   appPollEvents(app);
    gameHandleInput(app->game);
+
+   appPollEvents(app);
+   
 }
 
 static void _beginFrame(App* app) {

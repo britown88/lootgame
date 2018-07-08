@@ -20,7 +20,8 @@ typedef enum {
    GameButton_RT,
 
    GameButton_COUNT
-} GameButton;
+} GameButton_;
+typedef byte GameButton;
 
 struct Constants {
    Int2 resolution = { 1920, 1080 };
@@ -28,7 +29,7 @@ struct Constants {
    // per ms
    f32 stickTrackingSpeed = 0.01f;
    f32 dudeAcceleration = 0.005f;
-   f32 dudeMoveSpeed= 7.0f;
+   f32 dudeMoveSpeed= 5.0f;
    f32 dudeRotationSpeed = 0.01f;
 };
 
