@@ -22,6 +22,11 @@ void render::setBlendMode(BlendMode mode) {
    case BlendMode_DISABLED:
       glDisable(GL_BLEND);
       break;
+   case BlendMode_PURE_ADD:
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
+      //glBlendEquation(GL_FUNC_SUBTRACT);
+      break;
    case BlendMode_NORMAL:
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

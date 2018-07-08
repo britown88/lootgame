@@ -75,7 +75,7 @@ Constants &ConstantsGet() { return g_const; }
 struct Game {
    GameData data;
 
-   ShaderHandle shader = 0;
+   ShaderHandle shader = 0, colorShader = 0;
 
    Mesh mesh, meshUncentered;
    FBO fbo, lightfbo;
@@ -113,9 +113,11 @@ static TextureHandle _textureBuildFromFile(const char* path, TextureConfig const
 
 static void _createGraphicsObjects(Game* game){
    auto vertex = fileReadString("assets/vertex.glsl");
+   auto colorfrag = fileReadString("assets/coloronlyfrag.glsl");
    auto fragment = fileReadString("assets/fragment.glsl");
 
    game->shader = render::shaderBuild(vertex, fragment);
+   game->colorShader = render::shaderBuild(vertex, colorfrag);
 
    Vertex vbo[] = { 
       { { -0.5f, -0.5f },{ 0.0f, 0.0f } },
@@ -236,27 +238,46 @@ static void _populateLightLayer(Game* game) {
    auto& c = ConstantsGet();
    auto& res = c.resolution;
 
+   auto view = Matrix::ortho(0, (float)res.x, 0, (float)res.y, -1, 1);
+   render::shaderSetActive(game->shader);
+   render::uSetMatrix(u::viewMatrix, view);
+
    render::fboBind(game->lightfbo);
-   render::setBlendMode(BlendMode_NORMAL);
+   render::setBlendMode(BlendMode_PURE_ADD);
    render::viewport({ 0,0, res.x, res.y });
-   render::clear({1.0f, 1.0f, 1.0f, 0.f});
+   
+   render::clear({0.f,0.f,0.f,1.0f});
+   //render::clear({1.0f, 1.0f, 1.0f, 0.f});
 
    auto model = Matrix::translate2f(game->dude.pos);
-   model *= Matrix::scale2f({ 1000,1000 });
+   model *= Matrix::scale2f({ 500,500 });
 
-   render::uSetColor(u::color, {1.0f, 1.0f, 1.0f, 1.0f});
+   render::uSetColor(u::color, White);
    render::uSetMatrix(u::modelMatrix, model);
    render::textureBind(g_textures[GameTextures_Light], 0);
    render::meshRender(g_game->mesh);
 
-   //auto model = Matrix::identity();
-   //auto texmat = Matrix::identity();
+   model = Matrix::translate2f({420, 500});
+   model *= Matrix::scale2f({ 400,500 });
+   render::uSetColor(u::color, White);
+   render::uSetMatrix(u::modelMatrix, model);
+   render::meshRender(g_game->mesh);
 
-   //model = Matrix::translate2f({0, 0});
-   //model *= Matrix::scale2f({ 2000,2000 });
-   //render::uSetColor(u::color, { 1.0f, 0.5f, 0.5f, 1.0f });
-   //render::uSetMatrix(u::modelMatrix, model);
-   //render::meshRender(g_game->mesh);
+   model = Matrix::translate2f({ 1000,700 });
+   model *= Matrix::scale2f({ 500,800 });
+   render::uSetColor(u::color, White);
+   render::uSetMatrix(u::modelMatrix, model);
+   render::meshRender(g_game->mesh);
+
+   view = Matrix::ortho(0, (float)res.x, 0, (float)res.y, -1, 1);
+   render::shaderSetActive(game->colorShader);
+   render::uSetMatrix(u::viewMatrix, view);
+
+   model = Matrix::scale2f({ (f32)res.x, (f32)res.y});
+   render::uSetColor(u::color, {1, 1, 1, 0.5f});
+   render::uSetMatrix(u::modelMatrix, model);
+   render::textureBind(0, 0);
+   render::meshRender(g_game->meshUncentered);
 }
 
 static void _renderFloor(Game* game) {
@@ -278,38 +299,38 @@ static void _renderFloor(Game* game) {
 }
 
 static void _renderLightLayer(Game* game) {
-   {
-      render::setBlendMode(BlendMode_LIGHTING);
-      auto model = Matrix::identity();
-      auto texmat = Matrix::identity();
 
-      model *= Matrix::scale2f({ (float)game->lightfbo.sz.x, (float)game->lightfbo.sz.y });
+   render::setBlendMode(BlendMode_LIGHTING);
+   auto model = Matrix::identity();
+   auto texmat = Matrix::identity();
 
-      render::uSetColor(u::color, White);
-      render::uSetMatrix(u::texMatrix, texmat);
-      render::uSetMatrix(u::modelMatrix, model);
-      render::uSetTextureSlot(u::diffuse, 0);
+   model *= Matrix::scale2f({ (float)game->lightfbo.sz.x, (float)game->lightfbo.sz.y });
 
-      render::textureBind(game->lightfbo.tex, 0);
-      render::meshRender(g_game->meshUncentered);
-   }
+   render::uSetColor(u::color, White);
+   render::uSetMatrix(u::texMatrix, texmat);
+   render::uSetMatrix(u::modelMatrix, model);
+   render::uSetTextureSlot(u::diffuse, 0);
+
+   render::textureBind(game->lightfbo.tex, 0);
+   render::meshRender(g_game->meshUncentered);
+
 }
 
 static void _renderScene(Game* game) {
    auto& c = ConstantsGet();
    auto& res = ConstantsGet().resolution;
 
+   _populateLightLayer(game);
+
    auto view = Matrix::ortho(0, (float)res.x, 0, (float)res.y, -1, 1);
    render::shaderSetActive(game->shader);
    render::uSetMatrix(u::viewMatrix, view);
-
-   _populateLightLayer(game);
 
    render::fboBind(game->fbo);
 
    render::setBlendMode(BlendMode_NORMAL);
    render::viewport({ 0,0, res.x, res.y });
-   render::clear(DkBlue);
+   render::clear(White);
 
    _renderFloor(game);
 
@@ -331,7 +352,7 @@ static void _renderScene(Game* game) {
       _renderTarget(dude.pos + dude.faceVector * aimTargetDist, LtGray, 30);
    }
    
-   //_renderLightLayer(game);
+   _renderLightLayer(game);
 
 
    render::fboBind({});
@@ -423,12 +444,6 @@ void gameRender(Game*game) {
    _renderScene(game);
 }
 
-Float2 rotate(Float2 v, f32 rads) {
-   f32 angle = atan2f(v.x, v.y);
-   angle += rads;
-   return Float2{ cos(angle), sin(angle) };
-}
-
 static void _beginAttack(Dude& dude) {
    dude.state = Dude::State_ATTACKING;
    dude.moveVector = dude.faceVector = { 0.0f, 0.0f };
@@ -499,7 +514,8 @@ static void _updateDude(Game* game) {
       // scale half of mvspeed based on facing;
       f32 facing = v2Dot(velnorm, facnorm);
       auto scaledSpeed = (c.dudeMoveSpeed * 0.75f) + (c.dudeMoveSpeed * 0.25f * facing);
-      dp += dude.velocity * scaledSpeed;
+
+      dp += dude.velocity * scaledSpeed * dt.toMilliseconds();
    }
 
    game->dude.lastUpdated = appGetTime();

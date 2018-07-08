@@ -264,6 +264,9 @@ static void _updateFrame(App* app) {
    _updateDialogs(app);
 }
 
+#include <thread>
+#include <chrono>
+
 void appStep(App* app) {
    _pollEvents(app);
    _beginFrame(app);
@@ -274,6 +277,8 @@ void appStep(App* app) {
    if (app->shouldClose) {
       app->running = false;
    }
+   using namespace std::chrono_literals;
+   //std::this_thread::sleep_for(50ms);
 }
 
 

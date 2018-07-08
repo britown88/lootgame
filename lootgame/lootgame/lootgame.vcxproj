@@ -178,6 +178,7 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     <ClInclude Include="scf.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="assets\coloronlyfrag.glsl" />
     <None Include="assets\fragment.glsl" />
     <None Include="assets\vertex.glsl" />
   </ItemGroup>

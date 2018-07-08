@@ -115,5 +115,8 @@
     <None Include="assets\vertex.glsl">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="assets\coloronlyfrag.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
