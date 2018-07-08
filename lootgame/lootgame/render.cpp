@@ -17,13 +17,22 @@ void render::viewport(Recti const& r) {
    glViewport(r.x, r.y, r.w, r.h);
 }
 
-void render::enableAlphaBlending(bool enabled) {
-   if (enabled) {
+void render::setBlendMode(BlendMode mode) {
+   switch (mode) {
+   case BlendMode_DISABLED:
+      glDisable(GL_BLEND);
+      break;
+   case BlendMode_NORMAL:
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-   }
-   else {
-      glDisable(GL_BLEND);
+      //glBlendEquation(GL_FUNC_ADD);
+      break;
+   case BlendMode_LIGHTING:
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_ZERO, GL_SRC_COLOR);
+      //glBlendEquation(GL_FUNC_SUBTRACT);
+      break;
+
    }
 }
 

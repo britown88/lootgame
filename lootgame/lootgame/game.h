@@ -22,17 +22,27 @@ typedef enum {
    GameButton_COUNT
 } GameButton;
 
+struct Constants {
+   Int2 resolution = { 1920, 1080 };
+
+   // per ms
+   f32 stickTrackingSpeed = 0.01f;
+   f32 dudeAcceleration = 0.005f;
+   f32 dudeMoveSpeed= 7.0f;
+   f32 dudeRotationSpeed = 0.01f;
+};
+
+Constants &ConstantsGet();
+
 struct GameData {
    GameData() {}
    struct {
       ColorRGBAf bgClearColor = { 0.45f, 0.55f, 0.60f, 1.0f };  // clear color behond all imgui windows
       bool showUI = true;                               // whether to show the ui or just a fullscreen viewer
       Rectf vpScreenArea = {0,0,1,1}; // set by imgui when the viewer moves (only in debug), necessary to track mouse position
+   
+      bool showMovementDebugging = false;
    } imgui;
-
-   const struct {
-      const Int2 resolution = { 1920, 1080 };
-   } constants;
 
    struct {
       Float2 mousePos;

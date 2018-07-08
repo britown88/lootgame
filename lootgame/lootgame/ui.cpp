@@ -265,6 +265,7 @@ static void _renderViewerFBO(Game* game) {
 
    gameDataGet()->imgui.vpScreenArea = { a.x, a.y, b.x - a.x, b.y - a.y };
 
+   draw_list->AddRectFilled(a, b, IM_COL32(0, 0, 0, 255));
    draw_list->AddImage( (ImTextureID)(iPtr)fbo.tex, a, b );
 }
 
@@ -312,15 +313,35 @@ static void _showWindowedViewer(Game* g) {
 }
 
 static void _doUIDebugger() {
-   if (ImGui::Begin("UI Debugger", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+   ImGui::SetNextWindowSize(ImVec2(400, 1000), ImGuiCond_FirstUseEver);
+   if (ImGui::Begin("Game Debugger", nullptr)) {
 
       
       auto&io = gameDataGet()->io;
 
-      ImGui::Text("Left Stick: (%f, %f)", io.leftStick.x, io.leftStick.y);
-      ImGui::Text("Right Stick: (%f, %f)", io.rightStick.x, io.rightStick.y);
-      ImGui::Text("Left Trigger: %f", io.leftTrigger);
-      ImGui::Text("Right Trigger: %f", io.rightTrigger);
+      ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
+      if (ImGui::CollapsingHeader("Input")) {
+         ImGui::Text("Left Stick: (%f, %f)", io.leftStick.x, io.leftStick.y);
+         ImGui::Text("Right Stick: (%f, %f)", io.rightStick.x, io.rightStick.y);
+         ImGui::Text("Left Trigger: %f", io.leftTrigger);
+         ImGui::Text("Right Trigger: %f", io.rightTrigger);
+      }
+
+      ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
+      if (ImGui::CollapsingHeader("Fiddling")) {
+         auto& c = ConstantsGet();
+         auto& g = *gameDataGet();
+
+         ImGui::Checkbox("Show Movement UI", &g.imgui.showMovementDebugging);
+         ImGui::InputFloat("Move Speed", &c.dudeMoveSpeed);
+         ImGui::InputFloat("Rotate Speed", &c.dudeRotationSpeed);
+         ImGui::InputFloat("Acceleration", &c.dudeAcceleration);
+         ImGui::InputFloat("Stick Tracking", &c.stickTrackingSpeed);
+
+         
+      }
+
+      
 
 
    }

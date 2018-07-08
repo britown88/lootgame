@@ -26,16 +26,29 @@ struct Dude {
    Time lastUpdated;
 };
 
+static Constants g_const;
+Constants &ConstantsGet() { return g_const; }
+
+struct Attack {
+   f32 swipeAngle; // full range of the weapon swipe, in degrees
+   Time timeLength; // total time for the attack
+   Rectf hitbox; // axis-aligned, The origin here is the bottom center of the attack while facing up
+                 // attack will rotate around that origin
+};
+
+
 
 struct Game {
    GameData data;
 
    ShaderHandle shader = 0;
+
    TextureHandle dudeTex = 0;
    TextureHandle targetTex = 0;
+   TextureHandle lightTex = 0;
 
-   Mesh mesh;
-   FBO fbo;
+   Mesh mesh, meshUncentered;
+   FBO fbo, lightfbo;
 
    Dude dude = {};
 };
@@ -84,13 +97,26 @@ static void _createGraphicsObjects(Game* game){
       { { -0.5f,  0.5f },{ 0.0f, 1.0f } },
    };
 
-   game->mesh = render::meshBuild(vbo, 6);
+   Vertex vboUncentered[] = { 
+      { { 0.0f, 0.0f },{ 0.0f, 0.0f } },
+      { { 1.0f, 0.0f },{ 1.0f, 0.0f } },
+      { { 0.0f, 1.0f },{ 0.0f, 1.0f } },
 
-   auto& res = game->data.constants.resolution;
+      { { 1.0f, 0.0f },{ 1.0f, 0.0f } },
+      { { 1.0f, 1.0f },{ 1.0f, 1.0f } },
+      { { 0.0f, 1.0f },{ 0.0f, 1.0f } },
+   };
+
+   game->mesh = render::meshBuild(vbo, 6);
+   game->meshUncentered = render::meshBuild(vboUncentered, 6);
+
+   auto& res = ConstantsGet().resolution;
    game->fbo = render::fboBuild({ res.x, res.y });
+   game->lightfbo = render::fboBuild({ res.x, res.y });
 
    game->dudeTex = _textureBuildFromFile("assets/dude.png");
    game->targetTex = _textureBuildFromFile("assets/target.png");
+   game->lightTex = _textureBuildFromFile("assets/light.png");
 
    
    free(vertex);
@@ -100,7 +126,7 @@ static void _createGraphicsObjects(Game* game){
 static Dude _createDude(Game* game) {
    Dude out;
    out.pos = { 50,50 };
-   out.size = { 150, 90 };
+   out.size = { 100, 60 };
    out.texture = game->dudeTex;
    out.lastUpdated = appGetTime();
    return out;
@@ -178,19 +204,59 @@ static void _renderTarget(Float2 pos, ColorRGBAf color, f32 sz) {
    render::meshRender(g_game->mesh);
 }
 
+static void _renderLightLayer(Game* game) {
+
+}
+
 static void _renderScene(Game* game) {
-   auto& res = game->data.constants.resolution;
-
-   render::fboBind(game->fbo);
-
-   render::enableAlphaBlending(true);
-   render::viewport({ 0,0, res.x, res.y });
-   render::clear(DkBlue);
+   auto& c = ConstantsGet();
+   auto& res = ConstantsGet().resolution;
 
    auto view = Matrix::ortho(0, (float)res.x, 0, (float)res.y, -1, 1);
    render::shaderSetActive(game->shader);
-
    render::uSetMatrix("uViewMatrix", view);
+
+
+   //{
+   //   render::fboBind(game->lightfbo);
+   //   render::setBlendMode(BlendMode_NORMAL);
+   //   render::viewport({ 0,0, res.x, res.y });
+   //   render::clear({0.0f, 0.0f, 0.0f, 0.5f});
+
+   //   auto model = Matrix::identity();
+   //   auto texmat = Matrix::identity();
+
+   //   model *= Matrix::translate2f(game->dude.pos);
+   //   model *= Matrix::scale2f({ 1000,1000 });
+
+   //   render::uSetColor("uColor", {1.0f, 0.5f, 0.5f, 1.0f});
+   //   render::uSetMatrix("uTexMatrix", texmat);
+   //   render::uSetMatrix("uModelMatrix", model);
+   //   render::uSetTextureSlot("uDiffuse", 0);
+   //   render::textureBind(g_game->lightTex, 0);
+   //   render::meshRender(g_game->mesh);
+
+   //   {auto model = Matrix::identity();
+   //   auto texmat = Matrix::identity();
+
+   //   model *= Matrix::translate2f({0, 0});
+   //   model *= Matrix::scale2f({ 1000,1000 });
+   //   render::uSetMatrix("uModelMatrix", model);
+   //   render::meshRender(g_game->mesh);
+   //   }
+
+   //}
+   
+
+
+
+   render::fboBind(game->fbo);
+
+   render::setBlendMode(BlendMode_NORMAL);
+   render::viewport({ 0,0, res.x, res.y });
+   render::clear(DkBlue);
+
+
 
    _renderDude(game->dude);
 
@@ -199,22 +265,37 @@ static void _renderScene(Game* game) {
    auto &io = game->data.io;
    auto &dude = game->dude;
 
-   
-   _renderTarget(dude.pos + dude.velocity * moveTargetDist, Cyan, 25);
-   _renderTarget(dude.pos + v2Normalized(dude.facing) * aimTargetDist, Red, 25);
+   if (game->data.imgui.showMovementDebugging) {
+      _renderTarget(dude.pos + dude.velocity * moveTargetDist, Cyan, 40);
+      _renderTarget(dude.pos + v2Normalized(dude.facing) * aimTargetDist, Red, 40);
 
-   _renderTarget(dude.pos + io.leftStick * moveTargetDist, DkGreen, 15);
-   _renderTarget(dude.pos + dude.moveVector * moveTargetDist, Magenta, 15);   
+      _renderTarget(dude.pos + io.leftStick * moveTargetDist, DkGreen, 30);
+      _renderTarget(dude.pos + dude.moveVector * moveTargetDist, Magenta, 30);   
 
-   _renderTarget(dude.pos + io.rightStick * aimTargetDist, Yellow, 15);
-   _renderTarget(dude.pos + dude.faceVector * aimTargetDist, Magenta, 15);
-   
+      _renderTarget(dude.pos + io.rightStick * aimTargetDist, Yellow, 30);
+      _renderTarget(dude.pos + dude.faceVector * aimTargetDist, LtGray, 30);
+   }
+
+   //{
+   //   render::setBlendMode(BlendMode_LIGHTING);
+   //   auto model = Matrix::identity();
+   //   auto texmat = Matrix::identity();
+
+   //   model *= Matrix::scale2f({ (float)game->lightfbo.sz.x, (float)game->lightfbo.sz.y });
+
+   //   render::uSetColor("uColor", White);
+   //   render::uSetMatrix("uTexMatrix", texmat);
+   //   render::uSetMatrix("uModelMatrix", model);
+   //   render::uSetTextureSlot("uDiffuse", 0);
+   //   render::textureBind(game->lightfbo.tex, 0);
+   //   render::meshRender(g_game->meshUncentered);
+   //}
 
    render::fboBind({});
 }
 
 void gameHandleInput(Game*game) {
-   auto& res = game->data.constants.resolution;
+   auto& res = ConstantsGet().resolution;
    auto& vpScreen = game->data.imgui.vpScreenArea;
    auto& mPos = ImGui::GetIO().MousePos;
 
@@ -239,17 +320,9 @@ static void _updateDude(Game* game) {
    auto &io = game->data.io;
    auto &dude = game->dude;
 
-   const f32 trackingSpeed = 0.1f;
-   const f32 acceleration = 0.005f;
-   const f32 mvSpeed = 5.0f;
-   const f32 rotSpeed = 0.01f;
+   auto& c = ConstantsGet();
 
-   auto moveTrackDist = v2Dist(dude.moveVector, io.leftStick);
-   if (moveTrackDist > 0.0001f) {
-      //scale speed to distance
-      auto speed = trackingSpeed * (moveTrackDist / 2.0f);
-      dude.moveVector = v2MoveTowards(dude.moveVector, io.leftStick, speed * dt.toMilliseconds());
-   }
+   dude.moveVector = v2MoveTowards(dude.moveVector, io.leftStick, c.stickTrackingSpeed * dt.toMilliseconds());
 
    Float2 aimStick;
    bool aiming = false;
@@ -262,18 +335,16 @@ static void _updateDude(Game* game) {
       aiming = true;
    }
 
-   if (aiming) {
-      auto aimTrackDist = v2Dist(dude.faceVector, aimStick);
-      if (aimTrackDist > 0.0001f) {
-         //scale speed to distance
-         auto speed = trackingSpeed * (aimTrackDist / 2.0f);
-         dude.faceVector = v2MoveTowards(dude.faceVector, aimStick, speed * dt.toMilliseconds());
-      }
 
-      dude.facing = v2RotateTowards(dude.facing, dude.faceVector, v2FromAngle(rotSpeed * dt.toMilliseconds()));
+   dude.faceVector = v2MoveTowards(dude.faceVector, aimStick, c.stickTrackingSpeed * dt.toMilliseconds());
+
+   if (v2Dot(dude.faceVector, dude.faceVector) > 0.0f) {
+      dude.facing = v2RotateTowards(dude.facing, dude.faceVector, v2FromAngle(c.dudeRotationSpeed * dt.toMilliseconds()));
    }
+   
 
-   dude.velocity = v2MoveTowards(dude.velocity, dude.moveVector, acceleration * dt.toMilliseconds());
+
+   dude.velocity = v2MoveTowards(dude.velocity, dude.moveVector, c.dudeAcceleration * dt.toMilliseconds());
 
    // scale half of mvspeed based on facing;
    f32 facing = 0.0f;
@@ -281,36 +352,11 @@ static void _updateDude(Game* game) {
       facing = v2Dot(v2Normalized(dude.velocity), v2Normalized(dude.facing));
    }
 
-   auto scaledSpeed = (mvSpeed * 0.75f) + (mvSpeed * 0.25f * facing);
+   auto scaledSpeed = (c.dudeMoveSpeed * 0.75f) + (c.dudeMoveSpeed * 0.25f * facing);
 
    dp += dude.velocity * scaledSpeed;
 
    game->dude.lastUpdated = appGetTime();
-
-   //Float2 targetFace = {};
-
-   //if (fabs(io.rightStick.x) > AXIS_DEADZONE || fabs(io.rightStick.y) > AXIS_DEADZONE) {
-   //   targetFace = v2Normalized({ io.rightStick.x, io.rightStick.y });
-   //}
-   //else if (fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE) {
-   //   targetFace = v2Normalized({ io.leftStick.x, io.leftStick.y });
-
-   //}
-   //else {
-   //   //targetFace = dude.facing;
-   //}
-
-   //f32 angleinc = 0.1f;
-   ////dude.facing = v2RotateTowards(dude.facing, targetFace, v2FromAngle(0.1f));
-   ////dude.rotationAngle = atan2f(dude.facing.x, -dude.facing.y);
-
-
-   //const float mvSpeed = 5.0f;
-
-   //dp.y += mvSpeed * io.leftStick.y;
-   //dp.x += mvSpeed * io.leftStick.x;
-
-
 }
 
 void gameUpdate(Game* game) {   

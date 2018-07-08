@@ -50,11 +50,17 @@ struct Mesh {
    i32 vSize;
 };
 
+enum BlendMode {
+   BlendMode_DISABLED = 0,
+   BlendMode_NORMAL,
+   BlendMode_LIGHTING
+};
+
 namespace render{
 
    void clear(ColorRGBAf const& c);
    void viewport(Recti const& r);
-   void enableAlphaBlending(bool enabled);
+   void setBlendMode(BlendMode mode);
 
    // shaders
    ShaderHandle shaderBuild(const char* vertex, const char* fragment);
