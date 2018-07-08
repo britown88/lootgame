@@ -25,6 +25,7 @@ enum {
    GameTextures_Light,
    GameTextures_Circle,
    GameTextures_ShittySword,
+   GameTextures_Tile,
 
    GameTexture_COUNT
 }GameTextures_;
@@ -97,13 +98,13 @@ Game* gameCreate(StringView assetsFolder) {
    return g_game;
 }
 
-static TextureHandle _textureBuildFromFile(const char* path) {
+static TextureHandle _textureBuildFromFile(const char* path, TextureConfig const& cfg = {}) {
    u64 sz = 0;
    i32 x, y, comp;
    x = y = comp = 0;
    auto mem = fileReadBinary(path, &sz);
    auto png = stbi_load_from_memory(mem, (i32)sz, &x, &y, &comp, 4);
-   auto out = render::textureBuild((ColorRGBA*)png, { x, y }, {});
+   auto out = render::textureBuild((ColorRGBA*)png, { x, y }, cfg);
 
    free(mem);
    free(png);
@@ -148,6 +149,7 @@ static void _createGraphicsObjects(Game* game){
    g_textures[GameTextures_Light] = _textureBuildFromFile("assets/light.png");
    g_textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png");
    g_textures[GameTextures_ShittySword] = _textureBuildFromFile("assets/shittysword.png");
+   g_textures[GameTextures_Tile] = _textureBuildFromFile("assets/tile2.png", { RepeatType_REPEAT , FilterType_NEAREST });
    
    free(vertex);
    free(fragment);
@@ -237,10 +239,10 @@ static void _populateLightLayer(Game* game) {
    render::fboBind(game->lightfbo);
    render::setBlendMode(BlendMode_NORMAL);
    render::viewport({ 0,0, res.x, res.y });
-   render::clear({0.0f, 0.0f, 0.0f, 0.0f});
+   render::clear({1.0f, 1.0f, 1.0f, 0.f});
 
    auto model = Matrix::translate2f(game->dude.pos);
-   model *= Matrix::scale2f({ 1500,1500 });
+   model *= Matrix::scale2f({ 1000,1000 });
 
    render::uSetColor(u::color, {1.0f, 1.0f, 1.0f, 1.0f});
    render::uSetMatrix(u::modelMatrix, model);
@@ -250,11 +252,29 @@ static void _populateLightLayer(Game* game) {
    //auto model = Matrix::identity();
    //auto texmat = Matrix::identity();
 
-   model = Matrix::translate2f({0, 0});
-   model *= Matrix::scale2f({ 2000,2000 });
-   render::uSetColor(u::color, { 1.0f, 0.5f, 0.5f, 1.0f });
+   //model = Matrix::translate2f({0, 0});
+   //model *= Matrix::scale2f({ 2000,2000 });
+   //render::uSetColor(u::color, { 1.0f, 0.5f, 0.5f, 1.0f });
+   //render::uSetMatrix(u::modelMatrix, model);
+   //render::meshRender(g_game->mesh);
+}
+
+static void _renderFloor(Game* game) {
+   auto& c = ConstantsGet();
+   auto& res = c.resolution;
+
+   Float2 fres = { (f32)res.x, (f32)res.y };
+   f32 r = fres.x / fres.y;
+
+   auto texmat = Matrix::scale2f({ fres.x / 50, fres.y/50});
+   auto model = Matrix::scale2f(fres);
+
+   render::uSetColor(u::color, White);
+   render::uSetMatrix(u::texMatrix, texmat);
    render::uSetMatrix(u::modelMatrix, model);
-   render::meshRender(g_game->mesh);
+   render::uSetTextureSlot(u::diffuse, 0);
+   render::textureBind(g_textures[GameTextures_Tile], 0);
+   render::meshRender(g_game->meshUncentered);
 }
 
 static void _renderLightLayer(Game* game) {
@@ -291,6 +311,8 @@ static void _renderScene(Game* game) {
    render::viewport({ 0,0, res.x, res.y });
    render::clear(DkBlue);
 
+   _renderFloor(game);
+
    _renderDude(game->dude);   
 
    if (game->data.imgui.showMovementDebugging) {
@@ -309,7 +331,7 @@ static void _renderScene(Game* game) {
       _renderTarget(dude.pos + dude.faceVector * aimTargetDist, LtGray, 30);
    }
    
-   _renderLightLayer(game);
+   //_renderLightLayer(game);
 
 
    render::fboBind({});

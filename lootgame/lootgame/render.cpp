@@ -27,6 +27,7 @@ void render::setBlendMode(BlendMode mode) {
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
       //glBlendEquation(GL_FUNC_ADD);
       break;
+
    case BlendMode_LIGHTING:
       glEnable(GL_BLEND);
       glBlendFunc(GL_ZERO, GL_SRC_COLOR);
