@@ -481,10 +481,46 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
       bool pressed = event->type == SDL_KEYDOWN;
       GameButton btn;
       switch (event->key.keysym.scancode) {
-      case SDL_SCANCODE_W: btn = GameButton_UP; io.leftStick.y = pressed ? -1.0f : 0.0f; break;
-      case SDL_SCANCODE_A: btn = GameButton_LEFT; io.leftStick.x = pressed ? -1.0f : 0.0f; break;
-      case SDL_SCANCODE_S: btn = GameButton_DOWN; io.leftStick.y = pressed ? 1.0f : 0.0f; break;
-      case SDL_SCANCODE_D: btn = GameButton_RIGHT; io.leftStick.x = pressed ? 1.0f : 0.0f; break;
+      case SDL_SCANCODE_W: 
+         btn = GameButton_UP; 
+
+         if (io.buttonDown[GameButton_DOWN] && pressed) {
+            io.leftStick.y = pressed ? 0.0f : 1.0f;
+         }
+         else {
+            io.leftStick.y = pressed ? -1.0f : 0.0f;
+         }
+         break;
+      case SDL_SCANCODE_A:
+         btn = GameButton_LEFT;
+
+         if (io.buttonDown[GameButton_RIGHT] && pressed) {
+            io.leftStick.x = pressed ? 0.0f : 1.0f;
+         }
+         else {
+            io.leftStick.x = pressed ? -1.0f : 0.0f;
+         }
+         break;
+      case SDL_SCANCODE_S:
+         btn = GameButton_DOWN;
+
+         if (io.buttonDown[GameButton_UP] && pressed) {
+            io.leftStick.y = pressed ? 0.0f : -1.0f;
+         }
+         else {
+            io.leftStick.y = pressed ? 1.0f : 0.0f;
+         }
+         break;
+      case SDL_SCANCODE_D:
+         btn = GameButton_RIGHT;
+
+         if (io.buttonDown[GameButton_LEFT] && pressed) {
+            io.leftStick.x = pressed ? 0.0f : -1.0f;
+         }
+         else {
+            io.leftStick.x = pressed ? 1.0f : 0.0f;
+         }
+         break;
       default: return false;
       }
 
