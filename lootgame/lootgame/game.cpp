@@ -476,6 +476,46 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
    auto &io = game->data.io;
 
    switch (event->type) {
+   case SDL_KEYUP:
+   case SDL_KEYDOWN: {
+      bool pressed = event->type == SDL_KEYDOWN;
+      GameButton btn;
+      switch (event->key.keysym.scancode) {
+      case SDL_SCANCODE_W: btn = GameButton_UP; io.leftStick.y = pressed ? -1.0f : 0.0f; break;
+      case SDL_SCANCODE_A: btn = GameButton_LEFT; io.leftStick.x = pressed ? -1.0f : 0.0f; break;
+      case SDL_SCANCODE_S: btn = GameButton_DOWN; io.leftStick.y = pressed ? 1.0f : 0.0f; break;
+      case SDL_SCANCODE_D: btn = GameButton_RIGHT; io.leftStick.x = pressed ? 1.0f : 0.0f; break;
+      default: return false;
+      }
+
+      io.leftStick = v2Normalized(io.leftStick);
+      if (!io.buttonDown[btn] && pressed) {
+         io.buttonPressed[btn] = true;
+      }
+      if (io.buttonDown[btn] && !pressed) {
+         io.buttonReleased[btn] = true;
+      }
+      io.buttonDown[btn] = pressed;
+
+      return true;
+   }  break;
+
+   case SDL_MOUSEBUTTONDOWN:
+   case SDL_MOUSEBUTTONUP: {
+      bool pressed = event->type == SDL_MOUSEBUTTONDOWN;
+      if (!io.buttonDown[GameButton_RT] && pressed) {
+         io.buttonPressed[GameButton_RT] = true;
+      }
+
+      if (io.buttonDown[GameButton_RT] && !pressed) {
+         io.buttonReleased[GameButton_RT] = true;
+      }
+
+      io.buttonDown[GameButton_RT] = pressed;
+      return true;
+   }
+      
+
    case SDL_CONTROLLERDEVICEADDED:
       SDL_GameControllerOpen(0);
       return true;

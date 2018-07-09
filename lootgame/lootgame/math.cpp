@@ -46,7 +46,11 @@ Float2 v2Scale(Float2 a, f32 s) {
    return { a.x * s, a.y * s };
 }
 Float2 v2Normalized(Float2 v) {
-   return v / v2Len(v);
+   auto lnsq = v2LenSquared(v);
+   if (lnsq > 0.001f) {
+      return v / sqrtf(lnsq);
+   }
+   return { 0,0 };
 }
 
 //helper.  determines orientation of two vectors, positive vs. negative means clockwise/counterclockwise orientation
