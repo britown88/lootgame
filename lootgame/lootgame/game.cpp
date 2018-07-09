@@ -133,6 +133,7 @@ struct Game {
    FBO fbo, lightfbo;
 
    Dude dude = {};
+   std::vector<Dude> dudes;
 };
 
 static Game* g_game = nullptr;
@@ -224,12 +225,29 @@ static Dude _createDude(Game* game) {
    return out;
 }
 
+static Dude _createEnemy(Float2 pos, f32 size) {
+   Dude out;
+   out.moveset = _createMoveSet();
+   out.pos = pos;
+   out.size = size;
+   out.renderSize = { 100, 60 };
+   out.texture = g_textures[GameTextures_Dude];
+   out.lastUpdated = out.lastFree = appGetTime();
+   out.stamina = out.staminaMax = 4;
+   return out;
+}
+
 #define AXIS_DEADZONE 0.15f
 
 void gameBegin(Game*game) {
    
    _createGraphicsObjects(game);
    game->dude = _createDude(game);
+
+   game->dudes.push_back(_createEnemy({ 100, 300 }, 30.0f));
+   game->dudes.push_back(_createEnemy({ 300, 300 }, 50.0f));
+   game->dudes.push_back(_createEnemy({ 800, 600 }, 20.0f));
+   game->dudes.push_back(_createEnemy({ 1000, 100 }, 80.0f));
 
 }
 
@@ -276,6 +294,17 @@ static void _renderDude(Dude& dude) {
    }
 }
 
+static void _renderEnemy(Dude& dude) {
+   auto model = Matrix::translate2f(dude.pos);
+   model *= Matrix::scale2f({dude.size *  2, dude.size * 2});
+   render::uSetColor(u::color, Cyan);
+   render::uSetMatrix(u::modelMatrix, model);
+   render::uSetMatrix(u::texMatrix, Matrix::identity());
+   render::uSetTextureSlot(u::diffuse, 0);
+   render::textureBind(g_textures[GameTextures_Circle], 0);   
+   render::meshRender(g_game->mesh);
+}
+
 static void _renderTarget(Float2 pos, ColorRGBAf color, f32 sz) {
    auto model = Matrix::identity();
    auto texmat = Matrix::identity();
@@ -289,6 +318,17 @@ static void _renderTarget(Float2 pos, ColorRGBAf color, f32 sz) {
    render::uSetTextureSlot(u::diffuse, 0);
    render::textureBind(g_textures[GameTextures_Target], 0);
    render::meshRender(g_game->mesh);
+}
+
+static void _addLight(Float2 size, Float2 pos, ColorRGBAf c) {
+   auto model = Matrix::translate2f(pos);
+   model *= Matrix::scale2f(size);
+
+   render::uSetColor(u::color, c);
+   render::uSetMatrix(u::modelMatrix, model);
+   render::textureBind(g_textures[GameTextures_Light], 0);
+   render::meshRender(g_game->mesh);
+
 }
 
 static void _populateLightLayer(Game* game) {
@@ -306,32 +346,23 @@ static void _populateLightLayer(Game* game) {
    render::clear({0.f,0.f,0.f,1.0f});
    //render::clear({1.0f, 1.0f, 1.0f, 0.f});
 
-   auto model = Matrix::translate2f(game->dude.pos);
-   model *= Matrix::scale2f({ 500,500 });
+   _addLight({ 500, 500 }, game->dude.pos, White);
 
-   render::uSetColor(u::color, White);
-   render::uSetMatrix(u::modelMatrix, model);
-   render::textureBind(g_textures[GameTextures_Light], 0);
-   render::meshRender(g_game->mesh);
+   f32 lsz = 800;
+   _addLight({ lsz, lsz }, { 200, 600 }, Red);
+   _addLight({ lsz, lsz }, { 800, 300 }, Yellow);
+   _addLight({ lsz, lsz }, { 100, 1000 }, Blue);
+   _addLight({ lsz, lsz }, { 1200, 500 }, Green);
+   _addLight({ lsz, lsz }, { 1800, 200 }, Magenta);
+   _addLight({ lsz, lsz }, { 1800, 800 }, Cyan);
+   _addLight({ lsz, lsz }, { 900, 800 }, DkGreen);
 
-   model = Matrix::translate2f({420, 500});
-   model *= Matrix::scale2f({ 400,500 });
-   render::uSetColor(u::color, White);
-   render::uSetMatrix(u::modelMatrix, model);
-   render::meshRender(g_game->mesh);
 
-   model = Matrix::translate2f({ 1000,700 });
-   model *= Matrix::scale2f({ 500,800 });
-   render::uSetColor(u::color, White);
-   render::uSetMatrix(u::modelMatrix, model);
-   render::meshRender(g_game->mesh);
-
-   view = Matrix::ortho(0, (float)res.x, 0, (float)res.y, -1, 1);
    render::shaderSetActive(game->colorShader);
    render::uSetMatrix(u::viewMatrix, view);
 
-   model = Matrix::scale2f({ (f32)res.x, (f32)res.y});
-   render::uSetColor(u::color, {1, 1, 1, 0.5f});
+   auto model = Matrix::scale2f({ (f32)res.x, (f32)res.y});
+   render::uSetColor(u::color, {1, 1, 1, 0.2f});
    render::uSetMatrix(u::modelMatrix, model);
    render::textureBind(0, 0);
    render::meshRender(g_game->meshUncentered);
@@ -410,6 +441,10 @@ static void _renderScene(Game* game) {
    render::clear(White);
 
    _renderFloor(game);
+
+   for (auto&& d : game->dudes) {
+      _renderEnemy(d);
+   }
 
    _renderDude(game->dude);   
 
