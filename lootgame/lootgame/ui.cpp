@@ -265,7 +265,7 @@ static void _renderViewerFBO(Game* game) {
 
    gameDataGet()->imgui.vpScreenArea = { a.x, a.y, b.x - a.x, b.y - a.y };
 
-   draw_list->AddRectFilled(a, b, IM_COL32(0, 0, 0, 255));
+   //draw_list->AddRectFilled(a, b, IM_COL32(0, 0, 0, 255));
    draw_list->AddImage( (ImTextureID)(iPtr)fbo.tex, a, b );
 }
 

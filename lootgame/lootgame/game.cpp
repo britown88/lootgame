@@ -48,6 +48,39 @@ struct AttackSwing {
                  // attack will rotate around that origin
 };
 
+struct MoveSet {
+   std::vector<AttackSwing> swings;
+};
+
+static MoveSet _createMoveSet() {
+   MoveSet out;
+   out.swings.resize(3);
+   Rectf hitbox = { -25, -80, 50, 80 };
+
+   out.swings[0].swipeAngle = 90.0f;
+   out.swings[0].lungeSpeed = 0.0f;
+   out.swings[0].windupDur = timeMillis(100);
+   out.swings[0].swingDur = timeMillis(250);
+   out.swings[0].cooldownDur = timeMillis(500);
+   out.swings[0].hitbox = hitbox;
+
+   out.swings[1].swipeAngle = 180.0f;
+   out.swings[1].lungeSpeed = 0.25f;
+   out.swings[1].windupDur = timeMillis(100);
+   out.swings[1].swingDur = timeMillis(250);
+   out.swings[1].cooldownDur = timeMillis(250);
+   out.swings[1].hitbox = hitbox;
+
+   out.swings[2].swipeAngle = 0.0f;
+   out.swings[2].lungeSpeed = 0.5f;
+   out.swings[2].windupDur = timeMillis(100);
+   out.swings[2].swingDur = timeMillis(250);
+   out.swings[2].cooldownDur = timeMillis(100);
+   out.swings[2].hitbox = hitbox;
+
+   return out;
+}
+
 struct Dude {
    enum State {
       State_FREE = 0,
@@ -70,6 +103,7 @@ struct Dude {
    Time lastUpdated;
 
    Float2 weaponVector;
+   MoveSet moveset;
    AttackSwing swing;
    SwingPhase swingPhase;
    Time phaseStart;
@@ -172,6 +206,7 @@ static void _createGraphicsObjects(Game* game){
 
 static Dude _createDude(Game* game) {
    Dude out;
+   out.moveset = _createMoveSet();
    out.pos = { 50,50 };
    out.size = 30.0f;
    out.renderSize = { 100, 60 };
@@ -457,18 +492,13 @@ void gameRender(Game*game) {
    _renderScene(game);
 }
 
-static void _beginAttack(Dude& dude, Time t, int dir, f32 lunge) {
+static void _beginAttack(Dude& dude, Time t, int dir, int combo) {
+   dude.combo = combo;
+   dude.swing = dude.moveset.swings[combo];
+
    dude.state = Dude::State_ATTACKING;
    dude.moveVector = dude.faceVector = { 0.0f, 0.0f };
-
-   dude.swing.swipeAngle = 180.0f;
-
-   dude.swing.lungeSpeed = lunge;
-   dude.swing.windupDur = timeMillis(100);
-   dude.swing.swingDur = timeMillis(250);
-   dude.swing.cooldownDur = timeMillis(500);
-
-   dude.swing.hitbox = { -10, -50, 20, 50 };
+   
    dude.weaponVector = v2Normalized(v2Rotate(dude.facing, v2FromAngle(dir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
    dude.swingPhase = SwingPhase_Windup;
    dude.phaseStart = t;
@@ -491,28 +521,37 @@ static void _updateDude(Game* game) {
 
    auto& c = ConstantsGet();
 
+   // movement/aiming
+   dude.moveVector = v2MoveTowards(dude.moveVector, io.leftStick, c.stickTrackingSpeed * dt.toMilliseconds());
+   Float2 aimStick;
+   if (fabs(io.rightStick.x) > AXIS_DEADZONE || fabs(io.rightStick.y) > AXIS_DEADZONE) {
+      aimStick = io.rightStick;
+   }
+   else if (fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE) {
+      aimStick = io.leftStick;
+   }
+   dude.faceVector = v2MoveTowards(dude.faceVector, aimStick, c.stickTrackingSpeed * dt.toMilliseconds());
+
    // handle inputs
    if (game->dude.state == Dude::State_FREE) {
 
-      // movement/aiming
-      dude.moveVector = v2MoveTowards(dude.moveVector, io.leftStick, c.stickTrackingSpeed * dt.toMilliseconds());
-      Float2 aimStick;
-      if (fabs(io.rightStick.x) > AXIS_DEADZONE || fabs(io.rightStick.y) > AXIS_DEADZONE) {
-         aimStick = io.rightStick;
-      }
-      else if (fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE) {
-         aimStick = io.leftStick;
-      }
-      dude.faceVector = v2MoveTowards(dude.faceVector, aimStick, c.stickTrackingSpeed * dt.toMilliseconds());
+
 
       // triggers
       if (io.buttonPressed[GameButton_RT]) {
-         game->dude.combo = 0;
-         _beginAttack(game->dude, time, -1, 0.0f);
+         _beginAttack(game->dude, time, -1, 0);
       }
+
+      // update movement and aiming vectors
+      if (v2LenSquared(dude.faceVector) > 0.0f) {
+         dude.facing = v2Normalized(v2RotateTowards(dude.facing, dude.faceVector, v2FromAngle(c.dudeRotationSpeed * dt.toMilliseconds())));
+      }
+      dude.velocity = v2MoveTowards(dude.velocity, dude.moveVector, c.dudeAcceleration * dt.toMilliseconds());
    }
    else if (game->dude.state == Dude::State_ATTACKING) {
       auto swingdt = time - game->dude.phaseStart;
+
+      dude.velocity = v2MoveTowards(dude.velocity, {0,0}, c.dudeAcceleration * dt.toMilliseconds());
 
       switch (dude.swingPhase) {
       case SwingPhase_Windup:
@@ -532,7 +571,7 @@ static void _updateDude(Game* game) {
          auto radsPerMs = (dude.swing.swipeAngle * DEG2RAD) / dude.swing.swingDur.toMilliseconds();
          dude.weaponVector = v2Rotate(dude.weaponVector, v2FromAngle(-dude.swingDir * radsPerMs * dt.toMilliseconds()));
 
-         dp += dude.facing * dude.swing.lungeSpeed * dt.toMilliseconds();
+         dp += dude.facing * dude.swing.lungeSpeed * (f32)dt.toMilliseconds();
 
          if (swingdt > dude.swing.swingDur) {
             dude.phaseStart += dude.swing.swingDur;
@@ -541,14 +580,8 @@ static void _updateDude(Game* game) {
          }
       }  break;
       case SwingPhase_Cooldown:
-         if (io.buttonPressed[GameButton_RT] && dude.swingTimingSuccess && dude.combo < 3) {
-            ++dude.combo;
-            f32 lunge = 0.0f;
-            switch (dude.combo) {
-            case 1: lunge = 0.25f; break;
-            case 2: lunge = 0.75f; break;
-            }
-            _beginAttack(game->dude, time, -dude.swingDir, lunge);
+         if (io.buttonPressed[GameButton_RT] && dude.swingTimingSuccess && ++dude.combo < dude.moveset.swings.size()) {
+            _beginAttack(game->dude, time, -dude.swingDir, dude.combo);
          }
          else {
             if (swingdt > dude.swing.cooldownDur) {
@@ -561,11 +594,7 @@ static void _updateDude(Game* game) {
       }
    }
 
-   // update movement and aiming vectors
-   if (v2LenSquared(dude.faceVector) > 0.0f) {
-      dude.facing = v2Normalized(v2RotateTowards(dude.facing, dude.faceVector, v2FromAngle(c.dudeRotationSpeed * dt.toMilliseconds())));
-   }
-   dude.velocity = v2MoveTowards(dude.velocity, dude.moveVector, c.dudeAcceleration * dt.toMilliseconds());
+
 
    if (v2LenSquared(dude.velocity) > 0.0f) {
       auto velnorm = v2Normalized(dude.velocity);
@@ -575,7 +604,7 @@ static void _updateDude(Game* game) {
       f32 facing = v2Dot(velnorm, facnorm);
       auto scaledSpeed = (c.dudeMoveSpeed * 0.75f) + (c.dudeMoveSpeed * 0.25f * facing);
 
-      dp += dude.velocity * scaledSpeed * dt.toMilliseconds();
+      dp += dude.velocity * scaledSpeed * (f32)dt.toMilliseconds();
    }
 
    game->dude.lastUpdated = appGetTime();
