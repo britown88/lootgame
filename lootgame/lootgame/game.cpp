@@ -26,6 +26,8 @@ enum {
    GameTextures_Circle,
    GameTextures_ShittySword,
    GameTextures_Tile,
+   GameTextures_GemEmpty,
+   GameTextures_GemFilled,
 
    GameTexture_COUNT
 }GameTextures_;
@@ -101,6 +103,9 @@ struct Dude {
 
    TextureHandle texture = 0;
    Time lastUpdated;
+   Time lastFree; // tracked for time since entering free state
+
+   int stamina, staminaMax;
 
    Float2 weaponVector;
    MoveSet moveset;
@@ -198,6 +203,8 @@ static void _createGraphicsObjects(Game* game){
    g_textures[GameTextures_Light] = _textureBuildFromFile("assets/light.png");
    g_textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png");
    g_textures[GameTextures_ShittySword] = _textureBuildFromFile("assets/shittysword.png");
+   g_textures[GameTextures_GemEmpty] = _textureBuildFromFile("assets/gemempty.png");
+   g_textures[GameTextures_GemFilled] = _textureBuildFromFile("assets/gemfilled.png");
    g_textures[GameTextures_Tile] = _textureBuildFromFile("assets/tile2.png", { RepeatType_REPEAT , FilterType_NEAREST });
    
    free(vertex);
@@ -211,7 +218,9 @@ static Dude _createDude(Game* game) {
    out.size = 30.0f;
    out.renderSize = { 100, 60 };
    out.texture = g_textures[GameTextures_Dude];
-   out.lastUpdated = appGetTime();
+   out.lastUpdated = out.lastFree = appGetTime();
+
+   out.stamina = out.staminaMax = 4;
    return out;
 }
 
@@ -364,6 +373,26 @@ static void _renderLightLayer(Game* game) {
 
 }
 
+static void _renderGameUI(Game* game) {
+   render::setBlendMode(BlendMode_NORMAL);
+
+   render::uSetTextureSlot(u::diffuse, 0);
+   render::uSetMatrix(u::texMatrix, Matrix::identity());
+   render::uSetColor(u::color, White);
+
+   Float2 staminaCorner = { 5,5 };
+   Float2 gemSize = { 25, 50 };
+   f32 gemSpace = 5.0f;
+
+   for (int i = 0; i < game->dude.staminaMax; ++i) {
+      auto model = Matrix::translate2f(staminaCorner + Float2{(gemSize.x + gemSpace) * i, 0}) *  Matrix::scale2f(gemSize);
+      render::uSetMatrix(u::modelMatrix, model);
+      render::textureBind(g_textures[i < game->dude.stamina ? GameTextures_GemFilled : GameTextures_GemEmpty], 0);
+      render::meshRender(g_game->meshUncentered);
+   }
+
+}
+
 static void _renderScene(Game* game) {
    auto& c = ConstantsGet();
    auto& res = ConstantsGet().resolution;
@@ -401,6 +430,8 @@ static void _renderScene(Game* game) {
    }
    
    _renderLightLayer(game);
+
+   _renderGameUI(game);
 
 
    render::fboBind({});
@@ -535,10 +566,13 @@ static void _updateDude(Game* game) {
    // handle inputs
    if (game->dude.state == Dude::State_FREE) {
 
-
+      auto freedt = time - dude.lastFree;
+      if (freedt > timeMillis(500) && dude.stamina < dude.staminaMax) {
+         dude.stamina = dude.staminaMax;
+      }
 
       // triggers
-      if (io.buttonPressed[GameButton_RT]) {
+      if (dude.stamina > 0 && io.buttonPressed[GameButton_RT]) {
          _beginAttack(game->dude, time, -1, 0);
       }
 
@@ -561,9 +595,11 @@ static void _updateDude(Game* game) {
          if (swingdt > dude.swing.windupDur) {
             dude.phaseStart += dude.swing.windupDur;
             dude.swingPhase = SwingPhase_Swing;
+            dude.stamina -= 1;
          }
          break;
       case SwingPhase_Swing: {
+         
          if (io.buttonPressed[GameButton_RT]) {
             dude.swingTimingSuccess = false;
          }
@@ -581,12 +617,18 @@ static void _updateDude(Game* game) {
       }  break;
       case SwingPhase_Cooldown:
          if (io.buttonPressed[GameButton_RT] && dude.swingTimingSuccess && ++dude.combo < dude.moveset.swings.size()) {
-            _beginAttack(game->dude, time, -dude.swingDir, dude.combo);
+            if (dude.stamina > 0) {
+               _beginAttack(game->dude, time, -dude.swingDir, dude.combo);
+            }
+            else {
+               dude.swingTimingSuccess = false;
+            }
          }
          else {
             if (swingdt > dude.swing.cooldownDur) {
                dude.phaseStart += dude.swing.cooldownDur;
                dude.state = Dude::State_FREE;
+               dude.lastFree = time;
             }
          }
          
