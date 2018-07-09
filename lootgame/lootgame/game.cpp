@@ -32,9 +32,18 @@ enum {
    
 TextureHandle g_textures[GameTexture_COUNT];
 
+enum SwingPhase {
+   SwingPhase_Windup = 0,
+   SwingPhase_Swing,
+   SwingPhase_Cooldown
+};
+
 struct AttackSwing {
+   f32 lungeSpeed; // character will luinge forward during swingphase
    f32 swipeAngle; // full range of the weapon swipe, in degrees
-   Time timeLength; // total time for the attack
+   Time swingDur; // total time for the attack
+   Time windupDur; // vulnerability period before swing
+   Time cooldownDur; // period before user is free again
    Rectf hitbox; // axis-aligned, The origin here is the bottom center of the attack while facing up
                  // attack will rotate around that origin
 };
@@ -60,9 +69,13 @@ struct Dude {
    TextureHandle texture = 0;
    Time lastUpdated;
 
-   Time atackStart;
-   Float2 weaponVector, weaponTarget;
+   Float2 weaponVector;
    AttackSwing swing;
+   SwingPhase swingPhase;
+   Time phaseStart;
+   int swingDir;
+   bool swingTimingSuccess; // set to false if hitting attack again before cooldown phase
+   int combo;
 };
 
 static Constants g_const;
@@ -444,16 +457,24 @@ void gameRender(Game*game) {
    _renderScene(game);
 }
 
-static void _beginAttack(Dude& dude) {
+static void _beginAttack(Dude& dude, Time t, int dir, f32 lunge) {
    dude.state = Dude::State_ATTACKING;
    dude.moveVector = dude.faceVector = { 0.0f, 0.0f };
 
    dude.swing.swipeAngle = 180.0f;
-   dude.swing.timeLength = timeMillis(250);
-   dude.swing.hitbox = { -10, -50, 20, 50 };
 
-   dude.atackStart = appGetTime();
-   dude.weaponVector = v2Normalized(v2Rotate(dude.facing, v2FromAngle(dude.swing.swipeAngle / 2.0f * DEG2RAD)));
+   dude.swing.lungeSpeed = lunge;
+   dude.swing.windupDur = timeMillis(100);
+   dude.swing.swingDur = timeMillis(250);
+   dude.swing.cooldownDur = timeMillis(500);
+
+   dude.swing.hitbox = { -10, -50, 20, 50 };
+   dude.weaponVector = v2Normalized(v2Rotate(dude.facing, v2FromAngle(dir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
+   dude.swingPhase = SwingPhase_Windup;
+   dude.phaseStart = t;
+   dude.swingDir = dir;
+
+   dude.swingTimingSuccess = true;
 }
 
 static void _updateDude(Game* game) {
@@ -486,24 +507,63 @@ static void _updateDude(Game* game) {
 
       // triggers
       if (io.buttonPressed[GameButton_RT]) {
-         _beginAttack(game->dude);
+         game->dude.combo = 0;
+         _beginAttack(game->dude, time, -1, 0.0f);
       }
    }
    else if (game->dude.state == Dude::State_ATTACKING) {
-      auto slashdt = time - dude.atackStart;
+      auto swingdt = time - game->dude.phaseStart;
 
-      if (slashdt > dude.swing.timeLength) {
-         dude.state = Dude::State_FREE;
-      }
-      else {
-         auto radsPerMs = (dude.swing.swipeAngle * DEG2RAD) / dude.swing.timeLength.toMilliseconds();
-         dude.weaponVector = v2Rotate(dude.weaponVector, v2FromAngle(-radsPerMs * dt.toMilliseconds()));
+      switch (dude.swingPhase) {
+      case SwingPhase_Windup:
+         if (io.buttonPressed[GameButton_RT]) {
+            dude.swingTimingSuccess = false;
+         }
+         if (swingdt > dude.swing.windupDur) {
+            dude.phaseStart += dude.swing.windupDur;
+            dude.swingPhase = SwingPhase_Swing;
+         }
+         break;
+      case SwingPhase_Swing: {
+         if (io.buttonPressed[GameButton_RT]) {
+            dude.swingTimingSuccess = false;
+         }
+
+         auto radsPerMs = (dude.swing.swipeAngle * DEG2RAD) / dude.swing.swingDur.toMilliseconds();
+         dude.weaponVector = v2Rotate(dude.weaponVector, v2FromAngle(-dude.swingDir * radsPerMs * dt.toMilliseconds()));
+
+         dp += dude.facing * dude.swing.lungeSpeed * dt.toMilliseconds();
+
+         if (swingdt > dude.swing.swingDur) {
+            dude.phaseStart += dude.swing.swingDur;
+            dude.weaponVector = v2Normalized(v2Rotate(dude.facing, v2FromAngle(-dude.swingDir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
+            dude.swingPhase = SwingPhase_Cooldown;
+         }
+      }  break;
+      case SwingPhase_Cooldown:
+         if (io.buttonPressed[GameButton_RT] && dude.swingTimingSuccess && dude.combo < 3) {
+            ++dude.combo;
+            f32 lunge = 0.0f;
+            switch (dude.combo) {
+            case 1: lunge = 0.25f; break;
+            case 2: lunge = 0.75f; break;
+            }
+            _beginAttack(game->dude, time, -dude.swingDir, lunge);
+         }
+         else {
+            if (swingdt > dude.swing.cooldownDur) {
+               dude.phaseStart += dude.swing.cooldownDur;
+               dude.state = Dude::State_FREE;
+            }
+         }
+         
+         break;
       }
    }
 
    // update movement and aiming vectors
    if (v2LenSquared(dude.faceVector) > 0.0f) {
-      dude.facing = v2RotateTowards(dude.facing, dude.faceVector, v2FromAngle(c.dudeRotationSpeed * dt.toMilliseconds()));
+      dude.facing = v2Normalized(v2RotateTowards(dude.facing, dude.faceVector, v2FromAngle(c.dudeRotationSpeed * dt.toMilliseconds())));
    }
    dude.velocity = v2MoveTowards(dude.velocity, dude.moveVector, c.dudeAcceleration * dt.toMilliseconds());
 

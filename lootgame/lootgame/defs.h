@@ -63,6 +63,9 @@ typedef struct Time {
    Time operator-(Time const&lhs) { return { t - lhs.t }; }
    Time operator+(Time const&lhs) { return { t + lhs.t }; }
 
+   Time& operator-=(Time const&lhs) { t -= lhs.t; return *this; }
+   Time& operator+=(Time const&lhs) { t += lhs.t; return *this; }
+
    bool operator>(Time const&lhs) { return t > lhs.t; }
    bool operator<(Time const&lhs) { return t < lhs.t; }
    bool operator>=(Time const&lhs) { return t >= lhs.t; }
