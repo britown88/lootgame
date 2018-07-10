@@ -134,6 +134,9 @@ struct Game {
 
    Dude dude = {};
    std::vector<Dude> dudes;
+
+   Time lastMouseMove;
+   bool mouseActive;
 };
 
 static Game* g_game = nullptr;
@@ -237,7 +240,7 @@ static Dude _createEnemy(Float2 pos, f32 size) {
    return out;
 }
 
-#define AXIS_DEADZONE 0.15f
+#define AXIS_DEADZONE 0.25f
 
 void gameBegin(Game*game) {
    
@@ -484,41 +487,42 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
       case SDL_SCANCODE_W: 
          btn = GameButton_UP; 
 
-         if (io.buttonDown[GameButton_DOWN] && pressed) {
-            io.leftStick.y = pressed ? 0.0f : 1.0f;
+         if (pressed) {
+            io.leftStick.y = -1.0f;
          }
-         else {
-            io.leftStick.y = pressed ? -1.0f : 0.0f;
+         else if (!io.buttonDown[GameButton_DOWN]) {
+            io.leftStick.y = 0.0f;
          }
+
          break;
       case SDL_SCANCODE_A:
          btn = GameButton_LEFT;
 
-         if (io.buttonDown[GameButton_RIGHT] && pressed) {
-            io.leftStick.x = pressed ? 0.0f : 1.0f;
+         if (pressed) {
+            io.leftStick.x = -1.0f;
          }
-         else {
-            io.leftStick.x = pressed ? -1.0f : 0.0f;
+         else if (!io.buttonDown[GameButton_RIGHT]) {
+            io.leftStick.x = 0.0f;
          }
          break;
       case SDL_SCANCODE_S:
          btn = GameButton_DOWN;
 
-         if (io.buttonDown[GameButton_UP] && pressed) {
-            io.leftStick.y = pressed ? 0.0f : -1.0f;
+         if (pressed) {
+            io.leftStick.y = 1.0f;
          }
-         else {
-            io.leftStick.y = pressed ? 1.0f : 0.0f;
+         else if (!io.buttonDown[GameButton_UP]) {
+            io.leftStick.y = 0.0f;
          }
          break;
       case SDL_SCANCODE_D:
          btn = GameButton_RIGHT;
 
-         if (io.buttonDown[GameButton_LEFT] && pressed) {
-            io.leftStick.x = pressed ? 0.0f : -1.0f;
+         if (pressed) {
+            io.leftStick.x = 1.0f;
          }
-         else {
-            io.leftStick.x = pressed ? 1.0f : 0.0f;
+         else if (!io.buttonDown[GameButton_LEFT]) {
+            io.leftStick.x = 0.0f;
          }
          break;
       default: return false;
@@ -535,6 +539,11 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
 
       return true;
    }  break;
+
+   case SDL_MOUSEMOTION:
+      game->lastMouseMove = appGetTime();
+      game->mouseActive = true;
+      break;
 
    case SDL_MOUSEBUTTONDOWN:
    case SDL_MOUSEBUTTONUP: {
@@ -649,6 +658,15 @@ static void _beginAttack(Dude& dude, Time t, int dir, int combo) {
    dude.swingTimingSuccess = true;
 }
 
+static bool rightStickActive() {
+   auto &io = g_game->data.io;
+   return fabs(io.rightStick.x) > AXIS_DEADZONE || fabs(io.rightStick.y) > AXIS_DEADZONE;
+}
+static bool leftStickActive() {
+   auto &io = g_game->data.io;
+   return fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE;
+}
+
 static void _updateDude(Game* game) {
    auto time = appGetTime();
    auto dt = time - game->dude.lastUpdated;
@@ -663,16 +681,33 @@ static void _updateDude(Game* game) {
 
    auto& c = ConstantsGet();
 
+
    // movement/aiming
-   dude.moveVector = v2MoveTowards(dude.moveVector, io.leftStick, c.stickTrackingSpeed * dt.toMilliseconds());
+   dude.moveVector = io.leftStick;
+
+   bool rstick = rightStickActive();
+   bool lstick = leftStickActive();
+
    Float2 aimStick;
-   if (fabs(io.rightStick.x) > AXIS_DEADZONE || fabs(io.rightStick.y) > AXIS_DEADZONE) {
+   if (rstick) {
       aimStick = io.rightStick;
+      game->mouseActive = false;
    }
-   else if (fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE) {
+   else if (lstick) {
       aimStick = io.leftStick;
    }
-   dude.faceVector = v2MoveTowards(dude.faceVector, aimStick, c.stickTrackingSpeed * dt.toMilliseconds());
+
+   if (game->mouseActive) {
+      aimStick = io.mousePos - game->dude.pos;
+   }
+
+   if (v2LenSquared(aimStick) > 0) {
+      dude.faceVector = v2Normalized(aimStick);
+   }
+
+
+   
+   //dude.faceVector = v2MoveTowards(dude.faceVector, aimStick, c.stickTrackingSpeed * dt.toMilliseconds());
 
    // handle inputs
    if (game->dude.state == Dude::State_FREE) {

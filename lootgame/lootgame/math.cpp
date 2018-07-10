@@ -70,8 +70,18 @@ Float2 v2FromAngle(f32 radians) {
 }
 
 Float2 v2RotateTowards(Float2 direction, Float2 target, Float2 perFrame) {
+
    int det = SIGN(v2Determinant(direction, target));
-   if (det == 0) return target; //they are exactly aligned to start with, nothing to do
+   if (det == 0) {
+
+      // perfect 180 turnaround, just rotate away
+      if (v2Dot(direction, target) < 0) {
+         return v2Rotate(direction, perFrame);
+      }
+      else {
+         return target; //they are exactly aligned to start with, nothing to do
+      }
+   }
    if (det < 0) perFrame.y = -perFrame.y;  //this is being treated like a complex number and this is the conjugate.
    direction = v2Rotate(direction, perFrame);
    if (det != SIGN(v2Determinant(direction, target))) {
