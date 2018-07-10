@@ -27,7 +27,7 @@ struct Constants {
    Int2 resolution = { 1920, 1080 };
 
    // per ms
-   f32 stickTrackingSpeed = 0.01f;
+   f32 stickTrackingSpeed = 0.001f;
    f32 dudeAcceleration = 0.003f;
    f32 dudeMoveSpeed= 0.5f;
    f32 dudeRotationSpeed = 0.01f;

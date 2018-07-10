@@ -52,6 +52,9 @@ Float2 v2Normalized(Float2 v) {
    }
    return { 0,0 };
 }
+f32 v2Angle(Float2 v) {
+   return atan2f(v.y, v.x);
+}
 
 //helper.  determines orientation of two vectors, positive vs. negative means clockwise/counterclockwise orientation
 f32 v2Determinant(Float2 a, Float2 b) {

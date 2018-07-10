@@ -57,7 +57,7 @@ struct MoveSet {
 static MoveSet _createMoveSet() {
    MoveSet out;
    out.swings.resize(3);
-   Rectf hitbox = { -25, -80, 50, 80 };
+   Rectf hitbox = { 0, -25, 80, 50 };
 
    out.swings[0].swipeAngle = 90.0f;
    out.swings[0].lungeSpeed = 0.0f;
@@ -99,7 +99,7 @@ struct Dude {
    Float2 velocity;
 
    Float2 faceVector;
-   Float2 facing = { 0, -1 };
+   Float2 facing = { 1, 0 };
 
    TextureHandle texture = 0;
    Time lastUpdated;
@@ -114,7 +114,9 @@ struct Dude {
    Time phaseStart;
    int swingDir;
    bool swingTimingSuccess; // set to false if hitting attack again before cooldown phase
-   int combo;
+   int combo = 0;
+
+   bool hit = false;
 };
 
 static Constants g_const;
@@ -220,7 +222,7 @@ static Dude _createDude(Game* game) {
    out.moveset = _createMoveSet();
    out.pos = { 50,50 };
    out.size = 30.0f;
-   out.renderSize = { 100, 60 };
+   out.renderSize = { 60, 100 };
    out.texture = g_textures[GameTextures_Dude];
    out.lastUpdated = out.lastFree = appGetTime();
 
@@ -242,15 +244,46 @@ static Dude _createEnemy(Float2 pos, f32 size) {
 
 #define AXIS_DEADZONE 0.25f
 
+bool circleVsAabb(Float2 co, f32 cr, Rectf const& aabb) {
+   Float2 a = { aabb.x, aabb.y };
+   Float2 b = { a.x + aabb.w, a.y + aabb.h };
+
+   Float2 offset = { 0,0 };
+
+   if (co.x > b.x) { offset.x = co.x - b.x; }
+   else if (co.x < a.x) { offset.x = a.x - co.x; }
+
+   if (co.y > b.y) { offset.y = co.y - b.y; }
+   else if (co.y < a.y) { offset.y = a.y - co.y; }
+
+   // if offset length is less than the radius, collision!
+   return v2Len(offset) < cr;
+}
+
+bool _attackCollision(Dude& attacker, Dude& defender) {
+   auto origin = attacker.pos + attacker.weaponVector * attacker.size;
+   auto defendPos = v2Rotate(defender.pos - origin, v2FromAngle(-v2Angle(attacker.weaponVector)));
+
+   auto wbox = attacker.moveset.swings[attacker.combo].hitbox;
+   //wbox.x += origin.x;
+   //wbox.y += origin.y;
+
+   return circleVsAabb(defendPos, defender.size, wbox);
+}
+
 void gameBegin(Game*game) {
    
    _createGraphicsObjects(game);
    game->dude = _createDude(game);
 
-   game->dudes.push_back(_createEnemy({ 100, 300 }, 30.0f));
-   game->dudes.push_back(_createEnemy({ 300, 300 }, 50.0f));
-   game->dudes.push_back(_createEnemy({ 800, 600 }, 20.0f));
-   game->dudes.push_back(_createEnemy({ 1000, 100 }, 80.0f));
+   for (int i = 0; i < 100; ++i) {
+      game->dudes.push_back(_createEnemy({ (f32)(rand() % 1000), (f32)(rand()%1000)}, 30.0f));
+   }
+
+   
+  // game->dudes.push_back(_createEnemy({ 300, 300 }, 50.0f));
+   //game->dudes.push_back(_createEnemy({ 800, 600 }, 20.0f));
+   //game->dudes.push_back(_createEnemy({ 1000, 100 }, 80.0f));
 
 }
 
@@ -259,7 +292,7 @@ static void _renderSwing(Dude&dude) {
 
    auto model = Matrix::identity();
    model *= Matrix::translate2f(origin);
-   model *= Matrix::rotate2D(atan2f(dude.weaponVector.x, -dude.weaponVector.y));
+   model *= Matrix::rotate2D(v2Angle(dude.weaponVector));
    model *= Matrix::translate2f({dude.swing.hitbox.x, dude.swing.hitbox.y});
    model *= Matrix::scale2f({ dude.swing.hitbox.w, dude.swing.hitbox.h });
 
@@ -274,7 +307,7 @@ static void _renderDude(Dude& dude) {
    auto texmat = Matrix::identity();
 
    model *= Matrix::translate2f(dude.pos);
-   model *= Matrix::rotate2D(atan2f(dude.facing.x, -dude.facing.y));
+   model *= Matrix::rotate2D(v2Angle(dude.facing));
    model *= Matrix::scale2f(dude.renderSize);
 
    render::uSetColor(u::color, White);
@@ -285,28 +318,19 @@ static void _renderDude(Dude& dude) {
    render::textureBind(dude.texture, 0);
    render::meshRender(g_game->mesh);
 
-   //model = Matrix::translate2f(dude.pos);
-   //model *= Matrix::scale2f({dude.size *  2, dude.size * 2});
-   //render::uSetColor(u::color, {0.5f,1.f,1.f,0.75f});
-   //render::uSetMatrix(u::modelMatrix, model);
-   //render::textureBind(g_textures[GameTextures_Circle], 0);   
-   //render::meshRender(g_game->mesh);
+   model = Matrix::translate2f(dude.pos);
+   model *= Matrix::scale2f({dude.size *  2, dude.size * 2});
+   render::uSetColor(u::color, {0.5f,1.f,1.f,0.75f});
+   render::uSetMatrix(u::modelMatrix, model);
+   render::textureBind(g_textures[GameTextures_Circle], 0);   
+   render::meshRender(g_game->mesh);
    
    if (dude.state == Dude::State_ATTACKING) {
       _renderSwing(dude);
    }
 }
 
-static void _renderEnemy(Dude& dude) {
-   auto model = Matrix::translate2f(dude.pos);
-   model *= Matrix::scale2f({dude.size *  2, dude.size * 2});
-   render::uSetColor(u::color, Cyan);
-   render::uSetMatrix(u::modelMatrix, model);
-   render::uSetMatrix(u::texMatrix, Matrix::identity());
-   render::uSetTextureSlot(u::diffuse, 0);
-   render::textureBind(g_textures[GameTextures_Circle], 0);   
-   render::meshRender(g_game->mesh);
-}
+
 
 static void _renderTarget(Float2 pos, ColorRGBAf color, f32 sz) {
    auto model = Matrix::identity();
@@ -321,6 +345,21 @@ static void _renderTarget(Float2 pos, ColorRGBAf color, f32 sz) {
    render::uSetTextureSlot(u::diffuse, 0);
    render::textureBind(g_textures[GameTextures_Target], 0);
    render::meshRender(g_game->mesh);
+}
+
+static void _renderEnemy(Dude& dude) {
+
+   auto c = dude.hit ? Red : Cyan;
+
+   auto model = Matrix::translate2f(dude.pos);
+   model *= Matrix::scale2f({ dude.size * 2, dude.size * 2 });
+   render::uSetColor(u::color, c);
+   render::uSetMatrix(u::modelMatrix, model);
+   render::uSetMatrix(u::texMatrix, Matrix::identity());
+   render::uSetTextureSlot(u::diffuse, 0);
+   render::textureBind(g_textures[GameTextures_Circle], 0);
+   render::meshRender(g_game->mesh);
+
 }
 
 static void _addLight(Float2 size, Float2 pos, ColorRGBAf c) {
@@ -387,6 +426,17 @@ static void _renderFloor(Game* game) {
    render::uSetTextureSlot(u::diffuse, 0);
    render::textureBind(g_textures[GameTextures_Tile], 0);
    render::meshRender(g_game->meshUncentered);
+
+
+   Rectf testrect = { 300,300, 500, 200 };
+
+   render::shaderSetActive(game->colorShader);
+   render::uSetColor(u::color, circleVsAabb(game->dude.pos, game->dude.size, testrect) ? Red : Cyan);
+   render::uSetMatrix(u::modelMatrix, Matrix::translate2f({ testrect.x, testrect.y}) * Matrix::scale2f({ testrect.w, testrect.h }));
+   render::textureBind(0, 0);
+   render::meshRender(g_game->meshUncentered);
+
+   render::shaderSetActive(game->shader);
 }
 
 static void _renderLightLayer(Game* game) {
@@ -705,10 +755,6 @@ static void _updateDude(Game* game) {
       dude.faceVector = v2Normalized(aimStick);
    }
 
-
-   
-   //dude.faceVector = v2MoveTowards(dude.faceVector, aimStick, c.stickTrackingSpeed * dt.toMilliseconds());
-
    // handle inputs
    if (game->dude.state == Dude::State_FREE) {
 
@@ -790,7 +836,7 @@ static void _updateDude(Game* game) {
 
       // scale half of mvspeed based on facing;
       f32 facing = v2Dot(velnorm, facnorm);
-      auto scaledSpeed = (c.dudeMoveSpeed * 0.75f) + (c.dudeMoveSpeed * 0.25f * facing);
+      auto scaledSpeed = (c.dudeMoveSpeed * 0.85f) + (c.dudeMoveSpeed * 0.15f * facing);
 
       dp += dude.velocity * scaledSpeed * (f32)dt.toMilliseconds();
    }
@@ -802,6 +848,10 @@ void gameUpdate(Game* game) {
    
    
    _updateDude(game);
+
+   for (auto& d : game->dudes) {
+      d.hit = game->dude.state == Dude::State_ATTACKING && _attackCollision(game->dude, d);
+   }
    
 
 

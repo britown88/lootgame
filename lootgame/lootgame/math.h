@@ -17,6 +17,7 @@ typedef struct Float2 {
    f32 x = 0, y = 0;
 
    Float2 operator-(Float2 const& lhs) { return { x - lhs.x, y - lhs.y }; }
+   Float2 operator-() { return { -x, -y }; }
    Float2 operator+(Float2 const& lhs) { return { x + lhs.x, y + lhs.y }; }
    Float2 operator*(f32 s) { return { x * s, y * s }; }
    Float2 operator/(f32 s) { return { x / s, y /s }; }
@@ -50,6 +51,7 @@ f32 vDistSquared(Float3 const& a, Float3 const& b);
 f32 v2Determinant(Float2 a, Float2 b); //helper.  determines orientation of two vectors, positive vs. negative means clockwise/counterclockwise orientation
 Float2 v2Rotate(Float2 direction, Float2 rotation); //complex number rotation!!
 Float2 v2FromAngle(f32 radians);
+f32 v2Angle(Float2 v);
 
 //direction is the current direction, target is the target direction
 //perFrame is Float2{cos(anglePerFrame), sin(anglePerFrame)} - this can be precalculated, to avoid runtime trig
