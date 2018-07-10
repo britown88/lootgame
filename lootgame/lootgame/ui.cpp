@@ -337,12 +337,13 @@ static void _doUIDebugger() {
          auto& g = *gameDataGet();
 
          ImGui::Checkbox("Show Movement UI", &g.imgui.showMovementDebugging);
+         ImGui::Checkbox("Show Collision Checks", &g.imgui.showCollisionDebugging);
          ImGui::InputFloat("Move Speed", &c.dudeMoveSpeed);
          ImGui::InputFloat("Rotate Speed", &c.dudeRotationSpeed);
          ImGui::InputFloat("Acceleration", &c.dudeAcceleration);
          ImGui::InputFloat("Stick Tracking", &c.stickTrackingSpeed);
 
-         
+         ImGui::SliderFloat("Ambient Light", &g.imgui.ambientLight, 0.0f, 1.0f);
       }
 
       

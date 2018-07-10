@@ -43,6 +43,8 @@ struct GameData {
       Rectf vpScreenArea = {0,0,1,1}; // set by imgui when the viewer moves (only in debug), necessary to track mouse position
    
       bool showMovementDebugging = false;
+      bool showCollisionDebugging = false;
+      f32 ambientLight = 1.0f;
    } imgui;
 
    struct {

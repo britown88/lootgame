@@ -94,6 +94,7 @@ struct Dude {
    Float2 renderSize;
    Float2 pos;
    f32 size; // radius of the hitbox circle
+   ColorRGBAf c;
 
    Float2 moveVector;
    Float2 velocity;
@@ -147,7 +148,10 @@ GameData* gameDataGet() {
 }
 
 static void _gameDataInit(GameData* game, StringView assetsFolder) {
-   
+#ifndef  NDEBUG
+   game->imgui.showUI = false;
+#endif //  NDEBUG
+
 }
 
 Game* gameCreate(StringView assetsFolder) {
@@ -207,7 +211,7 @@ static void _createGraphicsObjects(Game* game){
    g_textures[GameTextures_Dude] = _textureBuildFromFile("assets/dude.png");
    g_textures[GameTextures_Target] = _textureBuildFromFile("assets/target.png");
    g_textures[GameTextures_Light] = _textureBuildFromFile("assets/light.png");
-   g_textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png");
+   g_textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png", { RepeatType_CLAMP , FilterType_LINEAR });
    g_textures[GameTextures_ShittySword] = _textureBuildFromFile("assets/shittysword.png");
    g_textures[GameTextures_GemEmpty] = _textureBuildFromFile("assets/gemempty.png");
    g_textures[GameTextures_GemFilled] = _textureBuildFromFile("assets/gemfilled.png");
@@ -219,6 +223,7 @@ static void _createGraphicsObjects(Game* game){
 
 static Dude _createDude(Game* game) {
    Dude out;
+   out.c = White;
    out.moveset = _createMoveSet();
    out.pos = { 50,50 };
    out.size = 30.0f;
@@ -233,12 +238,18 @@ static Dude _createDude(Game* game) {
 static Dude _createEnemy(Float2 pos, f32 size) {
    Dude out;
    out.moveset = _createMoveSet();
+   out.c = {1.0f, 0.3f, 0.3f, 1.0f};
    out.pos = pos;
    out.size = size;
-   out.renderSize = { 100, 60 };
+   out.renderSize = { size * 2, size * 3.33333f };
    out.texture = g_textures[GameTextures_Dude];
    out.lastUpdated = out.lastFree = appGetTime();
    out.stamina = out.staminaMax = 4;
+
+   auto fx = ((rand() % 200) - 100) / 100.0f;
+   auto fy = ((rand() % 200) - 100) / 100.0f;
+   out.facing = v2Normalized({fx, fy});
+
    return out;
 }
 
@@ -277,7 +288,7 @@ void gameBegin(Game*game) {
    game->dude = _createDude(game);
 
    for (int i = 0; i < 100; ++i) {
-      game->dudes.push_back(_createEnemy({ (f32)(rand() % 1000), (f32)(rand()%1000)}, 30.0f));
+      game->dudes.push_back(_createEnemy({ (f32)(rand() % 1920), (f32)(rand()%1080)}, 30.0f));
    }
 
    
@@ -310,7 +321,7 @@ static void _renderDude(Dude& dude) {
    model *= Matrix::rotate2D(v2Angle(dude.facing));
    model *= Matrix::scale2f(dude.renderSize);
 
-   render::uSetColor(u::color, White);
+   render::uSetColor(u::color, dude.c);
    render::uSetMatrix(u::texMatrix, texmat);
    render::uSetMatrix(u::modelMatrix, model);
    
@@ -318,12 +329,14 @@ static void _renderDude(Dude& dude) {
    render::textureBind(dude.texture, 0);
    render::meshRender(g_game->mesh);
 
-   model = Matrix::translate2f(dude.pos);
-   model *= Matrix::scale2f({dude.size *  2, dude.size * 2});
-   render::uSetColor(u::color, {0.5f,1.f,1.f,0.75f});
-   render::uSetMatrix(u::modelMatrix, model);
-   render::textureBind(g_textures[GameTextures_Circle], 0);   
-   render::meshRender(g_game->mesh);
+   if (gameDataGet()->imgui.showCollisionDebugging) {
+      model = Matrix::translate2f(dude.pos);
+      model *= Matrix::scale2f({ dude.size * 2, dude.size * 2 });
+      render::uSetColor(u::color, dude.hit ? Red : Cyan);
+      render::uSetMatrix(u::modelMatrix, model);
+      render::textureBind(g_textures[GameTextures_Circle], 0);
+      render::meshRender(g_game->mesh);
+   }
    
    if (dude.state == Dude::State_ATTACKING) {
       _renderSwing(dude);
@@ -404,7 +417,7 @@ static void _populateLightLayer(Game* game) {
    render::uSetMatrix(u::viewMatrix, view);
 
    auto model = Matrix::scale2f({ (f32)res.x, (f32)res.y});
-   render::uSetColor(u::color, {1, 1, 1, 0.2f});
+   render::uSetColor(u::color, {1, 1, 1, gameDataGet()->imgui.ambientLight });
    render::uSetMatrix(u::modelMatrix, model);
    render::textureBind(0, 0);
    render::meshRender(g_game->meshUncentered);
@@ -427,16 +440,19 @@ static void _renderFloor(Game* game) {
    render::textureBind(g_textures[GameTextures_Tile], 0);
    render::meshRender(g_game->meshUncentered);
 
+   if (gameDataGet()->imgui.showCollisionDebugging) {
+      Rectf testrect = { 300,300, 500, 200 };
+      render::shaderSetActive(game->colorShader);
+      render::uSetColor(u::color, circleVsAabb(game->dude.pos, game->dude.size, testrect) ? Red : Cyan);
+      render::uSetMatrix(u::modelMatrix, Matrix::translate2f({ testrect.x, testrect.y }) * Matrix::scale2f({ testrect.w, testrect.h }));
+      render::textureBind(0, 0);
+      render::meshRender(g_game->meshUncentered);
 
-   Rectf testrect = { 300,300, 500, 200 };
+      render::shaderSetActive(game->shader);
+   }
 
-   render::shaderSetActive(game->colorShader);
-   render::uSetColor(u::color, circleVsAabb(game->dude.pos, game->dude.size, testrect) ? Red : Cyan);
-   render::uSetMatrix(u::modelMatrix, Matrix::translate2f({ testrect.x, testrect.y}) * Matrix::scale2f({ testrect.w, testrect.h }));
-   render::textureBind(0, 0);
-   render::meshRender(g_game->meshUncentered);
 
-   render::shaderSetActive(game->shader);
+   
 }
 
 static void _renderLightLayer(Game* game) {
@@ -496,7 +512,7 @@ static void _renderScene(Game* game) {
    _renderFloor(game);
 
    for (auto&& d : game->dudes) {
-      _renderEnemy(d);
+      _renderDude(d);
    }
 
    _renderDude(game->dude);   
@@ -533,12 +549,13 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
    case SDL_KEYDOWN: {
       bool pressed = event->type == SDL_KEYDOWN;
       GameButton btn;
+      
       switch (event->key.keysym.scancode) {
       case SDL_SCANCODE_W: 
          btn = GameButton_UP; 
 
-         if (pressed) {
-            io.leftStick.y = -1.0f;
+         if (pressed) {            
+            if (!event->key.repeat) io.leftStick.y = -1.0f;
          }
          else if (!io.buttonDown[GameButton_DOWN]) {
             io.leftStick.y = 0.0f;
@@ -549,7 +566,7 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
          btn = GameButton_LEFT;
 
          if (pressed) {
-            io.leftStick.x = -1.0f;
+            if (!event->key.repeat) io.leftStick.x = -1.0f;
          }
          else if (!io.buttonDown[GameButton_RIGHT]) {
             io.leftStick.x = 0.0f;
@@ -559,7 +576,7 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
          btn = GameButton_DOWN;
 
          if (pressed) {
-            io.leftStick.y = 1.0f;
+            if (!event->key.repeat) io.leftStick.y = 1.0f;
          }
          else if (!io.buttonDown[GameButton_UP]) {
             io.leftStick.y = 0.0f;
@@ -569,7 +586,7 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
          btn = GameButton_RIGHT;
 
          if (pressed) {
-            io.leftStick.x = 1.0f;
+            if (!event->key.repeat) io.leftStick.x = 1.0f;
          }
          else if (!io.buttonDown[GameButton_LEFT]) {
             io.leftStick.x = 0.0f;
@@ -578,7 +595,10 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
       default: return false;
       }
 
-      io.leftStick = v2Normalized(io.leftStick);
+      if (!event->key.repeat) {
+         io.leftStick = v2Normalized(io.leftStick);
+      }
+      
       if (!io.buttonDown[btn] && pressed) {
          io.buttonPressed[btn] = true;
       }
