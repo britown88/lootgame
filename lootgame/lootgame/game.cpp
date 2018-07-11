@@ -738,11 +738,19 @@ static bool leftStickActive() {
    return fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE;
 }
 
-static bool _dudeCollision(Dude& mover, Dude& other) {
-   if (v2Dist(mover.pos, other.pos) < mover.size + other.size) {
+static bool _dudeCollision(f32 asize, Float2 apos, Float2 avel, f32 bsize, Float2 bpos, Time dt, Float2& avelOut) {
+   auto projectedDist = v2Dist(apos + avel * (f32)dt.toMilliseconds(), bpos);
+   auto colDist = asize + bsize;
+   if (projectedDist < colDist) {
+      auto overlap = (colDist - projectedDist) / (f32)dt.toMilliseconds();
 
-      auto reflect = v2Orthogonal(other.pos - mover.pos);
-      mover.velocity = v2Normalized( reflect * v2Dot(mover.velocity, reflect));
+      auto overlapv = v2Normalized(avel) * overlap;
+      avel -= overlapv;
+
+      auto reflect = v2Normalized(v2Orthogonal(bpos - apos));
+      reflect *= v2Dot(avel, reflect);
+
+      avelOut = reflect;
       return true;
    }
    return false;
@@ -830,7 +838,15 @@ static void _updateDude(Game* game) {
          auto radsPerMs = (dude.swing.swipeAngle * DEG2RAD) / dude.swing.swingDur.toMilliseconds();
          dude.weaponVector = v2Rotate(dude.weaponVector, v2FromAngle(-dude.swingDir * radsPerMs * dt.toMilliseconds()));
 
-         dp += dude.facing * dude.swing.lungeSpeed * (f32)dt.toMilliseconds();
+         Float2 lungeVel = dude.facing * dude.swing.lungeSpeed;
+         for (auto& d : g_game->dudes) {
+            if (_dudeCollision(dude.size, dude.pos, lungeVel, d.size, d.pos, dt, lungeVel)) {
+               lungeVel = { 0,0 };
+               break;
+            }
+         }
+
+         dp += lungeVel * (f32)dt.toMilliseconds();
 
          if (swingdt > dude.swing.swingDur) {
             dude.phaseStart += dude.swing.swingDur;
@@ -874,26 +890,13 @@ static void _updateDude(Game* game) {
 
          collide = false;
          for (auto& d : g_game->dudes) {
-            auto projectedDist = v2Dist(dude.pos + dude.velocity * (f32)dt.toMilliseconds(), d.pos);
-            auto colDist = dude.size + d.size;
-            if (projectedDist < colDist) {
-               auto overlap = (colDist - projectedDist) / (f32)dt.toMilliseconds();
-
-               auto overlapv = v2Normalized(dude.velocity) * overlap;
-               dude.velocity -= overlapv;
-
-               auto reflect = v2Normalized(v2Orthogonal(d.pos - dude.pos));
-               reflect *= v2Dot(dude.velocity, reflect);
-
-               dude.velocity = reflect;
+            if (_dudeCollision(dude.size, dude.pos, dude.velocity, d.size, d.pos, dt, dude.velocity)) {
                collide = true;
                ++tries;
                break;
             }
          }
       }
-
-      
 
       auto velnorm = v2Normalized(dude.velocity);
       auto facnorm = v2Normalized(dude.facing);
