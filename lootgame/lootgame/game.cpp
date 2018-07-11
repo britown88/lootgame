@@ -241,7 +241,7 @@ static Dude _createEnemy(Float2 pos, f32 size) {
    out.c = {1.0f, 0.3f, 0.3f, 1.0f};
    out.pos = pos;
    out.size = size;
-   out.renderSize = { size * 2, size * 3.33333f };
+   out.renderSize = { size * 2.5f, size * 4.2f };
    out.texture = g_textures[GameTextures_Dude];
    out.lastUpdated = out.lastFree = appGetTime();
    out.stamina = out.staminaMax = 4;
@@ -287,7 +287,7 @@ void gameBegin(Game*game) {
    _createGraphicsObjects(game);
    game->dude = _createDude(game);
 
-   for (int i = 0; i < 100; ++i) {
+   for (int i = 0; i < 125; ++i) {
       game->dudes.push_back(_createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand()%980) + 100}, 30.0f));
    }
 
@@ -398,7 +398,7 @@ static void _populateLightLayer(Game* game) {
    render::setBlendMode(BlendMode_PURE_ADD);
    render::viewport({ 0,0, res.x, res.y });
    
-   render::clear({0.f,0.f,0.f,1.0f});
+   render::clear({0.f,0.f,0.f,0.0f});
    //render::clear({1.0f, 1.0f, 1.0f, 0.f});
 
    _addLight({ 500, 500 }, game->dude.pos, White);
@@ -417,7 +417,8 @@ static void _populateLightLayer(Game* game) {
    render::uSetMatrix(u::viewMatrix, view);
 
    auto model = Matrix::scale2f({ (f32)res.x, (f32)res.y});
-   render::uSetColor(u::color, {1, 1, 1, gameDataGet()->imgui.ambientLight });
+   auto al = gameDataGet()->imgui.ambientLight;
+   render::uSetColor(u::color, { al,al,al,al });
    render::uSetMatrix(u::modelMatrix, model);
    render::textureBind(0, 0);
    render::meshRender(g_game->meshUncentered);

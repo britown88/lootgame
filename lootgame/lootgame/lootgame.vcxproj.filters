@@ -19,9 +19,6 @@
     <Filter Include="Source Files\game">
       <UniqueIdentifier>{a9311cf7-7c6e-4403-bd14-7fe5ace9ee90}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\utility">
-      <UniqueIdentifier>{14656380-3ac2-4f82-a5c7-30a1c1e7a7f9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\app">
       <UniqueIdentifier>{ebfdc64b-360c-40f6-a8c0-15da3d577139}</UniqueIdentifier>
     </Filter>
@@ -30,6 +27,9 @@
     </Filter>
     <Filter Include="Header Files\utility">
       <UniqueIdentifier>{3e7f9165-2857-4903-8baf-721ffbc61568}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\utility">
+      <UniqueIdentifier>{14656380-3ac2-4f82-a5c7-30a1c1e7a7f9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

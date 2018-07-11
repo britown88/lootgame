@@ -24,12 +24,12 @@ void render::setBlendMode(BlendMode mode) {
       break;
    case BlendMode_PURE_ADD:
       glEnable(GL_BLEND);
-      glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
+      glBlendFunc(GL_ONE, GL_ONE);
       //glBlendEquation(GL_FUNC_SUBTRACT);
       break;
    case BlendMode_NORMAL:
       glEnable(GL_BLEND);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
       //glBlendEquation(GL_FUNC_ADD);
       break;
 
@@ -147,8 +147,25 @@ TextureHandle render::textureBuild(ColorRGBA const* pixels, Int2 const& sz, Text
       break;
    };
 
+   auto fcol = new ColorRGBAf[sz.x*sz.y];
+
+   static f32 ibyte = 1.0f / 255.0f;
+
+   for (int i = 0; i < sz.x*sz.y; ++i) {
+      auto& c = pixels[i];
+      f32 scale = c.a * ibyte;
+      fcol[i] = {
+         (c.r * ibyte) * scale,
+         (c.g * ibyte) * scale,
+         (c.b * ibyte) * scale,
+         scale,
+      };
+   }
+
    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, sz.x, sz.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, sz.x, sz.y, 0, GL_RGBA, GL_FLOAT, fcol);
+
+   delete[] fcol;
 
    glBindTexture(GL_TEXTURE_2D, 0);
 
