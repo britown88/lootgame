@@ -148,7 +148,7 @@ GameData* gameDataGet() {
 }
 
 static void _gameDataInit(GameData* game, StringView assetsFolder) {
-#ifndef  NDEBUG
+#ifndef  _DEBUG
    game->imgui.showUI = false;
 #endif //  NDEBUG
 
@@ -288,7 +288,7 @@ void gameBegin(Game*game) {
    game->dude = _createDude(game);
 
    for (int i = 0; i < 100; ++i) {
-      game->dudes.push_back(_createEnemy({ (f32)(rand() % 1920), (f32)(rand()%1080)}, 30.0f));
+      game->dudes.push_back(_createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand()%980) + 100}, 30.0f));
    }
 
    
@@ -737,6 +737,16 @@ static bool leftStickActive() {
    return fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE;
 }
 
+static bool _dudeCollision(Dude& mover, Dude& other) {
+   if (v2Dist(mover.pos, other.pos) < mover.size + other.size) {
+
+      auto reflect = v2Orthogonal(other.pos - mover.pos);
+      mover.velocity = v2Normalized( reflect * v2Dot(mover.velocity, reflect));
+      return true;
+   }
+   return false;
+}
+
 static void _updateDude(Game* game) {
    auto time = appGetTime();
    auto dt = time - game->dude.lastUpdated;
@@ -851,6 +861,39 @@ static void _updateDude(Game* game) {
 
 
    if (v2LenSquared(dude.velocity) > 0.0f) {
+
+      bool collide = true;
+      int tries = 0;
+
+      while (collide) {
+         if (tries >= 3) {
+            dude.velocity = { 0,0 };
+            break;
+         }
+
+         collide = false;
+         for (auto& d : g_game->dudes) {
+            auto projectedDist = v2Dist(dude.pos + dude.velocity * (f32)dt.toMilliseconds(), d.pos);
+            auto colDist = dude.size + d.size;
+            if (projectedDist < colDist) {
+               auto overlap = (colDist - projectedDist) / (f32)dt.toMilliseconds();
+
+               auto overlapv = v2Normalized(dude.velocity) * overlap;
+               dude.velocity -= overlapv;
+
+               auto reflect = v2Normalized(v2Orthogonal(d.pos - dude.pos));
+               reflect *= v2Dot(dude.velocity, reflect);
+
+               dude.velocity = reflect;
+               collide = true;
+               ++tries;
+               break;
+            }
+         }
+      }
+
+      
+
       auto velnorm = v2Normalized(dude.velocity);
       auto facnorm = v2Normalized(dude.facing);
 
