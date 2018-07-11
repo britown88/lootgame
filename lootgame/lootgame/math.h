@@ -51,6 +51,7 @@ f32 vDistSquared(Float3 const& a, Float3 const& b);
 f32 v2Determinant(Float2 a, Float2 b); //helper.  determines orientation of two vectors, positive vs. negative means clockwise/counterclockwise orientation
 Float2 v2Rotate(Float2 direction, Float2 rotation); //complex number rotation!!
 Float2 v2FromAngle(f32 radians);
+Float2 v2Conjugate(Float2 unit);
 f32 v2Angle(Float2 v);
 
 //direction is the current direction, target is the target direction

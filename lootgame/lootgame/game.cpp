@@ -273,7 +273,7 @@ bool circleVsAabb(Float2 co, f32 cr, Rectf const& aabb) {
 
 bool _attackCollision(Dude& attacker, Dude& defender) {
    auto origin = attacker.pos + attacker.weaponVector * attacker.size;
-   auto defendPos = v2Rotate(defender.pos - origin, v2FromAngle(-v2Angle(attacker.weaponVector)));
+   auto defendPos = v2Rotate(defender.pos - origin, v2Conjugate(attacker.weaponVector));
 
    auto wbox = attacker.moveset.swings[attacker.combo].hitbox;
    //wbox.x += origin.x;

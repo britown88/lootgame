@@ -68,6 +68,11 @@ Float2 v2Rotate(Float2 direction, Float2 rotation) {
    float y = direction.x * rotation.y + direction.y * rotation.x;
    return Float2{ x,y };
 }
+
+//inverts rotation of unit vector
+Float2 v2Conjugate(Float2 unit) {
+   return Float2{ unit.x, -unit.y };
+}
 Float2 v2FromAngle(f32 radians) {
    return { cosf(radians), sinf(radians) };
 }
@@ -85,7 +90,7 @@ Float2 v2RotateTowards(Float2 direction, Float2 target, Float2 perFrame) {
          return target; //they are exactly aligned to start with, nothing to do
       }
    }
-   if (det < 0) perFrame.y = -perFrame.y;  //this is being treated like a complex number and this is the conjugate.
+   if (det < 0) perFrame = v2Conjugate(perFrame);  //this is being treated like a complex number and this is the conjugate.
    direction = v2Rotate(direction, perFrame);
    if (det != SIGN(v2Determinant(direction, target))) {
       //if this is true we overshot our target
