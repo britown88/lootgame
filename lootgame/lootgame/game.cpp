@@ -747,11 +747,11 @@ static bool _dudeCollision(f32 asize, Float2 apos, Float2 avel, f32 bsize, Float
       auto overlapv = v2Normalized(avel) * overlap;
       avel -= overlapv;
 
-      auto reflect = v2Normalized(v2Orthogonal(bpos - apos));
-      reflect *= v2Dot(avel, reflect);
+auto reflect = v2Normalized(v2Orthogonal(bpos - apos));
+reflect *= v2Dot(avel, reflect);
 
-      avelOut = reflect;
-      return true;
+avelOut = reflect;
+return true;
    }
    return false;
 }
@@ -816,7 +816,7 @@ static void _updateDude(Game* game) {
    else if (game->dude.state == Dude::State_ATTACKING) {
       auto swingdt = time - game->dude.phaseStart;
 
-      dude.velocity = v2MoveTowards(dude.velocity, {0,0}, c.dudeAcceleration * dt.toMilliseconds());
+      dude.velocity = v2MoveTowards(dude.velocity, { 0,0 }, c.dudeAcceleration * dt.toMilliseconds());
 
       switch (dude.swingPhase) {
       case SwingPhase_Windup:
@@ -830,7 +830,7 @@ static void _updateDude(Game* game) {
          }
          break;
       case SwingPhase_Swing: {
-         
+
          if (io.buttonPressed[GameButton_RT]) {
             dude.swingTimingSuccess = false;
          }
@@ -838,15 +838,30 @@ static void _updateDude(Game* game) {
          auto radsPerMs = (dude.swing.swipeAngle * DEG2RAD) / dude.swing.swingDur.toMilliseconds();
          dude.weaponVector = v2Rotate(dude.weaponVector, v2FromAngle(-dude.swingDir * radsPerMs * dt.toMilliseconds()));
 
-         Float2 lungeVel = dude.facing * dude.swing.lungeSpeed;
-         for (auto& d : g_game->dudes) {
-            if (_dudeCollision(dude.size, dude.pos, lungeVel, d.size, d.pos, dt, lungeVel)) {
-               lungeVel = { 0,0 };
-               break;
+         if (dude.swing.lungeSpeed > 0.0f) {
+            Float2 lungeVel = dude.facing * dude.swing.lungeSpeed;
+            bool collided = true;
+            int tries = 0;
+            while (collided) {
+               collided = false;
+               for (auto& d : g_game->dudes) {
+                  if (_dudeCollision(dude.size, dude.pos, lungeVel, d.size, d.pos, dt, lungeVel)) {
+                     collided = true;
+                     ++tries;
+                     break;
+                  }
+               }
+               if (tries >= 3) {
+                  lungeVel = { 0,0 };
+                  break;
+               }
             }
+            dp += lungeVel * (f32)dt.toMilliseconds();
          }
+         
+         
 
-         dp += lungeVel * (f32)dt.toMilliseconds();
+         
 
          if (swingdt > dude.swing.swingDur) {
             dude.phaseStart += dude.swing.swingDur;
