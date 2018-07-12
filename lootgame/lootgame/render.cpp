@@ -153,11 +153,12 @@ TextureHandle render::textureBuild(ColorRGBA const* pixels, Int2 const& sz, Text
 
    for (int i = 0; i < sz.x*sz.y; ++i) {
       auto& c = pixels[i];
+      auto lin = srgbToLinear({ c.r, c.g, c.b });
       f32 scale = c.a * ibyte;
       fcol[i] = {
-         (c.r * ibyte) * scale,
-         (c.g * ibyte) * scale,
-         (c.b * ibyte) * scale,
+          lin.x * scale,
+          lin.y * scale,
+          lin.z * scale,
          scale,
       };
    }
@@ -180,7 +181,7 @@ void render::textureBind(TextureHandle t, TextureSlot slot) {
 }
 
 // FBO
-FBO render::fboBuild(Int2 sz) {
+FBO render::fboBuild(Int2 sz, bool srgb) {
    FBO out;
 
    out.sz = sz;
@@ -194,7 +195,13 @@ FBO render::fboBuild(Int2 sz) {
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, sz.x, sz.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+   if (srgb) {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, sz.x, sz.y, 0, GL_RGBA, GL_FLOAT, NULL);
+   }
+   else {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, sz.x, sz.y, 0, GL_RGBA, GL_FLOAT, NULL);
+   }
+   
 
    glGenFramebuffers(1, &out.fbo);
    glBindFramebuffer(GL_FRAMEBUFFER, out.fbo);

@@ -485,3 +485,17 @@ float &Matrix::operator[](size_t index) {
 float const &Matrix::operator[](size_t index) const {
    return data[index];
 }
+
+static f32 sRGB(byte b) {
+   f32 x = b / 255.0f;
+   if (x <= 0.00031308f) {
+      return 12.92f * x;
+   }
+   else {
+      return 1.055f*pow(x, (1.0f / 2.4f)) - 0.055f;
+   }
+}
+
+Float3 srgbToLinear(ColorRGB const&srgb) {
+   return { sRGB(srgb.r), sRGB(srgb.g), sRGB(srgb.b) };
+}

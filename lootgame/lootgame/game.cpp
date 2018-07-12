@@ -205,7 +205,7 @@ static void _createGraphicsObjects(Game* game){
    game->meshUncentered = render::meshBuild(vboUncentered, 6);
 
    auto& res = ConstantsGet().resolution;
-   game->fbo = render::fboBuild({ res.x, res.y });
+   game->fbo = render::fboBuild({ res.x, res.y }, true);
    game->lightfbo = render::fboBuild({ res.x, res.y });
 
    g_textures[GameTextures_Dude] = _textureBuildFromFile("assets/dude.png");
