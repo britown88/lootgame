@@ -44,7 +44,7 @@ struct GameData {
    
       bool showMovementDebugging = false;
       bool showCollisionDebugging = false;
-      f32 ambientLight = 1.0f;
+      f32 ambientLight = 0.0f;
    } imgui;
 
    struct {

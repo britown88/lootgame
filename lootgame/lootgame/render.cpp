@@ -148,19 +148,12 @@ TextureHandle render::textureBuild(ColorRGBA const* pixels, Int2 const& sz, Text
    };
 
    auto fcol = new ColorRGBAf[sz.x*sz.y];
-
-   static f32 ibyte = 1.0f / 255.0f;
-
    for (int i = 0; i < sz.x*sz.y; ++i) {
       auto& c = pixels[i];
-      auto lin = srgbToLinear({ c.r, c.g, c.b });
-      f32 scale = c.a * ibyte;
-      fcol[i] = {
-          lin.x * scale,
-          lin.y * scale,
-          lin.z * scale,
-         scale,
-      };
+      fcol[i] = sRgbToLinear(c);
+      fcol[i].r *= fcol[i].a;
+      fcol[i].g *= fcol[i].a;
+      fcol[i].b *= fcol[i].a;
    }
 
    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -196,10 +189,10 @@ FBO render::fboBuild(Int2 sz, bool srgb) {
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
    if (srgb) {
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, sz.x, sz.y, 0, GL_RGBA, GL_FLOAT, NULL);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8, sz.x, sz.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
    }
    else {
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, sz.x, sz.y, 0, GL_RGBA, GL_FLOAT, NULL);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, sz.x, sz.y, 0, GL_RGBA, GL_FLOAT, NULL);
    }
    
 

@@ -249,6 +249,9 @@ static void _mainMenu( Game* g) {
    }
 }
 
+#include <functional>
+#include <GL/glew.h>
+
 static void _renderViewerFBO(Game* game) {
 
    auto fbo = gameGetOutputFBO(game);
@@ -265,8 +268,10 @@ static void _renderViewerFBO(Game* game) {
 
    gameDataGet()->imgui.vpScreenArea = { a.x, a.y, b.x - a.x, b.y - a.y };
 
-   //draw_list->AddRectFilled(a, b, IM_COL32(0, 0, 0, 255));
+
+   draw_list->AddCallback([](auto, auto) { glEnable(GL_FRAMEBUFFER_SRGB); }, nullptr);
    draw_list->AddImage( (ImTextureID)(iPtr)fbo.tex, a, b );
+   draw_list->AddCallback([](auto, auto) { glDisable(GL_FRAMEBUFFER_SRGB); }, nullptr);
 }
 
 static void _showFullScreenViewer(Game* g) {

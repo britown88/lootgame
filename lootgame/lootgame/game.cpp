@@ -133,7 +133,7 @@ struct Game {
    ShaderHandle shader = 0, colorShader = 0;
 
    Mesh mesh, meshUncentered;
-   FBO fbo, lightfbo;
+   FBO fbo, lightfbo, outputfbo;
 
    Dude dude = {};
    std::vector<Dude> dudes;
@@ -205,8 +205,9 @@ static void _createGraphicsObjects(Game* game){
    game->meshUncentered = render::meshBuild(vboUncentered, 6);
 
    auto& res = ConstantsGet().resolution;
-   game->fbo = render::fboBuild({ res.x, res.y }, true);
+   game->fbo = render::fboBuild({ res.x, res.y });
    game->lightfbo = render::fboBuild({ res.x, res.y });
+   game->outputfbo = render::fboBuild({ res.x, res.y }, true);
 
    g_textures[GameTextures_Dude] = _textureBuildFromFile("assets/dude.png");
    g_textures[GameTextures_Target] = _textureBuildFromFile("assets/target.png");
@@ -399,7 +400,6 @@ static void _populateLightLayer(Game* game) {
    render::viewport({ 0,0, res.x, res.y });
    
    render::clear({0.f,0.f,0.f,0.0f});
-   //render::clear({1.0f, 1.0f, 1.0f, 0.f});
 
    _addLight({ 500, 500 }, game->dude.pos, White);
 
@@ -418,7 +418,7 @@ static void _populateLightLayer(Game* game) {
 
    auto model = Matrix::scale2f({ (f32)res.x, (f32)res.y});
    auto al = gameDataGet()->imgui.ambientLight;
-   render::uSetColor(u::color, { al,al,al,al });
+   render::uSetColor(u::color, sRgbToLinear(ColorRGBAf{ al,al,al,al }));
    render::uSetMatrix(u::modelMatrix, model);
    render::textureBind(0, 0);
    render::meshRender(g_game->meshUncentered);
@@ -494,6 +494,8 @@ static void _renderGameUI(Game* game) {
 
 }
 
+#include "GL/glew.h"
+
 static void _renderScene(Game* game) {
    auto& c = ConstantsGet();
    auto& res = ConstantsGet().resolution;
@@ -538,8 +540,43 @@ static void _renderScene(Game* game) {
 
    _renderGameUI(game);
 
+   
+
+   //render::setBlendMode(BlendMode_NORMAL);
+   glBlendFunc(GL_ONE, GL_ZERO);
+
+   render::shaderSetActive(game->shader);
+   render::fboBind( game->outputfbo );
+   
+   render::viewport({ 0,0, res.x, res.y });
+   render::clear({ 1, 1, 1, 1 });
+
+   render::uSetColor(u::color, {1, 1, 1, 1});
+   render::uSetMatrix(u::viewMatrix, Matrix::ortho(0, (float)res.x, 0, (float)res.y, -1, 1));
+   render::uSetMatrix(u::texMatrix, Matrix::identity());
+   render::uSetMatrix(u::modelMatrix, Matrix::scale2f({ (float)game->outputfbo.sz.x, (float)game->outputfbo.sz.y }));
+   render::uSetTextureSlot(u::diffuse, 0);
+   render::textureBind(game->fbo.tex, 0);
+   render::meshRender(g_game->meshUncentered);
 
    render::fboBind({});
+
+   
+
+   //render::shaderSetActive(game->shader);
+   //render::viewport({ 0, 0, res.x, res.y });
+   //render::clear({ 1, 1, 1, 1 });
+   //render::uSetColor(u::color, { 1, 1, 1, 1 });
+   //render::uSetMatrix(u::viewMatrix, Matrix::ortho(0, (float)res.x, (float)res.y, 0, -1, 1));
+   //render::uSetMatrix(u::texMatrix, Matrix::identity());
+   //render::uSetMatrix(u::modelMatrix, Matrix::scale2f({ (float)game->outputfbo.sz.x, (float)game->outputfbo.sz.y }));
+   //render::uSetTextureSlot(u::diffuse, 0);
+   //render::textureBind(game->outputfbo.tex, 0);
+
+   //
+   //render::meshRender(g_game->meshUncentered);
+   
+
 }
 
 bool gameProcessEvent(Game*game, SDL_Event* event) {
@@ -711,7 +748,9 @@ void gameHandleInput(Game*game) {
 }
 
 void gameRender(Game*game) {
+   glEnable(GL_FRAMEBUFFER_SRGB);
    _renderScene(game);
+   glDisable(GL_FRAMEBUFFER_SRGB);
 }
 
 static void _beginAttack(Dude& dude, Time t, int dir, int combo) {
@@ -945,5 +984,5 @@ void gameDestroy(Game* game) {
 }
 
 FBO const& gameGetOutputFBO(Game* game) {
-   return game->fbo;
+   return game->outputfbo;
 }

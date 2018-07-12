@@ -486,30 +486,36 @@ float const &Matrix::operator[](size_t index) const {
    return data[index];
 }
 
-static f32 sRGB(byte b) {
-   f32 x = b / 255.0f;
-   if (x <= 0.00031308f) {
-      return 12.92f * x;
+
+static f32 s2lin(f32 x) {
+   if (x <= 0.04045f) {
+      return x * (1.0f / 12.92f);
    }
    else {
-      return 1.055f*pow(x, (1.0f / 2.4f)) - 0.055f;
+      return pow((x + 0.055f) * (1.0 / 1.055f), 2.4);
    }
 }
 
-static f32 sRGB(f32 x) {
-   if (x <= 0.00031308f) {
-      return 12.92f * x;
+static f32 lin2s(f32 x) {
+   if (x <= 0.0031308f) {
+      return x * 12.92f;
    }
    else {
-      return 1.055f*pow(x, (1.0f / 2.4f)) - 0.055f;
+      return 1.055f * pow(x, 1.0f / 2.4f) - 0.055f;
    }
 }
 
+static f32 i255 = 1.0f / 255.0f;
 
-Float3 srgbToLinear(ColorRGB const&srgb) {
-   return { sRGB(srgb.r), sRGB(srgb.g), sRGB(srgb.b) };
+ColorRGBAf sRgbToLinear(ColorRGBAf const& srgb) {
+   return { s2lin(srgb.r), s2lin(srgb.g), s2lin(srgb.b), srgb.a };
 }
-
-ColorRGBAf linearizeColor(ColorRGBAf const&srgb) {
-   return { sRGB(srgb.r), sRGB(srgb.g), sRGB(srgb.b), srgb.a };
+ColorRGBAf sRgbToLinear(ColorRGBf const& srgb) {
+   return { s2lin(srgb.r), s2lin(srgb.g), s2lin(srgb.b), 1.0f };
+}
+ColorRGBAf sRgbToLinear(ColorRGBA const& srgb){
+   return { s2lin(srgb.r * i255), s2lin(srgb.g * i255), s2lin(srgb.b * i255), srgb.a * i255 };
+}
+ColorRGBAf sRgbToLinear(ColorRGB const& srgb) {
+   return { s2lin(srgb.r * i255), s2lin(srgb.g * i255), s2lin(srgb.b * i255), 1.0f };
 }

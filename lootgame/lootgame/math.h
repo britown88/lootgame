@@ -93,11 +93,10 @@ Recti getProportionallyFitRect(Float2 srcSize, Float2 destSize);
 Recti getProportionallyFitRect(Int2 srcSize, Int2 destSize);
 
 
-
-Float3 srgbToLinear(ColorRGB const&srgb);
-ColorRGBAf linearizeColor(ColorRGBAf const&srgb);
-
-ColorHSV srgbToHSV(ColorRGB const&srgb);
+ColorRGBAf sRgbToLinear(ColorRGBAf const& srgb);
+ColorRGBAf sRgbToLinear(ColorRGBf const& srgb);
+ColorRGBAf sRgbToLinear(ColorRGBA const& srgb);
+ColorRGBAf sRgbToLinear(ColorRGB const& srgb);
 
 struct  Matrix {
    float data[16];
