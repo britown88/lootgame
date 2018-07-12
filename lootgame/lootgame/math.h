@@ -95,6 +95,7 @@ Recti getProportionallyFitRect(Int2 srcSize, Int2 destSize);
 
 
 Float3 srgbToLinear(ColorRGB const&srgb);
+ColorRGBAf linearizeColor(ColorRGBAf const&srgb);
 
 ColorHSV srgbToHSV(ColorRGB const&srgb);
 

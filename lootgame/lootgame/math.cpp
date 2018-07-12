@@ -496,6 +496,20 @@ static f32 sRGB(byte b) {
    }
 }
 
+static f32 sRGB(f32 x) {
+   if (x <= 0.00031308f) {
+      return 12.92f * x;
+   }
+   else {
+      return 1.055f*pow(x, (1.0f / 2.4f)) - 0.055f;
+   }
+}
+
+
 Float3 srgbToLinear(ColorRGB const&srgb) {
    return { sRGB(srgb.r), sRGB(srgb.g), sRGB(srgb.b) };
+}
+
+ColorRGBAf linearizeColor(ColorRGBAf const&srgb) {
+   return { sRGB(srgb.r), sRGB(srgb.g), sRGB(srgb.b), srgb.a };
 }
