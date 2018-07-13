@@ -147,19 +147,12 @@ TextureHandle render::textureBuild(ColorRGBA const* pixels, Int2 const& sz, Text
       break;
    };
 
-   auto fcol = new ColorRGBAf[sz.x*sz.y];
    for (int i = 0; i < sz.x*sz.y; ++i) {
-      auto& c = pixels[i];
-      fcol[i] = sRgbToLinear(c);
-      fcol[i].r *= fcol[i].a;
-      fcol[i].g *= fcol[i].a;
-      fcol[i].b *= fcol[i].a;
+      ((ColorRGBA*)pixels)[i] = srgbPremultipleAlpha(pixels[i]);
    }
 
    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, sz.x, sz.y, 0, GL_RGBA, GL_FLOAT, fcol);
-
-   delete[] fcol;
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, sz.x, sz.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
    glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -174,7 +167,7 @@ void render::textureBind(TextureHandle t, TextureSlot slot) {
 }
 
 // FBO
-FBO render::fboBuild(Int2 sz, bool srgb) {
+FBO render::fboBuild(Int2 sz) {
    FBO out;
 
    out.sz = sz;
@@ -188,13 +181,7 @@ FBO render::fboBuild(Int2 sz, bool srgb) {
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-   if (srgb) {
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8, sz.x, sz.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-   }
-   else {
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, sz.x, sz.y, 0, GL_RGBA, GL_FLOAT, NULL);
-   }
-   
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, sz.x, sz.y, 0, GL_RGBA, GL_FLOAT, NULL);
 
    glGenFramebuffers(1, &out.fbo);
    glBindFramebuffer(GL_FRAMEBUFFER, out.fbo);

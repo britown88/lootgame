@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <GL/glew.h>
 #include <SDL2/SDL.h>
 #include <stb/stb_image.h>
 #include "win.h"
@@ -133,7 +134,7 @@ struct Game {
    ShaderHandle shader = 0, colorShader = 0;
 
    Mesh mesh, meshUncentered;
-   FBO fbo, lightfbo, outputfbo;
+   FBO fbo, lightfbo;
 
    Dude dude = {};
    std::vector<Dude> dudes;
@@ -173,6 +174,32 @@ static TextureHandle _textureBuildFromFile(const char* path, TextureConfig const
    return out;
 }
 
+static TextureHandle _mklighttexture() {
+   Float2 sz = { 720, 720 };
+   auto mem = new ColorRGBA[sz.x * sz.y];
+   for (int y = 0; y < sz.y; ++y) {
+      for (int x = 0; x < sz.x; ++x) {
+         auto dist = v2Dist({ (f32)x, (f32)y }, { 360.0f, 360.0f }) / 360.0f;
+         auto idx = y * 360 + x;
+
+         ColorRGBAf fc;
+
+         if (dist > 0) {
+            fc = { 1 - dist , 1 - dist , 1 - dist , 1 - dist };
+         }
+         else {
+            fc = { 0 , 0 , 0 , 0 };
+         }
+
+         mem[idx] = linearToSrgb(fc);
+      }
+   }
+
+   auto out = render::textureBuild((ColorRGBA*)mem, { 720, 720 }, { RepeatType_CLAMP , FilterType_NEAREST });
+   delete[] mem;
+   return out;
+}
+
 static void _createGraphicsObjects(Game* game){
    auto vertex = fileReadString("assets/vertex.glsl");
    auto colorfrag = fileReadString("assets/coloronlyfrag.glsl");
@@ -207,7 +234,6 @@ static void _createGraphicsObjects(Game* game){
    auto& res = ConstantsGet().resolution;
    game->fbo = render::fboBuild({ res.x, res.y });
    game->lightfbo = render::fboBuild({ res.x, res.y });
-   game->outputfbo = render::fboBuild({ res.x, res.y }, true);
 
    g_textures[GameTextures_Dude] = _textureBuildFromFile("assets/dude.png");
    g_textures[GameTextures_Target] = _textureBuildFromFile("assets/target.png");
@@ -403,7 +429,7 @@ static void _populateLightLayer(Game* game) {
 
    _addLight({ 500, 500 }, game->dude.pos, White);
 
-   f32 lsz = 800;
+   f32 lsz = 720;
    _addLight({ lsz, lsz }, { 200, 600 }, Red);
    _addLight({ lsz, lsz }, { 800, 300 }, Yellow);
    _addLight({ lsz, lsz }, { 100, 1000 }, Blue);
@@ -494,7 +520,7 @@ static void _renderGameUI(Game* game) {
 
 }
 
-#include "GL/glew.h"
+
 
 static void _renderScene(Game* game) {
    auto& c = ConstantsGet();
@@ -543,21 +569,24 @@ static void _renderScene(Game* game) {
    
 
    //render::setBlendMode(BlendMode_NORMAL);
-   glBlendFunc(GL_ONE, GL_ZERO);
+   //glBlendFunc(GL_ONE, GL_ZERO);
 
-   render::shaderSetActive(game->shader);
-   render::fboBind( game->outputfbo );
-   
-   render::viewport({ 0,0, res.x, res.y });
-   render::clear({ 1, 1, 1, 1 });
+   //render::shaderSetActive(game->shader);
+   //render::fboBind( game->outputfbo );
+   //
+   //render::viewport({ 0,0, res.x, res.y });
+   //render::clear({ 1, 1, 1, 1 });
 
-   render::uSetColor(u::color, {1, 1, 1, 1});
-   render::uSetMatrix(u::viewMatrix, Matrix::ortho(0, (float)res.x, 0, (float)res.y, -1, 1));
-   render::uSetMatrix(u::texMatrix, Matrix::identity());
-   render::uSetMatrix(u::modelMatrix, Matrix::scale2f({ (float)game->outputfbo.sz.x, (float)game->outputfbo.sz.y }));
-   render::uSetTextureSlot(u::diffuse, 0);
-   render::textureBind(game->fbo.tex, 0);
-   render::meshRender(g_game->meshUncentered);
+   //render::uSetColor(u::color, {1, 1, 1, 1});
+   //render::uSetMatrix(u::viewMatrix, Matrix::ortho(0, (float)res.x, 0, (float)res.y, -1, 1));
+   //render::uSetMatrix(u::texMatrix, Matrix::identity());
+   //render::uSetMatrix(u::modelMatrix, Matrix::scale2f({ (float)game->outputfbo.sz.x, (float)game->outputfbo.sz.y }));
+   //render::uSetTextureSlot(u::diffuse, 0);
+   //render::textureBind(game->fbo.tex, 0);
+
+   //glEnable(GL_FRAMEBUFFER_SRGB);
+   //render::meshRender(g_game->meshUncentered);
+   //glDisable(GL_FRAMEBUFFER_SRGB);
 
    render::fboBind({});
 
@@ -748,9 +777,9 @@ void gameHandleInput(Game*game) {
 }
 
 void gameRender(Game*game) {
-   glEnable(GL_FRAMEBUFFER_SRGB);
+   
    _renderScene(game);
-   glDisable(GL_FRAMEBUFFER_SRGB);
+   
 }
 
 static void _beginAttack(Dude& dude, Time t, int dir, int combo) {
@@ -984,5 +1013,5 @@ void gameDestroy(Game* game) {
 }
 
 FBO const& gameGetOutputFBO(Game* game) {
-   return game->outputfbo;
+   return game->fbo;
 }

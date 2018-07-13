@@ -82,7 +82,7 @@ namespace render{
    void uSetTextureSlot(const char* u, TextureSlot const& value);
 
    // FBO
-   FBO fboBuild(Int2 sz, bool srgb = false);
+   FBO fboBuild(Int2 sz);
    void fboDestroy(FBO& fbo);
 
    void fboBind(FBO const& fbo);

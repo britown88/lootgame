@@ -492,7 +492,7 @@ static f32 s2lin(f32 x) {
       return x * (1.0f / 12.92f);
    }
    else {
-      return pow((x + 0.055f) * (1.0 / 1.055f), 2.4);
+      return powf((x + 0.055f) * (1.0 / 1.055f), 2.4);
    }
 }
 
@@ -518,4 +518,24 @@ ColorRGBAf sRgbToLinear(ColorRGBA const& srgb){
 }
 ColorRGBAf sRgbToLinear(ColorRGB const& srgb) {
    return { s2lin(srgb.r * i255), s2lin(srgb.g * i255), s2lin(srgb.b * i255), 1.0f };
+}
+
+ColorRGBA linearToSrgb(ColorRGBAf const& lin) {
+   return { 
+      (byte)(lin2s(lin.r) * 255), 
+      (byte)(lin2s(lin.g) * 255),
+      (byte)(lin2s(lin.b) * 255),
+      (byte)(lin.a * 255) };
+}
+
+
+ColorRGBA srgbPremultipleAlpha(ColorRGBA const& srgb) {
+   auto alphaScale = srgb.a * i255;
+
+   return 
+   {  (byte)(lin2s(s2lin(srgb.r * i255) * alphaScale) * 255),
+      (byte)(lin2s(s2lin(srgb.g * i255) * alphaScale) * 255),
+      (byte)(lin2s(s2lin(srgb.b * i255) * alphaScale) * 255),
+      srgb.a,
+      };
 }
