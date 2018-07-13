@@ -90,12 +90,17 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SDL_MAIN_HANDLED;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(sdl2)lib;$(glew)lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>sdl2.lib;sdl2main.lib;glew32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>
       </SubSystem>
+      <CreateHotPatchableImage>Enabled</CreateHotPatchableImage>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <OptimizeReferences>false</OptimizeReferences>
+      <EnableCOMDATFolding>false</EnableCOMDATFolding>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y "$(glew)bin" "$(OutDir)"
@@ -126,7 +131,7 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;D:/LivePP/API/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SDL_MAIN_HANDLED;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -151,6 +156,7 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="app.cpp" />
+    <ClCompile Include="lpp.cpp" />
     <ClCompile Include="win.cpp" />
     <ClCompile Include="colors.cpp" />
     <ClCompile Include="game.cpp" />
@@ -167,6 +173,7 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h" />
+    <ClInclude Include="lpp.h" />
     <ClInclude Include="win.h" />
     <ClInclude Include="defs.h" />
     <ClInclude Include="game.h" />

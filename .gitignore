@@ -260,3 +260,5 @@ paket-files/
 __pycache__/
 *.pyc
 /lootgame/lootgame/imgui.ini
+/lootgame/lootgame/log_telemetry_lootgame.txt
+/lootgame/lootgame/log_dev_lootgame.txt

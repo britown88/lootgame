@@ -19,6 +19,7 @@
 
 #include "render.h"
 #include "game.h"
+#include "lpp.h"
 
 
 struct App {
@@ -269,6 +270,8 @@ static void _updateFrame(App* app) {
 #include <chrono>
 
 void appStep(App* app) {
+   lppSync();
+
    _pollEvents(app);
    _beginFrame(app);
 

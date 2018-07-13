@@ -1,5 +1,9 @@
 
 #include "app.h"
+#include "lpp.h"
+
+
+
 
 static void _parseArgs(int argc, char** argv, AppConfig &config) {
    auto begin = argv + 1;
@@ -14,6 +18,8 @@ static void _parseArgs(int argc, char** argv, AppConfig &config) {
 
 int main(int argc, char** argv)
 {
+   lppStartup();   
+
    AppConfig config;
    _parseArgs(argc, argv, config);
 
