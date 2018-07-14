@@ -16,11 +16,11 @@ typedef struct {
 typedef struct Float2 {
    f32 x = 0, y = 0;
 
-   Float2 operator-(Float2 const& lhs) { return { x - lhs.x, y - lhs.y }; }
-   Float2 operator-() { return { -x, -y }; }
-   Float2 operator+(Float2 const& lhs) { return { x + lhs.x, y + lhs.y }; }
-   Float2 operator*(f32 s) { return { x * s, y * s }; }
-   Float2 operator/(f32 s) { return { x / s, y /s }; }
+   Float2 operator-(Float2 const& lhs) const { return { x - lhs.x, y - lhs.y }; }
+   Float2 operator-() const { return { -x, -y }; }
+   Float2 operator+(Float2 const& lhs) const { return { x + lhs.x, y + lhs.y }; }
+   Float2 operator*(f32 s) const { return { x * s, y * s }; }
+   Float2 operator/(f32 s) const { return { x / s, y /s }; }
 
    Float2& operator-=(Float2 const& lhs) { x -= lhs.x; y -= lhs.y; return *this; }
    Float2& operator+=(Float2 const& lhs) { x += lhs.x; y += lhs.y; return *this; }
@@ -54,11 +54,13 @@ Float2 v2FromAngle(f32 radians);
 Float2 v2Conjugate(Float2 unit);
 f32 v2Angle(Float2 v);
 Float2 v2Orthogonal(Float2 v);
+Float2 v2CapLength(Float2 v, f32 max);
 
 //direction is the current direction, target is the target direction
 //perFrame is Float2{cos(anglePerFrame), sin(anglePerFrame)} - this can be precalculated, to avoid runtime trig
 Float2 v2RotateTowards(Float2 direction, Float2 target, Float2 perFrame);
 Float2 v2MoveTowards(Float2 position, Float2 target, f32 speed);
+
 
 typedef struct {
    i32 x, y, w, h;
@@ -88,6 +90,9 @@ static bool rectiIntersects(Recti a, Recti b) {
       b.y >= a.y + a.h) return false;
    return true;
 }
+
+// collisions
+bool circleVsAabb(Float2 co, f32 cr, Rectf const& aabb);
 
 Recti getProportionallyFitRect(Float2 srcSize, Float2 destSize);
 Recti getProportionallyFitRect(Int2 srcSize, Int2 destSize);

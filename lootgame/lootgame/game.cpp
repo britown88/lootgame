@@ -12,6 +12,11 @@
 #include "win.h"
 #include "render.h"
 
+#define AXIS_DEADZONE 0.25f
+
+static Constants g_const;
+Constants &ConstantsGet() { return g_const; }
+
 namespace u {
    static StringView color = "uColor";
    static StringView diffuse = "uDiffuse";
@@ -84,6 +89,8 @@ static MoveSet _createMoveSet() {
    return out;
 }
 
+
+
 struct Dude {
    enum State {
       State_FREE = 0,
@@ -93,18 +100,20 @@ struct Dude {
    State state = State_FREE;
 
    Float2 renderSize;
-   Float2 pos;
-   f32 size; // radius of the hitbox circle
    ColorRGBAf c;
 
-   Float2 moveVector;
-   Float2 velocity;
+   Float2 pos;
+   f32 size; // radius of the hitbox circle
 
-   Float2 faceVector;
-   Float2 facing = { 1, 0 };
+   f32 moveSpeedCap = 0.0f;       // updated per frame, interpolates toward moveSpeedCapTarget
+   f32 moveSpeedCapTarget = 0.0f; // updated per frame, max speed based on length of move vector and velocity direction vs facing
+   Float2 moveVector = { 0.0f, 0.0f };   // vector length 0-1 for movement amount/direction
+   Float2 velocity = { 0.0f, 0.0f };      // actual delta pos per frame, moveVector*accel is added per frame, capped at moveSpeed
+
+   Float2 faceVector = { 0.0f, 0.0f };  // unit vector for target facing, facing will interpolate toward this angle
+   Float2 facing = { 1, 0 };  // unit vector for character facing
 
    TextureHandle texture = 0;
-   Time lastUpdated;
    Time lastFree; // tracked for time since entering free state
 
    int stamina, staminaMax;
@@ -121,10 +130,6 @@ struct Dude {
    bool hit = false;
 };
 
-static Constants g_const;
-Constants &ConstantsGet() { return g_const; }
-
-
 
 
 
@@ -140,6 +145,7 @@ struct Game {
    std::vector<Dude> dudes;
 
    Time lastMouseMove;
+   Time lastUpdate;
    bool mouseActive;
 };
 
@@ -147,6 +153,176 @@ static Game* g_game = nullptr;
 GameData* gameDataGet() {
    return &g_game->data;
 }
+
+
+static bool rightStickActive() {
+   auto &io = g_game->data.io;
+   return fabs(io.rightStick.x) > AXIS_DEADZONE || fabs(io.rightStick.y) > AXIS_DEADZONE;
+}
+static bool leftStickActive() {
+   auto &io = g_game->data.io;
+   return fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE;
+}
+
+const f32 dudeSpeedCapEasing = 0.01f;
+const f32 dudeAcceleration = 0.01f;
+const f32 dudeMoveSpeed = 0.5f;
+const f32 dudeRotationSpeed = 0.01f;
+
+void dudeUpdateVelocity(Dude& dude) {
+   // we assume at this point the moveVector is current
+
+   // scale mvspeed based on facing;
+   f32 facedot = v2Dot(v2Normalized(dude.velocity), dude.facing);
+   auto scaledSpeed = (dudeMoveSpeed * 0.85f) + (dudeMoveSpeed * 0.15f * facedot);
+
+   // set the target speed
+   dude.moveSpeedCapTarget = scaledSpeed * v2Len(dude.moveVector);
+
+   // ease speed cap toward target
+   if (dude.moveSpeedCap < dude.moveSpeedCapTarget) {
+      dude.moveSpeedCap += dudeSpeedCapEasing;
+   }
+   else {
+      dude.moveSpeedCap -= dudeSpeedCapEasing;
+   }
+
+   // add the movevector scaled against acceleration to velocity and cap it
+   dude.velocity = v2CapLength(dude.velocity + dude.moveVector * dudeAcceleration, dude.moveSpeedCap);
+}
+
+// rotate facing vector toward the facevector
+void dudeUpdateRotation(Dude& dude) {
+   if (v2LenSquared(dude.faceVector) > 0.0f) {
+      dude.facing = v2Normalized(v2RotateTowards(dude.facing, dude.faceVector, v2FromAngle(dudeRotationSpeed)));
+   }
+}
+
+void dudeApplyInputMovement(Dude& dude) {
+   auto& io = gameDataGet()->io;
+
+   dude.moveVector = io.leftStick;
+
+   bool rstick = rightStickActive();
+   bool lstick = leftStickActive();
+
+   Float2 aimStick;
+   if (rstick) {
+      aimStick = io.rightStick;
+      g_game->mouseActive = false;
+   }
+   else if (lstick) {
+      aimStick = io.leftStick;
+   }
+
+   if (g_game->mouseActive) {
+      aimStick = io.mousePos - g_game->dude.pos;
+   }
+
+   if (v2LenSquared(aimStick) > 0) {
+      dude.faceVector = v2Normalized(aimStick);
+   }
+}
+
+
+// Intersects ray r = p + td, |d| = 1, with sphere co,cr and, if intersecting,
+// returns t value of intersection and intersection point q
+int intersectRaySphere(Float2 p, Float2 d, Float2 co, f32 cr, f32& t, Float2& q) {
+   auto m = p - co;
+   auto b = v2Dot(m, d);
+   auto c = v2Dot(m, m) - cr * cr;
+
+   // exit if r's origin outside s (c>0) and r pointing away from s (b>0)
+   if (c > 0.0f && b > 0.0f) return 0;
+   auto discr = b * b - c;
+   // a negative discriminant corresponds to ray missing sphere
+   if (discr < 0.0f) return 0;
+   // ray now found to intersect sphere, compute smallest t value of intersection
+   t = -b - sqrtf(discr);
+   // if t is negative, ray started inside sphere so clamp t to zero
+   if (t < 0.0f)  t = 0.0f;
+   q = p + d * t;
+
+   return 1;
+}
+
+struct DudeCollision {
+   Dude* a = nullptr;
+   Dude* b = nullptr;
+   f32 time = 0.0f;
+};
+
+void getAllDudeCollisions(std::vector<Dude>& dudes, std::vector<DudeCollision>& out) {
+   out.clear();
+
+   for (auto&& a : dudes) {
+      for (auto&&b : dudes) {
+         if (&a == &b) {
+            continue;
+         }
+
+         if (v2Dist(a.pos + a.velocity, b.pos + b.velocity) < a.size + b.size) {
+            f32 t = 0.0f;
+            Float2 q = { 0,0 };
+
+            if (intersectRaySphere(a.pos, a.velocity + b.velocity, b.pos, a.size + b.size, t, q)) {
+               out.push_back({ &a, &b, t });
+            }
+         }
+      }
+   }
+}
+
+void updateDudePositions(std::vector<Dude>& dudes) {
+   f32 timeRemaining = 1.0f;
+   int attemptsToResolve = 0;
+
+   std::vector<DudeCollision> collisions;
+
+   while (timeRemaining > 0.0f && attemptsToResolve < 32) {
+      getAllDudeCollisions(dudes, collisions);
+
+      if (collisions.empty()) {
+         for (auto&& d : dudes) {
+            d.pos += d.velocity * timeRemaining;
+         }
+
+         timeRemaining = 0.0f;
+         break; //...yatta
+      }
+         
+      // get soonest collision
+      DudeCollision c = {nullptr, nullptr, FLT_MAX};
+      for (auto &dc : collisions) {
+         if (dc.time < c.time) {
+            c = dc;
+         }
+      }
+
+      for (auto&& d : dudes) {
+         if (&d == c.a || &d == c.b) {
+            d.pos += d.velocity * (c.time - 0.005f);
+         }
+         else {
+            d.pos += d.velocity * c.time;
+         }
+      }
+
+      //v2Dot()
+
+      auto reflect = v2Normalized(v2Orthogonal(c.b->pos - c.a->pos));
+      c.a->velocity = reflect * v2Dot(c.a->velocity, reflect);
+
+      reflect = v2Normalized(v2Orthogonal(c.a->pos - c.b->pos));
+      c.b->velocity = reflect * v2Dot(c.b->velocity, reflect);
+
+      timeRemaining -= c.time;
+      ++attemptsToResolve;
+   }
+}
+
+
+
 
 static void _gameDataInit(GameData* game, StringView assetsFolder) {
 #ifndef  _DEBUG
@@ -237,7 +413,7 @@ static void _createGraphicsObjects(Game* game){
 
    g_textures[GameTextures_Dude] = _textureBuildFromFile("assets/dude.png");
    g_textures[GameTextures_Target] = _textureBuildFromFile("assets/target.png");
-   g_textures[GameTextures_Light] = _textureBuildFromFile("assets/light.png");
+   g_textures[GameTextures_Light] = _textureBuildFromFile("assets/light3.png");
    g_textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png", { RepeatType_CLAMP , FilterType_LINEAR });
    g_textures[GameTextures_ShittySword] = _textureBuildFromFile("assets/shittysword.png");
    g_textures[GameTextures_GemEmpty] = _textureBuildFromFile("assets/gemempty.png");
@@ -256,7 +432,6 @@ static Dude _createDude(Game* game) {
    out.size = 30.0f;
    out.renderSize = { 60, 100 };
    out.texture = g_textures[GameTextures_Dude];
-   out.lastUpdated = out.lastFree = appGetTime();
 
    out.stamina = out.staminaMax = 4;
    return out;
@@ -268,9 +443,9 @@ static Dude _createEnemy(Float2 pos, f32 size) {
    out.c = {1.0f, 0.3f, 0.3f, 1.0f};
    out.pos = pos;
    out.size = size;
+   out.velocity = { 0,0 };
    out.renderSize = { size * 2.5f, size * 4.2f };
    out.texture = g_textures[GameTextures_Dude];
-   out.lastUpdated = out.lastFree = appGetTime();
    out.stamina = out.staminaMax = 4;
 
    auto fx = ((rand() % 200) - 100) / 100.0f;
@@ -280,41 +455,17 @@ static Dude _createEnemy(Float2 pos, f32 size) {
    return out;
 }
 
-#define AXIS_DEADZONE 0.25f
 
-bool circleVsAabb(Float2 co, f32 cr, Rectf const& aabb) {
-   Float2 a = { aabb.x, aabb.y };
-   Float2 b = { a.x + aabb.w, a.y + aabb.h };
-
-   Float2 offset = { 0,0 };
-
-   if (co.x > b.x) { offset.x = co.x - b.x; }
-   else if (co.x < a.x) { offset.x = a.x - co.x; }
-
-   if (co.y > b.y) { offset.y = co.y - b.y; }
-   else if (co.y < a.y) { offset.y = a.y - co.y; }
-
-   // if offset length is less than the radius, collision!
-   return v2Len(offset) < cr;
-}
-
-bool _attackCollision(Dude& attacker, Dude& defender) {
-   auto origin = attacker.pos + attacker.weaponVector * attacker.size;
-   auto defendPos = v2Rotate(defender.pos - origin, v2Conjugate(attacker.weaponVector));
-
-   auto wbox = attacker.moveset.swings[attacker.combo].hitbox;
-   //wbox.x += origin.x;
-   //wbox.y += origin.y;
-
-   return circleVsAabb(defendPos, defender.size, wbox);
-}
 
 void gameBegin(Game*game) {
-   
+   game->lastUpdate = appGetTime();
+
    _createGraphicsObjects(game);
    game->dude = _createDude(game);
 
-   for (int i = 0; i < 125; ++i) {
+   game->dudes.push_back(game->dude);
+
+   for (int i = 0; i < 1; ++i) {
       game->dudes.push_back(_createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand()%980) + 100}, 30.0f));
    }
 
@@ -369,8 +520,6 @@ static void _renderDude(Dude& dude) {
       _renderSwing(dude);
    }
 }
-
-
 
 static void _renderTarget(Float2 pos, ColorRGBAf color, f32 sz) {
    auto model = Matrix::identity();
@@ -427,16 +576,16 @@ static void _populateLightLayer(Game* game) {
    
    render::clear({0.f,0.f,0.f,0.0f});
 
-   _addLight({ 500, 500 }, game->dude.pos, White);
+   _addLight({ 500, 500 }, game->dude.pos, Yellow);
 
-   f32 lsz = 720;
-   _addLight({ lsz, lsz }, { 200, 600 }, Red);
+   f32 lsz = 500;
+   _addLight({ lsz, lsz }, { 200, 600 }, Yellow);
    _addLight({ lsz, lsz }, { 800, 300 }, Yellow);
-   _addLight({ lsz, lsz }, { 100, 1000 }, Blue);
-   _addLight({ lsz, lsz }, { 1200, 500 }, Green);
-   _addLight({ lsz, lsz }, { 1800, 200 }, Magenta);
-   _addLight({ lsz, lsz }, { 1800, 800 }, Cyan);
-   _addLight({ lsz, lsz }, { 900, 800 }, DkGreen);
+   _addLight({ lsz, lsz }, { 100, 1000 }, Yellow);
+   _addLight({ lsz, lsz }, { 1200, 500 }, Yellow);
+   _addLight({ lsz, lsz }, { 1800, 200 }, Yellow);
+   _addLight({ lsz, lsz }, { 1800, 800 }, Yellow);
+   _addLight({ lsz, lsz }, { 900, 800 }, Yellow);
 
 
    render::shaderSetActive(game->colorShader);
@@ -519,8 +668,6 @@ static void _renderGameUI(Game* game) {
    }
 
 }
-
-
 
 static void _renderScene(Game* game) {
    auto& c = ConstantsGet();
@@ -782,6 +929,21 @@ void gameRender(Game*game) {
    
 }
 
+
+
+
+bool _attackCollision(Dude& attacker, Dude& defender) {
+   auto origin = attacker.pos + attacker.weaponVector * attacker.size;
+   auto defendPos = v2Rotate(defender.pos - origin, v2Conjugate(attacker.weaponVector));
+
+   auto wbox = attacker.moveset.swings[attacker.combo].hitbox;
+   //wbox.x += origin.x;
+   //wbox.y += origin.y;
+
+   return circleVsAabb(defendPos, defender.size, wbox);
+}
+
+
 static void _beginAttack(Dude& dude, Time t, int dir, int combo) {
    dude.combo = combo;
    dude.swing = dude.moveset.swings[combo];
@@ -797,36 +959,14 @@ static void _beginAttack(Dude& dude, Time t, int dir, int combo) {
    dude.swingTimingSuccess = true;
 }
 
-static bool rightStickActive() {
-   auto &io = g_game->data.io;
-   return fabs(io.rightStick.x) > AXIS_DEADZONE || fabs(io.rightStick.y) > AXIS_DEADZONE;
-}
-static bool leftStickActive() {
-   auto &io = g_game->data.io;
-   return fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE;
-}
 
-static bool _dudeCollision(f32 asize, Float2 apos, Float2 avel, f32 bsize, Float2 bpos, Time dt, Float2& avelOut) {
-   auto projectedDist = v2Dist(apos + avel * (f32)dt.toMilliseconds(), bpos);
-   auto colDist = asize + bsize;
-   if (projectedDist < colDist) {
-      auto overlap = (colDist - projectedDist) / (f32)dt.toMilliseconds();
 
-      auto overlapv = v2Normalized(avel) * overlap;
-      avel -= overlapv;
 
-auto reflect = v2Normalized(v2Orthogonal(bpos - apos));
-reflect *= v2Dot(avel, reflect);
 
-avelOut = reflect;
-return true;
-   }
-   return false;
-}
 
 static void _updateDude(Game* game) {
    auto time = appGetTime();
-   auto dt = time - game->dude.lastUpdated;
+   auto dt = time;
    if (dt.toMilliseconds() == 0) {
       return;
    }
@@ -840,27 +980,7 @@ static void _updateDude(Game* game) {
 
 
    // movement/aiming
-   dude.moveVector = io.leftStick;
-
-   bool rstick = rightStickActive();
-   bool lstick = leftStickActive();
-
-   Float2 aimStick;
-   if (rstick) {
-      aimStick = io.rightStick;
-      game->mouseActive = false;
-   }
-   else if (lstick) {
-      aimStick = io.leftStick;
-   }
-
-   if (game->mouseActive) {
-      aimStick = io.mousePos - game->dude.pos;
-   }
-
-   if (v2LenSquared(aimStick) > 0) {
-      dude.faceVector = v2Normalized(aimStick);
-   }
+   
 
    // handle inputs
    if (game->dude.state == Dude::State_FREE) {
@@ -874,17 +994,9 @@ static void _updateDude(Game* game) {
       if (dude.stamina > 0 && io.buttonPressed[GameButton_RT]) {
          _beginAttack(game->dude, time, -1, 0);
       }
-
-      // update movement and aiming vectors
-      if (v2LenSquared(dude.faceVector) > 0.0f) {
-         dude.facing = v2Normalized(v2RotateTowards(dude.facing, dude.faceVector, v2FromAngle(c.dudeRotationSpeed * dt.toMilliseconds())));
-      }
-      dude.velocity = v2MoveTowards(dude.velocity, dude.moveVector, c.dudeAcceleration * dt.toMilliseconds());
    }
    else if (game->dude.state == Dude::State_ATTACKING) {
       auto swingdt = time - game->dude.phaseStart;
-
-      dude.velocity = v2MoveTowards(dude.velocity, { 0,0 }, c.dudeAcceleration * dt.toMilliseconds());
 
       switch (dude.swingPhase) {
       case SwingPhase_Windup:
@@ -907,24 +1019,24 @@ static void _updateDude(Game* game) {
          dude.weaponVector = v2Rotate(dude.weaponVector, v2FromAngle(-dude.swingDir * radsPerMs * dt.toMilliseconds()));
 
          if (dude.swing.lungeSpeed > 0.0f) {
-            Float2 lungeVel = dude.facing * dude.swing.lungeSpeed;
-            bool collided = true;
-            int tries = 0;
-            while (collided) {
-               collided = false;
-               for (auto& d : g_game->dudes) {
-                  if (_dudeCollision(dude.size, dude.pos, lungeVel, d.size, d.pos, dt, lungeVel)) {
-                     collided = true;
-                     ++tries;
-                     break;
-                  }
-               }
-               if (tries >= 3) {
-                  lungeVel = { 0,0 };
-                  break;
-               }
-            }
-            dp += lungeVel * (f32)dt.toMilliseconds();
+            //Float2 lungeVel = dude.facing * dude.swing.lungeSpeed;
+            //bool collided = true;
+            //int tries = 0;
+            //while (collided) {
+            //   collided = false;
+            //   for (auto& d : g_game->dudes) {
+            //      if (_dudeCollision(dude.size, dude.pos, lungeVel, d.size, d.pos, dt, lungeVel)) {
+            //         collided = true;
+            //         ++tries;
+            //         break;
+            //      }
+            //   }
+            //   if (tries >= 3) {
+            //      lungeVel = { 0,0 };
+            //      break;
+            //   }
+            //}
+            //dp += lungeVel * (f32)dt.toMilliseconds();
          }
          
          
@@ -958,52 +1070,40 @@ static void _updateDude(Game* game) {
       }
    }
 
-
-
-   if (v2LenSquared(dude.velocity) > 0.0f) {
-
-      bool collide = true;
-      int tries = 0;
-
-      while (collide) {
-         if (tries >= 3) {
-            dude.velocity = { 0,0 };
-            break;
-         }
-
-         collide = false;
-         for (auto& d : g_game->dudes) {
-            if (_dudeCollision(dude.size, dude.pos, dude.velocity, d.size, d.pos, dt, dude.velocity)) {
-               collide = true;
-               ++tries;
-               break;
-            }
-         }
-      }
-
-      auto velnorm = v2Normalized(dude.velocity);
-      auto facnorm = v2Normalized(dude.facing);
-
-      // scale half of mvspeed based on facing;
-      f32 facing = v2Dot(velnorm, facnorm);
-      auto scaledSpeed = (c.dudeMoveSpeed * 0.85f) + (c.dudeMoveSpeed * 0.15f * facing);
-
-      dp += dude.velocity * scaledSpeed * (f32)dt.toMilliseconds();
-   }
-
-   game->dude.lastUpdated = appGetTime();
 }
 
 void gameUpdate(Game* game) {   
-   
-   
-   _updateDude(game);
+   auto time = appGetTime();
+   auto dt = time - game->lastUpdate;
+   auto ms = dt.toMilliseconds();
 
-   for (auto& d : game->dudes) {
-      d.hit = game->dude.state == Dude::State_ATTACKING && _attackCollision(game->dude, d);
+   for (Milliseconds i = 0; i < ms; ++i) {
+
+      bool first = true;
+      for (auto && d : game->dudes) {
+         if (first) {
+            dudeApplyInputMovement(d);
+            first = false;
+         }
+         
+         dudeUpdateRotation(d);
+         dudeUpdateVelocity(d);
+      }
+
+      updateDudePositions(game->dudes);      
    }
-   
 
+   game->lastUpdate = appGetTime();
+   
+   //_updateDude(game);
+
+   //for (auto& d : game->dudes) {
+   //   if (game->dude.state == Dude::State_ATTACKING) {
+   //      d.hit = _attackCollision(game->dude, d);
+   //   }
+   //   
+   //}
+   //
 
    gameDoUI(game);
 }

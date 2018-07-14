@@ -26,11 +26,6 @@ typedef byte GameButton;
 struct Constants {
    Int2 resolution = { 1920, 1080 };
 
-   // per ms
-   f32 stickTrackingSpeed = 0.001f;
-   f32 dudeAcceleration = 0.003f;
-   f32 dudeMoveSpeed= 0.5f;
-   f32 dudeRotationSpeed = 0.01f;
 };
 
 Constants &ConstantsGet();
@@ -43,8 +38,8 @@ struct GameData {
       Rectf vpScreenArea = {0,0,1,1}; // set by imgui when the viewer moves (only in debug), necessary to track mouse position
    
       bool showMovementDebugging = false;
-      bool showCollisionDebugging = false;
-      f32 ambientLight = 0.0f;
+      bool showCollisionDebugging = true;
+      f32 ambientLight = 0.5f;
    } imgui;
 
    struct {

@@ -113,6 +113,34 @@ Float2 v2MoveTowards(Float2 position, Float2 target, f32 speed) {
    return position + dir * (speed / length);
 }
 
+Float2 v2CapLength(Float2 v, f32 max) {
+   auto lensq = v2LenSquared(v);
+   if (lensq > max*max) {
+      if (lensq > 0.001f) {
+         return (v / sqrtf(lensq)) * max;
+      }
+      return { 0,0 };
+   }
+   return v;
+}
+
+
+bool circleVsAabb(Float2 co, f32 cr, Rectf const& aabb) {
+   Float2 a = { aabb.x, aabb.y };
+   Float2 b = { a.x + aabb.w, a.y + aabb.h };
+
+   Float2 offset = { 0,0 };
+
+   if (co.x > b.x) { offset.x = co.x - b.x; }
+   else if (co.x < a.x) { offset.x = a.x - co.x; }
+
+   if (co.y > b.y) { offset.y = co.y - b.y; }
+   else if (co.y < a.y) { offset.y = a.y - co.y; }
+
+   // if offset length is less than the radius, collision!
+   return v2Len(offset) < cr;
+}
+
 
 
 
