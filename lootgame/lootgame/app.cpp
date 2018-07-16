@@ -212,12 +212,6 @@ void appPollEvents(App* app) {
 
 
 
-static void _pollEvents(App* app) {
-   gameHandleInput(app->game);
-
-   appPollEvents(app);
-   
-}
 
 static void _beginFrame(App* app) {
    ImGui_ImplOpenGL3_NewFrame();
@@ -272,8 +266,9 @@ static void _updateFrame(App* app) {
 void appStep(App* app) {
    lppSync();
 
-   _pollEvents(app);
+   appPollEvents(app);
    _beginFrame(app);
+   gameHandleInput(app->game);
 
    _updateFrame(app);
    _renderFrame(app);
