@@ -16,16 +16,16 @@ typedef struct {
 typedef struct Float2 {
    f32 x = 0, y = 0;
 
-   Float2 operator-(Float2 const& lhs) const { return { x - lhs.x, y - lhs.y }; }
-   Float2 operator-() const { return { -x, -y }; }
-   Float2 operator+(Float2 const& lhs) const { return { x + lhs.x, y + lhs.y }; }
-   Float2 operator*(f32 s) const { return { x * s, y * s }; }
-   Float2 operator/(f32 s) const { return { x / s, y /s }; }
+   inline Float2 operator-(Float2 lhs) const { return { x - lhs.x, y - lhs.y }; }
+   inline Float2 operator-() const { return { -x, -y }; }
+   inline Float2 operator+(Float2 lhs) const { return { x + lhs.x, y + lhs.y }; }
+   inline Float2 operator*(f32 s) const { return { x * s, y * s }; }
+   inline Float2 operator/(f32 s) const { return { x / s, y /s }; }
 
-   Float2& operator-=(Float2 const& lhs) { x -= lhs.x; y -= lhs.y; return *this; }
-   Float2& operator+=(Float2 const& lhs) { x += lhs.x; y += lhs.y; return *this; }
-   Float2& operator/=(f32 s) { x /= s; y /= s; return *this; }
-   Float2& operator*=(f32 s) { x *= s; y *= s; return *this; }
+   inline Float2& operator-=(Float2 lhs) { x -= lhs.x; y -= lhs.y; return *this; }
+   inline Float2& operator+=(Float2 lhs) { x += lhs.x; y += lhs.y; return *this; }
+   inline Float2& operator/=(f32 s) { x /= s; y /= s; return *this; }
+   inline Float2& operator*=(f32 s) { x *= s; y *= s; return *this; }
 } Float2;
 
 typedef struct {
@@ -41,6 +41,7 @@ Float3 vScale(Float3 v, f32 s);
 
 f32 v2Dot(Float2 a, Float2 b);
 f32 v2Dist(Float2 a, Float2 b);
+f32 v2DistSquared(Float2 a, Float2 b);
 f32 v2Len(Float2 v);
 f32 v2LenSquared(Float2 v);
 Float2 v2Subtract(Float2 a, Float2 b);

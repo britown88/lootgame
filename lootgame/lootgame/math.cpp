@@ -30,6 +30,9 @@ f32 v2Dot(Float2 v1, Float2 v2) {
 f32 v2Dist(Float2 a, Float2 b) {
    return v2Len(b - a);
 }
+f32 v2DistSquared(Float2 a, Float2 b) {
+   return v2LenSquared(b - a);
+}
 f32 v2Len(Float2 v) {
    return sqrtf(v2Dot(v, v));
 }

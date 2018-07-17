@@ -133,6 +133,7 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;D:/LivePP/API/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SDL_MAIN_HANDLED;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -173,6 +174,7 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h" />
+    <ClInclude Include="dynarray.h" />
     <ClInclude Include="lpp.h" />
     <ClInclude Include="win.h" />
     <ClInclude Include="defs.h" />

@@ -11,6 +11,8 @@
 #include <stb/stb_image.h>
 #include "win.h"
 #include "render.h"
+#include <stb/stretchy_buffer.h>
+#include "dynarray.h"
 
 #define AXIS_DEADZONE 0.25f
 
@@ -57,7 +59,7 @@ struct AttackSwing {
 };
 
 struct MoveSet {
-   std::vector<AttackSwing> swings;
+   DynamicArray<AttackSwing> swings;
 };
 
 static MoveSet _createMoveSet() {
@@ -109,6 +111,11 @@ struct PhyObject {
    };
 };
 
+struct Behavior {
+   Float2 targetPos = { 0,0 };
+   Time started;
+};
+
 struct Dude {
    enum State {
       State_FREE = 0,
@@ -137,6 +144,8 @@ struct Dude {
    int combo = 0;
 
    bool hit = false;
+
+   Behavior ai;
 };
 
 
@@ -151,8 +160,8 @@ struct Game {
    FBO fbo, lightfbo;
 
    Dude* maindude;
-   std::vector<Dude*> dudes;
-   std::vector<PhyObject*> phyObjs;
+   DynamicArray<Dude*> dudes;
+   DynamicArray<PhyObject*> phyObjs;
 
    Time lastMouseMove;
    Time lastUpdate;
@@ -262,57 +271,43 @@ struct PhyCollision {
    f32 time = 0.0f;
 };
 
-#include <unordered_set>
 
-static uint64_t hash_combine(uint64_t seed, uint64_t value){
-   return seed ^ (value + 0x9e3779b9 + (seed << 6) + (seed >> 2));
-}
+void getAllPhyCollisions(DynamicArray<PhyObject*>& objs, DynamicArray<PhyCollision>& collisions, f32 &timeRemaining) {
 
-struct PhyObjHasher {
-   size_t operator()(PhyCollision const& c) const noexcept {
-      return hash_combine(std::hash<uint64_t>{}((uint64_t)c.a), std::hash<uint64_t>{}((uint64_t)c.b));
-   }
-};
+   auto oe = objs.end();
+   for (auto i = objs.begin(); i != oe; ++i){
+      for (auto j = i + 1; j != oe; ++j) {
+         auto& a = *i;
+         auto& b = *j;
+         
+         auto combinedSize = a->circle.size + b->circle.size;
+         f32 rangeCheck = //v2DistSquared(a->pos + a->velocity, b->pos + b->velocity);
+            v2LenSquared({
+               (a->pos.x + a->velocity.x) - (b->pos.x + b->velocity.x),
+               (a->pos.y + a->velocity.y) - (b->pos.y + b->velocity.y)
+            });
 
-struct PhyObjCompare {
-   bool operator()(PhyCollision const& a, PhyCollision const& b) const noexcept {
-      return a.a == b.a && a.b == b.b;
-   }
-};
-
-void getAllPhyCollisions(std::vector<PhyObject*>& objs, std::vector<PhyCollision>& out, f32 &timeRemaining) {
-   out.clear();
-
-   std::unordered_set<PhyCollision, PhyObjHasher, PhyObjCompare> set;
-
-   for (auto&& a : objs) {
-      for (auto&&b : objs) {
-         if (a == b) {
-            continue;
-         }
-         PhyCollision srch = { b, a, 0.0f };
-         if (set.find(srch) != set.end()) {
-            continue;
-         }
-
-         //if (a->circle.size + b->circle.size - v2Dist(a->pos + (a->velocity * timeRemaining), b->pos + (b->velocity * timeRemaining)) > 0.001f ) {
+         if (rangeCheck < combinedSize*combinedSize) {
             f32 t = 0.0f;
             Float2 q = { 0,0 };
 
-            auto dirvec = (a->velocity * timeRemaining) - (b->velocity * timeRemaining);
+            auto avelscaled = a->velocity * timeRemaining;
+            auto bvelscaled = b->velocity * timeRemaining;
+
+            auto dirvec = avelscaled - bvelscaled;
             auto len = v2Len(dirvec);
             dirvec /= len;
 
-            if (intersectRaySphere(a->pos, dirvec, b->pos, a->circle.size + b->circle.size, t, q) && t <= len && t > 0.0f) {
-               out.push_back({ a, b, (t/len) * timeRemaining });
-               set.insert(out.back());
+            if (intersectRaySphere(a->pos, dirvec, b->pos, combinedSize, t, q) && t <= len && t > 0.0f) {
+               PhyCollision c = { a, b, (t / len) * timeRemaining };
+               collisions.push_back(c);
             }
-        // }
+         }
       }
    }
 }
 
-void resolveOverlaps(std::vector<PhyObject*>& objs) {
+void resolveOverlaps(DynamicArray<PhyObject*>& objs) {
    bool overlap = false;
    int attemptsToResolve = 0;
 
@@ -325,9 +320,11 @@ void resolveOverlaps(std::vector<PhyObject*>& objs) {
                continue;
             }
 
-            auto dist = v2Dist(a->pos, b->pos);
+            auto distsq = v2DistSquared(a->pos, b->pos);
             auto colRange = a->circle.size + b->circle.size;
-            if (dist < colRange) {
+            if (distsq < colRange * colRange) {
+               auto dist = sqrtf(distsq);
+
                auto overlap = colRange - dist;
                auto impulse = v2Normalized(b->pos - a->pos) * (overlap / 2 + 0.01f) / (a->invMass + b->invMass);
                //if (overlap > 0.001f) {
@@ -340,13 +337,6 @@ void resolveOverlaps(std::vector<PhyObject*>& objs) {
       }
 
    } while (overlap && attemptsToResolve++ < 32);
-
-   
-   if (overlap) {
-      int fuck;
-      fuck = 10;
-
-   }
 }
 
 void applyCollisionImpulse(Float2 pos1, Float2 pos2, Float2& vel1, Float2& vel2, float invMass1, float invMass2, float restitution)
@@ -370,20 +360,23 @@ f32 overlap(PhyObject const&a, PhyObject const& b) {
    return (a.circle.size + b.circle.size) - v2Dist(a.pos, b.pos);
 }
 
-void updatePhyPositions(std::vector<PhyObject*>& objs) {
+void updatePhyPositions(DynamicArray<PhyObject*>& objs) {
    f32 timeRemaining = 1.0f;
    int attemptsToResolve = 0;
 
-   std::vector<PhyCollision> collisions;
+   DynamicArray<PhyCollision> collisions;
 
    resolveOverlaps(objs);
 
    f32 prethingcol, postvelcol, postimpulepostimpulse;
 
    while (timeRemaining > 0.0f && attemptsToResolve < 32) {
+      collisions.clear();
       getAllPhyCollisions(objs, collisions, timeRemaining);
 
-      if (collisions.empty()) {
+      auto cCount = collisions.size();
+
+      if (!cCount) {
          for (auto&& o : objs) {
             o->pos += o->velocity * timeRemaining;
          }
@@ -394,9 +387,14 @@ void updatePhyPositions(std::vector<PhyObject*>& objs) {
          
       // get soonest collision
       PhyCollision c = {nullptr, nullptr, FLT_MAX};
-      for (auto &dc : collisions) {
-         if (dc.time < c.time) {
-            c = dc;
+      if (cCount == 1) {
+         c = collisions[0];
+      }
+      else {
+         for (auto&& dc : collisions) {
+            if (dc.time < c.time) {
+               c = dc;
+            }
          }
       }
 
@@ -577,9 +575,8 @@ static Dude* _createEnemy(Float2 pos, f32 size) {
    out.texture = g_textures[GameTextures_Dude];
    out.stamina = out.staminaMax = 4;
 
-   auto fx = ((rand() % 200) - 100) / 100.0f;
-   auto fy = ((rand() % 200) - 100) / 100.0f;
-   out.phy.facing = v2Normalized({fx, fy});
+   out.ai.targetPos = { (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 };
+   out.ai.started = appGetTime();
 
    return outptr;
 }
@@ -595,7 +592,7 @@ void gameBegin(Game*game) {
    game->dudes.push_back(game->maindude);
    game->phyObjs.push_back(&game->maindude->phy);
 
-   for (int i = 0; i < 100; ++i) {
+   for (int i = 0; i < 50; ++i) {
       auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 }, 30.0f);
       game->dudes.push_back(e);
       game->phyObjs.push_back(&e->phy);
@@ -1094,8 +1091,16 @@ static void _beginAttack(Dude& dude, Time t, int dir, int combo) {
 
 
 
-
-
+void dueUpdateBehavior(Dude& dude) {
+   if (v2Dist(dude.phy.pos, dude.ai.targetPos) < dude.phy.circle.size || appGetTime() - dude.ai.started > timeSecs(10)) {
+      dude.ai.targetPos = { (f32)(rand() % 1820), (f32)(rand() % 980) };
+      dude.ai.started = appGetTime();
+   }
+   else{
+      auto vec = v2Normalized(dude.ai.targetPos - dude.phy.pos);
+      dude.phy.moveVector = dude.phy.faceVector = vec;
+   }
+}
 
 static void _updateDude(Game* game) {
    auto time = appGetTime();
@@ -1210,30 +1215,23 @@ void gameUpdate(Game* game) {
    auto dt = time - game->lastUpdate;
    auto ms = dt.toMilliseconds();
 
-   for (Milliseconds i = 0; i < ms; ++i) {
+   for (Milliseconds i = 0; i < 7; ++i) {
 
       phyApplyInputMovement(game->maindude->phy);      
 
-      for (auto && p : game->phyObjs) {
-         if (p != &game->maindude->phy) {
-            auto& mp = game->maindude->phy;
-
-            auto v = gameDataGet()->io.mousePos - p->pos;
-            if (v2LenSquared(v) > 0.0f) {
-               p->faceVector = p->moveVector = v2Normalized(v);
-            }
-
-            
+      for (auto && d : game->dudes) {
+         if (d != game->maindude) {
+            dueUpdateBehavior(*d);
          }
 
-         phyUpdateRotation(*p);
-         phyUpdateVelocity(*p);
+         phyUpdateRotation(d->phy);
+         phyUpdateVelocity(d->phy);
       }
 
       updatePhyPositions(game->phyObjs);
    }
 
-   game->lastUpdate = appGetTime();
+   game->lastUpdate += timeMillis(ms);
    
    //_updateDude(game);
 
