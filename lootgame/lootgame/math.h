@@ -13,7 +13,7 @@ typedef struct {
    i32 x, y, z;
 } Int3;
 
-typedef struct Float2 {
+struct Float2 {
    f32 x = 0, y = 0;
 
    inline Float2 operator-(Float2 lhs) const { return { x - lhs.x, y - lhs.y }; }
@@ -26,7 +26,7 @@ typedef struct Float2 {
    inline Float2& operator+=(Float2 lhs) { x += lhs.x; y += lhs.y; return *this; }
    inline Float2& operator/=(f32 s) { x /= s; y /= s; return *this; }
    inline Float2& operator*=(f32 s) { x *= s; y *= s; return *this; }
-} Float2;
+};
 
 typedef struct {
    f32 x, y, z;

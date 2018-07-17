@@ -102,7 +102,10 @@ struct PhyObject {
    Float2 velocity = { 0.0f, 0.0f };      // actual delta pos per frame, moveVector*accel is added per frame, capped at moveSpeed
 
    Float2 faceVector = { 0.0f, 0.0f };  // unit vector for target facing, facing will interpolate toward this angle
-   Float2 facing = { 1, 0 };  // unit vector for character facing   
+   Float2 facing = { 1, 0 };  // unit vector for character facing  
+
+   int island = -1;
+   int islandMailbox = -1;
 
    union {
       struct {
@@ -184,8 +187,8 @@ static bool leftStickActive() {
 }
 
 const f32 dudeSpeedCapEasing = 0.01f;
-const f32 dudeAcceleration = 0.01f;
-const f32 dudeMoveSpeed = 0.5f;
+const f32 dudeAcceleration = 0.001f;
+const f32 dudeMoveSpeed = 0.4f;
 const f32 dudeRotationSpeed = 0.01f;
 
 void phyUpdateVelocity(PhyObject& p) {
@@ -307,31 +310,121 @@ void getAllPhyCollisions(DynamicArray<PhyObject*>& objs, DynamicArray<PhyCollisi
    }
 }
 
-void resolveOverlaps(DynamicArray<PhyObject*>& objs) {
+struct IslandPartition {
+   int mailbox = 0;
+   DynamicArray<PhyObject*> objs;
+};
+
+struct IslandPartitionSet {
+   int mailbox = 0;
+   DynamicArray<IslandPartition> islands;
+
+   int next() {
+      int i = 0;
+      for (auto && island : islands) {
+         if (island.mailbox != mailbox) {
+            island.mailbox = mailbox;
+            island.objs.clear();
+            return i;
+         }
+         else if (island.objs.empty()) {
+            return i;
+         }
+         ++i;
+      }
+
+      islands.push_back({ mailbox, {} });
+      return i;
+   }
+};
+
+void partitionSetReset(IslandPartitionSet* pSet) {
+   ++pSet->mailbox;
+}
+
+void partitionSetAddObjs(IslandPartitionSet* pSet, PhyObject*a, PhyObject* b, bool connected) {
+
+   // if updating a for first time, add it to its own island
+   if (a->islandMailbox != pSet->mailbox) {
+      a->islandMailbox = pSet->mailbox;
+      a->island = pSet->next();
+      pSet->islands[a->island].objs.push_back(a);
+   }
+
+   if (connected) {
+
+      // if updating b for first time and its connected, add it to a's island
+      if (b->islandMailbox != pSet->mailbox) {
+         b->islandMailbox = pSet->mailbox;
+         b->island = a->island;
+         pSet->islands[a->island].objs.push_back(b);
+      }
+
+      // if b is part of an island, merge them to a
+      else if(a->island != b->island){
+         int from = 0, to = 0;
+         if (pSet->islands[a->island].objs.size() > pSet->islands[b->island].objs.size()) {
+            from = b->island;
+            to = a->island;
+         }
+         else {
+            from = a->island;
+            to = b->island;
+         }
+         
+         for (auto&& obj : pSet->islands[from].objs) {
+            obj->island = to;            
+         }
+         pSet->islands[to].objs.insert(pSet->islands[to].objs.begin(), pSet->islands[from].objs.begin(), pSet->islands[from].objs.end());
+         pSet->islands[from].objs.clear();
+      }
+   }
+
+   // if updating b for first time and not connected, add to its own island
+   else if (b->islandMailbox != pSet->mailbox) {
+      b->islandMailbox = pSet->mailbox;
+      b->island = pSet->next();
+      pSet->islands[b->island].objs.push_back(b);
+   }
+}
+
+void resolveOverlaps(DynamicArray<PhyObject*>& objs, IslandPartitionSet* pSet) {
    bool overlap = false;
    int attemptsToResolve = 0;
+
+   partitionSetReset(pSet);
 
    do {
       overlap = false;
 
-      for (auto&& a : objs) {
-         for (auto&&b : objs) {
-            if (&a == &b) {
-               continue;
+      auto oe = objs.end();
+      for (auto i = objs.begin(); i != oe; ++i) {
+         for (auto j = i + 1; j != oe; ++j) {
+            auto& a = *i;
+            auto& b = *j;
+
+            auto combinedSize = a->circle.size + b->circle.size;
+            auto connectRange = combinedSize + (dudeMoveSpeed * 2);
+            f32 distanceSquared = v2LenSquared({ a->pos.x - b->pos.x, a->pos.y - b->pos.y });
+
+            bool connected = distanceSquared < connectRange * connectRange;
+
+            if (!attemptsToResolve) {
+               partitionSetAddObjs(pSet, a, b, connected);
             }
 
-            auto distsq = v2DistSquared(a->pos, b->pos);
-            auto colRange = a->circle.size + b->circle.size;
-            if (distsq < colRange * colRange) {
-               auto dist = sqrtf(distsq);
+            if (connected) {
 
-               auto overlap = colRange - dist;
-               auto impulse = v2Normalized(b->pos - a->pos) * (overlap / 2 + 0.01f) / (a->invMass + b->invMass);
-               //if (overlap > 0.001f) {
+               if (distanceSquared < combinedSize * combinedSize) {
+                  auto dist = sqrtf(distanceSquared);
+
+                  auto overlap = combinedSize - dist;
+                  auto impulse = v2Normalized(b->pos - a->pos) * (overlap / 2 + 0.01f) / (a->invMass + b->invMass);
+
                   a->pos -= impulse * a->invMass;
                   b->pos += impulse * b->invMass;
                   overlap = true;
-               //}
+               }
             }
          }
       }
@@ -356,89 +449,69 @@ void applyCollisionImpulse(Float2 pos1, Float2 pos2, Float2& vel1, Float2& vel2,
    vel2 += impulse * invMass2;
 }
 
-f32 overlap(PhyObject const&a, PhyObject const& b) {
-   return (a.circle.size + b.circle.size) - v2Dist(a.pos, b.pos);
-}
+
 
 void updatePhyPositions(DynamicArray<PhyObject*>& objs) {
-   f32 timeRemaining = 1.0f;
-   int attemptsToResolve = 0;
 
+   static IslandPartitionSet pSet;
    DynamicArray<PhyCollision> collisions;
 
-   resolveOverlaps(objs);
+   resolveOverlaps(objs, &pSet);
 
-   f32 prethingcol, postvelcol, postimpulepostimpulse;
+   for (auto&& island : pSet.islands) {
+      if (island.mailbox != pSet.mailbox) {
+         continue;
 
-   while (timeRemaining > 0.0f && attemptsToResolve < 32) {
-      collisions.clear();
-      getAllPhyCollisions(objs, collisions, timeRemaining);
+      }
+      
 
-      auto cCount = collisions.size();
+      f32 timeRemaining = 1.0f;
+      int attemptsToResolve = 0;
 
-      if (!cCount) {
-         for (auto&& o : objs) {
-            o->pos += o->velocity * timeRemaining;
+      while (timeRemaining > 0.0f && attemptsToResolve < 32) {
+         collisions.clear();
+         getAllPhyCollisions(island.objs, collisions, timeRemaining);
+
+         auto cCount = collisions.size();
+
+         if (!cCount) {
+            for (auto&& o : island.objs) {
+               o->pos += o->velocity * timeRemaining;
+            }
+
+            timeRemaining = 0.0f;
+            break; //...yatta
          }
 
-         timeRemaining = 0.0f;
-         break; //...yatta
-      }
-         
-      // get soonest collision
-      PhyCollision c = {nullptr, nullptr, FLT_MAX};
-      if (cCount == 1) {
-         c = collisions[0];
-      }
-      else {
-         for (auto&& dc : collisions) {
-            if (dc.time < c.time) {
-               c = dc;
+         // get soonest collision
+         PhyCollision c = { nullptr, nullptr, FLT_MAX };
+         if (cCount == 1) {
+            c = collisions[0];
+         }
+         else {
+            for (auto&& dc : collisions) {
+               if (dc.time < c.time) {
+                  c = dc;
+               }
             }
          }
-      }
 
-      auto&a = *c.a;
-      auto&b = *c.b;
+         auto&a = *c.a;
+         auto&b = *c.b;
 
-      prethingcol = overlap(a, b);
-
-      for (auto&& d : objs) {
-         /*if (d == c.a || d == c.b) {
-            d->pos += d->velocity * (c.time - 0.01f);
-         }
-         else*/ {
+         for (auto&& d : island.objs) {
             d->pos += d->velocity * c.time;
          }
-      }
 
-      postvelcol = overlap(a, b);
+         applyCollisionImpulse(a.pos, b.pos, a.velocity, b.velocity, a.invMass, b.invMass, 0.01f);
 
-      //v2Dot()
-      
-      applyCollisionImpulse(a.pos, b.pos, a.velocity, b.velocity, a.invMass, b.invMass, 0.01f);
-
-      postimpulepostimpulse = overlap(a, b);
-
-      //auto reflect = v2Normalized(v2Orthogonal(c.b->pos - c.a->pos));
-      //c.a->velocity = reflect * v2Dot(c.a->velocity, reflect);
-
-      //reflect = v2Normalized(v2Orthogonal(c.a->pos - c.b->pos));
-      //c.b->velocity = reflect * v2Dot(c.b->velocity, reflect);
-
-      timeRemaining -= c.time;
-      ++attemptsToResolve;
-
-      if (attemptsToResolve == 32) {
-         break;
+         timeRemaining -= c.time;
+         ++attemptsToResolve;
       }
    }
-   if (timeRemaining > 0) {
-      return;
-   }
 
 
-
+   
 }
 
 
@@ -570,7 +643,7 @@ static Dude* _createEnemy(Float2 pos, f32 size) {
    out.phy.pos = pos;
    out.phy.circle.size = size;
    out.phy.velocity = { 0,0 };
-   out.phy.invMass = 1.0f;
+   out.phy.invMass =(f32)(rand()%50 + 5) / 100.0f;
    out.renderSize = { size * 2.5f, size * 4.2f };
    out.texture = g_textures[GameTextures_Dude];
    out.stamina = out.staminaMax = 4;
@@ -592,7 +665,7 @@ void gameBegin(Game*game) {
    game->dudes.push_back(game->maindude);
    game->phyObjs.push_back(&game->maindude->phy);
 
-   for (int i = 0; i < 50; ++i) {
+   for (int i = 0; i < 150; ++i) {
       auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 }, 30.0f);
       game->dudes.push_back(e);
       game->phyObjs.push_back(&e->phy);
@@ -637,9 +710,16 @@ static void _renderDude(Dude& dude) {
    render::meshRender(g_game->mesh);
 
    if (gameDataGet()->imgui.showCollisionDebugging) {
+      static DynamicArray<ColorRGBAf> islandCols;
+
+      if (dude.phy.island >= islandCols.size()) {
+         islandCols.push_back(sRgbToLinear(ColorRGBA{(byte)(rand()%256), (byte)(rand() % 256), (byte)(rand() % 256), 255 }));
+      }
+
+
       model = Matrix::translate2f(dude.phy.pos);
       model *= Matrix::scale2f({ dude.phy.circle.size * 2, dude.phy.circle.size * 2 });
-      render::uSetColor(u::color, dude.hit ? Red : Cyan);
+      render::uSetColor(u::color, islandCols[dude.phy.island]);
       render::uSetMatrix(u::modelMatrix, model);
       render::textureBind(g_textures[GameTextures_Circle], 0);
       render::meshRender(g_game->mesh);
@@ -708,13 +788,13 @@ static void _populateLightLayer(Game* game) {
    _addLight({ 500, 500 }, game->maindude->phy.pos, Yellow);
 
    f32 lsz = 500;
-   _addLight({ lsz, lsz }, { 200, 600 }, Yellow);
-   _addLight({ lsz, lsz }, { 800, 300 }, Yellow);
-   _addLight({ lsz, lsz }, { 100, 1000 }, Yellow);
-   _addLight({ lsz, lsz }, { 1200, 500 }, Yellow);
-   _addLight({ lsz, lsz }, { 1800, 200 }, Yellow);
-   _addLight({ lsz, lsz }, { 1800, 800 }, Yellow);
-   _addLight({ lsz, lsz }, { 900, 800 }, Yellow);
+   //_addLight({ lsz, lsz }, { 200, 600 }, Yellow);
+   //_addLight({ lsz, lsz }, { 800, 300 }, Yellow);
+   //_addLight({ lsz, lsz }, { 100, 1000 }, Yellow);
+   //_addLight({ lsz, lsz }, { 1200, 500 }, Yellow);
+   //_addLight({ lsz, lsz }, { 1800, 200 }, Yellow);
+   //_addLight({ lsz, lsz }, { 1800, 800 }, Yellow);
+   //_addLight({ lsz, lsz }, { 900, 800 }, Yellow);
 
 
    render::shaderSetActive(game->colorShader);
@@ -1215,7 +1295,13 @@ void gameUpdate(Game* game) {
    auto dt = time - game->lastUpdate;
    auto ms = dt.toMilliseconds();
 
-   for (Milliseconds i = 0; i < 7; ++i) {
+   if (ms > 32) {
+      // something bad happened and we spiked hard
+      ms = 32;
+      game->lastUpdate = time - timeMillis(ms);
+   }
+
+   for (Milliseconds i = 0; i < ms; ++i) {
 
       phyApplyInputMovement(game->maindude->phy);      
 
