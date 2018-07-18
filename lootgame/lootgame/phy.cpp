@@ -11,39 +11,6 @@ struct PhyCollision {
    f32 time = 0.0f;
 };
 
-const f32 dudeSpeedCapEasing = 0.01f;
-const f32 dudeAcceleration = 0.001f;
-const f32 dudeMoveSpeed = 0.4f;
-const f32 dudeRotationSpeed = 0.01f;
-
-void phyUpdateVelocity(PhyObject& p) {
-   // we assume at this point the moveVector is current
-
-   // scale mvspeed based on facing;
-   f32 facedot = v2Dot(v2Normalized(p.velocity), p.facing);
-   auto scaledSpeed = (dudeMoveSpeed * 0.85f) + (dudeMoveSpeed * 0.15f * facedot);
-
-   // set the target speed
-   p.moveSpeedCapTarget = scaledSpeed * v2Len(p.moveVector);
-
-   // ease speed cap toward target
-   if (p.moveSpeedCap < p.moveSpeedCapTarget) {
-      p.moveSpeedCap += dudeSpeedCapEasing;
-   }
-   else {
-      p.moveSpeedCap -= dudeSpeedCapEasing;
-   }
-
-   // add the movevector scaled against acceleration to velocity and cap it
-   p.velocity = v2CapLength(p.velocity + p.moveVector * dudeAcceleration, p.moveSpeedCap);
-}
-
-// rotate facing vector toward the facevector
-void phyUpdateRotation(PhyObject& p) {
-   if (v2LenSquared(p.faceVector) > 0.0f) {
-      p.facing = v2Normalized(v2RotateTowards(p.facing, p.faceVector, v2FromAngle(dudeRotationSpeed)));
-   }
-}
 
 void getAllPhyCollisions(DynamicArray<PhyObject*>& objs, DynamicArray<PhyCollision>& collisions, f32 &timeRemaining) {
 
@@ -174,7 +141,7 @@ void resolveOverlaps(DynamicArray<PhyObject*>& objs, IslandPartitionSet* pSet) {
             auto& b = *j;
 
             auto combinedSize = a->circle.size + b->circle.size;
-            auto connectRange = combinedSize + (dudeMoveSpeed * 2);
+            auto connectRange = combinedSize + (a->maxSpeed + b->maxSpeed);
             f32 distanceSquared = v2LenSquared({ a->pos.x - b->pos.x, a->pos.y - b->pos.y });
 
             bool connected = distanceSquared < connectRange * connectRange;

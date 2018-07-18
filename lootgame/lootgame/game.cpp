@@ -91,7 +91,18 @@ static MoveSet _createMoveSet() {
    return out;
 }
 
+const f32 dudeSpeedCapEasing = 0.01f;
+const f32 dudeAcceleration = 0.001f;
+const f32 dudeMoveSpeed = 0.4f;
+const f32 dudeRotationSpeed = 0.01f;
 
+struct Movement {
+   f32 moveSpeedCap = 0.0f;       // updated per frame, interpolates toward moveSpeedCapTarget
+   f32 moveSpeedCapTarget = 0.0f; // updated per frame, max speed based on length of move vector and velocity direction vs facing
+   Float2 moveVector = { 0.0f, 0.0f };   // vector length 0-1 for movement amount/direction
+   Float2 faceVector = { 0.0f, 0.0f };  // unit vector for target facing, facing will interpolate toward this angle
+   Float2 facing = { 1, 0 };  // unit vector for character facing  
+};
 
 struct Behavior {
    Float2 targetPos = { 0,0 };
@@ -110,6 +121,8 @@ struct Dude {
    ColorRGBAf c;
 
    PhyObject phy;
+   Movement mv;
+   Behavior ai;
 
    TextureHandle texture = 0;
    Time lastFree; // tracked for time since entering free state
@@ -124,13 +137,42 @@ struct Dude {
    int swingDir;
    bool swingTimingSuccess; // set to false if hitting attack again before cooldown phase
    int combo = 0;
-
-   bool hit = false;
-
-   Behavior ai;
+   
 };
 
 
+
+
+
+
+void dudeUpdateVelocity(Dude& d) {
+   // we assume at this point the moveVector is current
+
+   // scale mvspeed based on facing;
+   f32 facedot = v2Dot(v2Normalized(d.phy.velocity), d.mv.facing);
+   auto scaledSpeed = (dudeMoveSpeed * 0.85f) + (dudeMoveSpeed * 0.15f * facedot);
+
+   // set the target speed
+   d.mv.moveSpeedCapTarget = scaledSpeed * v2Len(d.mv.moveVector);
+
+   // ease speed cap toward target
+   if (d.mv.moveSpeedCap < d.mv.moveSpeedCapTarget) {
+      d.mv.moveSpeedCap += dudeSpeedCapEasing;
+   }
+   else {
+      d.mv.moveSpeedCap -= dudeSpeedCapEasing;
+   }
+
+   // add the movevector scaled against acceleration to velocity and cap it
+   d.phy.velocity = v2CapLength(d.phy.velocity + d.mv.moveVector * dudeAcceleration, d.mv.moveSpeedCap);
+}
+
+// rotate facing vector toward the facevector
+void dudeUpdateRotation(Dude& d) {
+   if (v2LenSquared(d.mv.faceVector) > 0.0f) {
+      d.mv.facing = v2Normalized(v2RotateTowards(d.mv.facing, d.mv.faceVector, v2FromAngle(dudeRotationSpeed)));
+   }
+}
 
 
 struct Game {
@@ -141,9 +183,8 @@ struct Game {
    Mesh mesh, meshUncentered;
    FBO fbo, lightfbo;
 
-   Dude* maindude;
-   DynamicArray<Dude*> dudes;
-   DynamicArray<PhyObject*> phyObjs;
+   Dude maindude;
+   DynamicArray<Dude> baddudes;
 
    Time lastMouseMove;
    Time lastUpdate;
@@ -165,10 +206,10 @@ static bool leftStickActive() {
    return fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE;
 }
 
-void phyApplyInputMovement(PhyObject& p) {
+void dudeApplyInputMovement(Dude& d) {
    auto& io = gameDataGet()->io;
 
-   p.moveVector = io.leftStick;
+   d.mv.moveVector = io.leftStick;
 
    bool rstick = rightStickActive();
    bool lstick = leftStickActive();
@@ -183,11 +224,11 @@ void phyApplyInputMovement(PhyObject& p) {
    }
 
    if (g_game->mouseActive) {
-      aimStick = io.mousePos - p.pos;
+      aimStick = io.mousePos - d.phy.pos;
    }
 
    if (v2LenSquared(aimStick) > 0) {
-      p.faceVector = v2Normalized(aimStick);
+      d.mv.faceVector = v2Normalized(aimStick);
    }
 }
 
@@ -294,32 +335,32 @@ static void _createGraphicsObjects(Game* game){
    free(fragment);
 }
 
-static Dude* _createDude(Game* game) {
-   auto outptr = new Dude();
-   auto&out = *outptr;
+static Dude _createDude(Game* game) {
+   Dude out;
 
    out.c = White;
    out.moveset = _createMoveSet();
    out.phy.pos = { 50,50 };
    out.phy.circle.size = 30.0f;
+   out.phy.maxSpeed = dudeMoveSpeed;
    out.phy.invMass = 0.0f;
    out.renderSize = { 60, 100 };
    out.texture = g_textures[GameTextures_Dude];
 
    out.stamina = out.staminaMax = 4;
 
-   return outptr;
+   return out;
 }
 
-static Dude* _createEnemy(Float2 pos, f32 size) {
-   auto outptr = new Dude();
-   auto&out = *outptr;
+static Dude _createEnemy(Float2 pos, f32 size) {
+   Dude out;
 
    out.moveset = _createMoveSet();
    out.c = {1.0f, 0.3f, 0.3f, 1.0f};
    out.phy.pos = pos;
    out.phy.circle.size = size;
    out.phy.velocity = { 0,0 };
+   out.phy.maxSpeed = dudeMoveSpeed;
    out.phy.invMass =(f32)(rand()%50 + 5) / 100.0f;
    out.renderSize = { size * 2.5f, size * 4.2f };
    out.texture = g_textures[GameTextures_Dude];
@@ -328,7 +369,7 @@ static Dude* _createEnemy(Float2 pos, f32 size) {
    out.ai.targetPos = { (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 };
    out.ai.started = appGetTime();
 
-   return outptr;
+   return out;
 }
 
 
@@ -339,20 +380,10 @@ void gameBegin(Game*game) {
    _createGraphicsObjects(game);
    game->maindude = _createDude(game);
 
-   
-
    for (int i = 0; i < DUDE_COUNT; ++i) {
       auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 }, 30.0f);
-      game->dudes.push_back(e);
-      game->phyObjs.push_back(&e->phy);
+      game->baddudes.push_back(e);
    }
-
-   game->dudes.push_back(game->maindude);
-   game->phyObjs.push_back(&game->maindude->phy);
-   
-  // game->dudes.push_back(_createEnemy({ 300, 300 }, 50.0f));
-   //game->dudes.push_back(_createEnemy({ 800, 600 }, 20.0f));
-   //game->dudes.push_back(_createEnemy({ 1000, 100 }, 80.0f));
 
 }
 
@@ -377,7 +408,7 @@ static void _renderDude(Dude& dude) {
    auto texmat = Matrix::identity();
 
    model *= Matrix::translate2f(dude.phy.pos);
-   model *= Matrix::rotate2D(v2Angle(dude.phy.facing));
+   model *= Matrix::rotate2D(v2Angle(dude.mv.facing));
    model *= Matrix::scale2f(dude.renderSize);
 
    render::uSetColor(u::color, dude.c);
@@ -418,20 +449,6 @@ static void _renderTarget(Float2 pos, ColorRGBAf color, f32 sz) {
    render::meshRender(g_game->mesh);
 }
 
-static void _renderEnemy(Dude& dude) {
-
-   auto c = dude.hit ? Red : Cyan;
-
-   auto model = Matrix::translate2f(dude.phy.pos);
-   model *= Matrix::scale2f({ dude.phy.circle.size * 2, dude.phy.circle.size * 2 });
-   render::uSetColor(u::color, c);
-   render::uSetMatrix(u::modelMatrix, model);
-   render::uSetMatrix(u::texMatrix, Matrix::identity());
-   render::uSetTextureSlot(u::diffuse, 0);
-   render::textureBind(g_textures[GameTextures_Circle], 0);
-   render::meshRender(g_game->mesh);
-
-}
 
 static void _addLight(Float2 size, Float2 pos, ColorRGBAf c) {
    auto model = Matrix::translate2f(pos);
@@ -458,7 +475,7 @@ static void _populateLightLayer(Game* game) {
    
    render::clear({0.f,0.f,0.f,0.0f});
 
-   _addLight({ 500, 500 }, game->maindude->phy.pos, Yellow);
+   _addLight({ 500, 500 }, game->maindude.phy.pos, Yellow);
 
    f32 lsz = 250;
    _addLight({ lsz, lsz }, { 200, 600 }, Yellow);
@@ -501,7 +518,7 @@ static void _renderFloor(Game* game) {
    if (gameDataGet()->imgui.showCollisionDebugging) {
       Rectf testrect = { 300,300, 500, 200 };
       render::shaderSetActive(game->colorShader);
-      render::uSetColor(u::color, circleVsAabb(game->maindude->phy.pos, game->maindude->phy.circle.size, testrect) ? Red : Cyan);
+      render::uSetColor(u::color, circleVsAabb(game->maindude.phy.pos, game->maindude.phy.circle.size, testrect) ? Red : Cyan);
       render::uSetMatrix(u::modelMatrix, Matrix::translate2f({ testrect.x, testrect.y }) * Matrix::scale2f({ testrect.w, testrect.h }));
       render::textureBind(0, 0);
       render::meshRender(g_game->meshUncentered);
@@ -542,10 +559,10 @@ static void _renderGameUI(Game* game) {
    Float2 gemSize = { 25, 50 };
    f32 gemSpace = 5.0f;
 
-   for (int i = 0; i < game->maindude->staminaMax; ++i) {
+   for (int i = 0; i < game->maindude.staminaMax; ++i) {
       auto model = Matrix::translate2f(staminaCorner + Float2{(gemSize.x + gemSpace) * i, 0}) *  Matrix::scale2f(gemSize);
       render::uSetMatrix(u::modelMatrix, model);
-      render::textureBind(g_textures[i < game->maindude->stamina ? GameTextures_GemFilled : GameTextures_GemEmpty], 0);
+      render::textureBind(g_textures[i < game->maindude.stamina ? GameTextures_GemFilled : GameTextures_GemEmpty], 0);
       render::meshRender(g_game->meshUncentered);
    }
 
@@ -569,9 +586,11 @@ static void _renderScene(Game* game) {
 
    _renderFloor(game);
 
-   for (auto&& d : game->dudes) {
-      _renderDude(*d);
+   for (auto&& d : game->baddudes) {
+      _renderDude(d);
    }
+
+   _renderDude(game->maindude);
 
    //_renderDude(*game->maindude);
 
@@ -579,16 +598,16 @@ static void _renderScene(Game* game) {
       const static f32 moveTargetDist = 100.0f;
       const static f32 aimTargetDist = 200.0f;
       auto &io = game->data.io;
-      auto &dude = *game->maindude;
+      auto &dude = game->maindude;
 
       _renderTarget(dude.phy.pos + dude.phy.velocity * moveTargetDist, Cyan, 40);
-      _renderTarget(dude.phy.pos + v2Normalized(dude.phy.facing) * aimTargetDist, Red, 40);
+      _renderTarget(dude.phy.pos + v2Normalized(dude.mv.facing) * aimTargetDist, Red, 40);
 
       _renderTarget(dude.phy.pos + io.leftStick * moveTargetDist, DkGreen, 30);
-      _renderTarget(dude.phy.pos + dude.phy.moveVector * moveTargetDist, Magenta, 30);
+      _renderTarget(dude.phy.pos + dude.mv.moveVector * moveTargetDist, Magenta, 30);
 
       _renderTarget(dude.phy.pos + io.rightStick * aimTargetDist, Yellow, 30);
-      _renderTarget(dude.phy.pos + dude.phy.faceVector * aimTargetDist, LtGray, 30);
+      _renderTarget(dude.phy.pos + dude.mv.faceVector * aimTargetDist, LtGray, 30);
    }
    
    _renderLightLayer(game);
@@ -832,9 +851,9 @@ static void _beginAttack(Dude& dude, Time t, int dir, int combo) {
    dude.swing = dude.moveset.swings[combo];
 
    dude.state = Dude::State_ATTACKING;
-   dude.phy.moveVector = dude.phy.faceVector = { 0.0f, 0.0f };
+   dude.mv.moveVector = dude.mv.faceVector = { 0.0f, 0.0f };
    
-   dude.weaponVector = v2Normalized(v2Rotate(dude.phy.facing, v2FromAngle(dir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
+   dude.weaponVector = v2Normalized(v2Rotate(dude.mv.facing, v2FromAngle(dir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
    dude.swingPhase = SwingPhase_Windup;
    dude.phaseStart = t;
    dude.swingDir = dir;
@@ -844,14 +863,14 @@ static void _beginAttack(Dude& dude, Time t, int dir, int combo) {
 
 
 
-void dueUpdateBehavior(Dude& dude) {
+void dudeUpdateBehavior(Dude& dude) {
    if (v2Dist(dude.phy.pos, dude.ai.targetPos) < dude.phy.circle.size || appGetTime() - dude.ai.started > timeSecs(10)) {
       dude.ai.targetPos = { (f32)(rand() % 1820), (f32)(rand() % 980) };
       dude.ai.started = appGetTime();
    }
    else{
       auto vec = v2Normalized(dude.ai.targetPos - dude.phy.pos);
-      dude.phy.moveVector = dude.phy.faceVector = vec;
+      dude.mv.moveVector = dude.mv.faceVector = vec;
    }
 }
 
@@ -863,9 +882,9 @@ static void _updateDude(Game* game, Milliseconds ms) {
    }
 
    auto&m = game->data.io.mousePos;
-   auto&dp = game->maindude->phy.pos;
-   auto &io = game->data.io;
-   auto &dude = *game->maindude;
+   auto& dp = game->maindude.phy.pos;
+   auto& io = game->data.io;
+   auto& dude = game->maindude;
 
    auto& c = ConstantsGet();
 
@@ -874,7 +893,7 @@ static void _updateDude(Game* game, Milliseconds ms) {
    
 
    // handle inputs
-   if (game->maindude->state == Dude::State_FREE) {
+   if (game->maindude.state == Dude::State_FREE) {
 
       auto freedt = time - dude.lastFree;
       if (freedt > timeMillis(500) && dude.stamina < dude.staminaMax) {
@@ -883,11 +902,11 @@ static void _updateDude(Game* game, Milliseconds ms) {
 
       // triggers
       if (dude.stamina > 0 && io.buttonPressed[GameButton_RT]) {
-         _beginAttack(*game->maindude, time, -1, 0);
+         _beginAttack(game->maindude, time, -1, 0);
       }
    }
-   else if (game->maindude->state == Dude::State_ATTACKING) {
-      auto swingdt = time - game->maindude->phaseStart;
+   else if (game->maindude.state == Dude::State_ATTACKING) {
+      auto swingdt = time - game->maindude.phaseStart;
 
       switch (dude.swingPhase) {
       case SwingPhase_Windup:
@@ -936,14 +955,14 @@ static void _updateDude(Game* game, Milliseconds ms) {
 
          if (swingdt > dude.swing.swingDur) {
             dude.phaseStart += dude.swing.swingDur;
-            dude.weaponVector = v2Normalized(v2Rotate(dude.phy.facing, v2FromAngle(-dude.swingDir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
+            dude.weaponVector = v2Normalized(v2Rotate(dude.mv.facing, v2FromAngle(-dude.swingDir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
             dude.swingPhase = SwingPhase_Cooldown;
          }
       }  break;
       case SwingPhase_Cooldown:
          if (io.buttonPressed[GameButton_RT] && dude.swingTimingSuccess && ++dude.combo < dude.moveset.swings.size()) {
             if (dude.stamina > 0) {
-               _beginAttack(*game->maindude, time, -dude.swingDir, dude.combo);
+               _beginAttack(game->maindude, time, -dude.swingDir, dude.combo);
             }
             else {
                dude.swingTimingSuccess = false;
@@ -974,37 +993,32 @@ void gameUpdate(Game* game) {
       game->lastUpdate = time - timeMillis(ms);
    }
 
-   _updateDude(game, ms);
+   // build physics system
+   DynamicArray<PhyObject*> pObjs;
+   pObjs.push_back(&game->maindude.phy);
+   for (auto && d : game->baddudes) {
+      pObjs.push_back(&d.phy);
+   }
 
    for (Milliseconds i = 0; i < ms; ++i) {
 
-      phyApplyInputMovement(game->maindude->phy);   
+      dudeApplyInputMovement(game->maindude);   
+      dudeUpdateRotation(game->maindude);
+      dudeUpdateVelocity(game->maindude);
       
 
-      for (auto && d : game->dudes) {
-         if (d != game->maindude) {
-            dueUpdateBehavior(*d);
-         }
-
-         phyUpdateRotation(d->phy);
-         phyUpdateVelocity(d->phy);
+      for (auto && d : game->baddudes) {
+         dudeUpdateBehavior(d);  
+         dudeUpdateRotation(d);
+         dudeUpdateVelocity(d);
       }
 
-      updatePhyPositions(game->phyObjs);
+      updatePhyPositions(pObjs);
    }
 
    game->lastUpdate += timeMillis(ms);
-   
-   //_updateDude(game);
 
-   //for (auto& d : game->dudes) {
-   //   if (game->dude.state == Dude::State_ATTACKING) {
-   //      d.hit = _attackCollision(game->dude, d);
-   //   }
-   //   
-   //}
-   //
-
+   // imgui output
    gameDoUI(game);
 }
 
