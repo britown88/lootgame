@@ -12,7 +12,7 @@
 #include <stb/stb_image.h>
 
 #define AXIS_DEADZONE 0.25f
-#define DUDE_COUNT 100
+#define DUDE_COUNT 1
 
 static Constants g_const;
 Constants &ConstantsGet() { return g_const; }
@@ -89,10 +89,11 @@ static MoveSet _createMoveSet() {
    return out;
 }
 
-const f32 dudeSpeedCapEasing = 0.01f;
-const f32 dudeAcceleration = 0.001f;
-const f32 dudeMoveSpeed = 0.4f;
-const f32 dudeRotationSpeed = 0.01f;
+
+f32 dudeAcceleration =     0.005f;
+f32 dudeRotationSpeed =    0.010f;
+f32 dudeMoveSpeed =        0.600f;
+f32 dudeSpeedCapEasing =   0.004f;
 
 struct Movement {
    f32 moveSpeedCap = 0.0f;       // updated per frame, interpolates toward moveSpeedCapTarget
@@ -140,6 +141,20 @@ struct Dude {
 
 
 
+static void uiEditDude(Dude& dude){
+   if (ImGui::Begin(format("Dude Editor##%p", &dude).c_str(), 0, ImGuiWindowFlags_AlwaysAutoResize)) {
+
+      ImGui::InputFloat("Acceleration", &dudeAcceleration, 0.001f, 0.01f, 4);
+      ImGui::InputFloat("Rotation Speed", &dudeRotationSpeed, 0.01f, 0.1f, 4);
+      ImGui::InputFloat("Move Speed", &dude.phy.maxSpeed, 0.01f, 0.1f, 4);
+      ImGui::InputFloat("Speed Cap", &dudeSpeedCapEasing, 0.001f, 0.01f, 4);
+
+      f32 ratio = dude.mv.moveSpeedCap / 1.0f;
+      ImGui::ProgressBar(ratio);
+   }
+   ImGui::End();
+}
+
 
 static bool rightStickActive() {
    auto &io = gameDataGet()->io;
@@ -181,18 +196,19 @@ void dudeUpdateVelocity(Dude& d) {
 
    // scale mvspeed based on facing;
    f32 facedot = v2Dot(v2Normalized(d.phy.velocity), d.mv.facing);
-   auto scaledSpeed = (dudeMoveSpeed * 0.85f) + (dudeMoveSpeed * 0.15f * facedot);
+   auto scaledSpeed = (d.phy.maxSpeed * 0.85f) + (d.phy.maxSpeed * 0.15f * facedot);
 
    // set the target speed
    d.mv.moveSpeedCapTarget = scaledSpeed * v2Len(d.mv.moveVector);
 
    // ease speed cap toward target
    if (d.mv.moveSpeedCap < d.mv.moveSpeedCapTarget) {
-      d.mv.moveSpeedCap += dudeSpeedCapEasing;
+      d.mv.moveSpeedCap += dudeSpeedCapEasing;      
    }
    else {
       d.mv.moveSpeedCap -= dudeSpeedCapEasing;
    }
+   clamp(d.mv.moveSpeedCap, 0, d.mv.moveSpeedCapTarget);
 
    // add the movevector scaled against acceleration to velocity and cap it
    d.phy.velocity = v2CapLength(d.phy.velocity + d.mv.moveVector * dudeAcceleration, d.mv.moveSpeedCap);
@@ -593,14 +609,19 @@ static void _populateLightLayer(Game* game) {
 
    _addLight({ 500, 500 }, game->maindude.phy.pos, Yellow);
 
-   f32 lsz = 250;
-   _addLight({ lsz, lsz }, { 200, 600 }, Yellow);
-   _addLight({ lsz, lsz }, { 800, 300 }, Yellow);
-   _addLight({ lsz, lsz }, { 100, 1000 }, Yellow);
-   _addLight({ lsz, lsz }, { 1200, 500 }, Yellow);
-   _addLight({ lsz, lsz }, { 1800, 200 }, Yellow);
-   _addLight({ lsz, lsz }, { 1800, 800 }, Yellow);
-   _addLight({ lsz, lsz }, { 900, 800 }, Yellow);
+   for (auto&& d : game->baddudes) {
+      f32 lsz = 250;
+      _addLight({ lsz, lsz }, d.phy.pos, Yellow);
+   }
+
+   //f32 lsz = 250;
+   //_addLight({ lsz, lsz }, { 200, 600 }, Yellow);
+   //_addLight({ lsz, lsz }, { 800, 300 }, Yellow);
+   //_addLight({ lsz, lsz }, { 100, 1000 }, Yellow);
+   //_addLight({ lsz, lsz }, { 1200, 500 }, Yellow);
+   //_addLight({ lsz, lsz }, { 1800, 200 }, Yellow);
+   //_addLight({ lsz, lsz }, { 1800, 800 }, Yellow);
+   //_addLight({ lsz, lsz }, { 900, 800 }, Yellow);
 
 
    render::shaderSetActive(game->colorShader);
@@ -990,5 +1011,6 @@ void gameUpdate(Game* game) {
    game->lastUpdate += timeMillis(ms);
 
    // imgui output
+   //uiEditDude(game->maindude);
    gameDoUI(game);
 }
