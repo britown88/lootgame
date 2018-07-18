@@ -13,7 +13,7 @@
 
 #define AXIS_DEADZONE 0.25f
 #define AXIS_AIM_DEADZONE 0.5f
-#define DUDE_COUNT 1
+#define DUDE_COUNT 20
 
 static Constants g_const;
 Constants &ConstantsGet() { return g_const; }
@@ -114,6 +114,7 @@ struct Behavior {
 struct Dude {
    enum State {
       State_FREE = 0,
+      State_COOLDOWN,
       State_DASH,
       State_ATTACKING,
    };
@@ -131,8 +132,7 @@ struct Dude {
    Behavior ai;
 
    
-   Milliseconds dashStart;
-   Milliseconds freeStart;
+   Milliseconds stateStart;
 
    int stamina, staminaMax;
 
@@ -141,18 +141,17 @@ struct Dude {
    MoveSet moveset;
    AttackSwing swing;
    SwingPhase swingPhase;
-   Time phaseStart;
    int swingDir;
    bool swingTimingSuccess; // set to false if hitting attack again before cooldown phase
    int combo = 0;
    
 };
 
-void dudeDash(Dude& d) {
+void dudeStartDash(Dude& d) {
    if (d.stamina > 0) {
       --d.stamina;
       d.state = Dude::State_DASH;
-      d.dashStart = 0;
+      d.stateStart = 0;
 
       if (v2LenSquared(d.mv.moveVector) > 0.0f) {
          d.mv.moveVector = v2Normalized(d.mv.moveVector);
@@ -168,8 +167,9 @@ void dudeDash(Dude& d) {
    }
 }
 void dudeEndDash(Dude& d) {
-   d.freeStart = 0;
-   d.state = Dude::State_FREE;
+   d.stateStart = 0;
+   d.state = Dude::State_COOLDOWN;
+   d.mv.moveVector = { 0,0 };
    d.phy.maxSpeed = dudeMoveSpeed;
 }
 
@@ -228,7 +228,7 @@ void dudeApplyInputMovement(Dude& d) {
 void dudeApplyInputActions(Dude& d) {
    auto& io = gameDataGet()->io;
    if (io.buttonPressed[GameButton_LT]){
-      dudeDash(d);
+      dudeStartDash(d);
    }
 }
 
@@ -295,7 +295,7 @@ static void _beginAttack(Dude& dude, Time t, int dir, int combo) {
 
    dude.weaponVector = v2Normalized(v2Rotate(dude.mv.facing, v2FromAngle(dir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
    dude.swingPhase = SwingPhase_Windup;
-   dude.phaseStart = t;
+   //dude.st = t;
    dude.swingDir = dir;
 
    dude.swingTimingSuccess = true;
@@ -419,13 +419,19 @@ void dudeUpdateBehavior(Dude& dude) {
 void dudeUpdateState(Dude& d) {
    switch (d.state) {
    case Dude::State_FREE:
-      if (d.freeStart++ > 500 && d.stamina < d.staminaMax) {
+      if (d.stateStart++ > 500 && d.stamina < d.staminaMax) {
          ++d.stamina;
-         d.freeStart = 0;
+         d.stateStart = 0;
+      }
+      break;
+   case Dude::State_COOLDOWN:
+      if (d.stateStart++ > 300) {
+         d.state = Dude::State_FREE;
+         d.stateStart = 0;
       }
       break;
    case Dude::State_DASH:
-      if (d.dashStart++ > 30) {
+      if (d.stateStart++ > 30) {
          dudeEndDash(d);
       }
       break;
@@ -532,7 +538,7 @@ static void _createGraphicsObjects(Game* game){
    g_textures[GameTextures_ShittySword] = _textureBuildFromFile("assets/shittysword.png");
    g_textures[GameTextures_GemEmpty] = _textureBuildFromFile("assets/gemempty.png");
    g_textures[GameTextures_GemFilled] = _textureBuildFromFile("assets/gemfilled.png");
-   g_textures[GameTextures_Tile] = _textureBuildFromFile("assets/tile2.png", { RepeatType_REPEAT , FilterType_NEAREST });
+   g_textures[GameTextures_Tile] = _textureBuildFromFile("assets/tile.png", { RepeatType_REPEAT , FilterType_NEAREST });
    
    free(vertex);
    free(fragment);
