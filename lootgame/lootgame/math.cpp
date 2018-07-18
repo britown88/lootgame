@@ -570,3 +570,25 @@ ColorRGBA srgbPremultipleAlpha(ColorRGBA const& srgb) {
       srgb.a,
       };
 }
+
+
+// Intersects ray r = p + td, |d| = 1, with sphere co,cr and, if intersecting,
+// returns t value of intersection and intersection point q
+int intersectRaySphere(Float2 p, Float2 d, Float2 co, f32 cr, f32& t, Float2& q) {
+   auto m = p - co;
+   auto b = v2Dot(m, d);
+   auto c = v2Dot(m, m) - cr * cr;
+
+   // exit if r's origin outside s (c>0) and r pointing away from s (b>0)
+   if (c > 0.0f && b > 0.0f) return 0;
+   auto discr = b * b - c;
+   // a negative discriminant corresponds to ray missing sphere
+   if (discr < 0.0f) return 0;
+   // ray now found to intersect sphere, compute smallest t value of intersection
+   t = -b - sqrtf(discr);
+   // if t is negative, ray started inside sphere so clamp t to zero
+   if (t < 0.0f)  t = 0.0f;
+   q = p + d * t;
+
+   return 1;
+}

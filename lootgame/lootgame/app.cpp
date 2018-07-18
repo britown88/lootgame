@@ -266,9 +266,10 @@ static void _updateFrame(App* app) {
 void appStep(App* app) {
    lppSync();
 
-   appPollEvents(app);
+   
    _beginFrame(app);
    gameHandleInput(app->game);
+   appPollEvents(app);
 
    _updateFrame(app);
    _renderFrame(app);

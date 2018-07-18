@@ -1,20 +1,20 @@
 #include "game.h"
 #include "app.h"
-
+#include "win.h"
+#include "render.h"
 #include "imgui.h"
-#include "scf.h"
-#include <unordered_map>
+#include "phy.h"
+
 #include <vector>
 
 #include <GL/glew.h>
 #include <SDL2/SDL.h>
 #include <stb/stb_image.h>
-#include "win.h"
-#include "render.h"
-#include <stb/stretchy_buffer.h>
-#include "dynarray.h"
+
+
 
 #define AXIS_DEADZONE 0.25f
+#define DUDE_COUNT 100
 
 static Constants g_const;
 Constants &ConstantsGet() { return g_const; }
@@ -91,28 +91,7 @@ static MoveSet _createMoveSet() {
    return out;
 }
 
-struct PhyObject {
-   Float2 pos;
 
-   f32 invMass = 1.0f;
-   
-   f32 moveSpeedCap = 0.0f;       // updated per frame, interpolates toward moveSpeedCapTarget
-   f32 moveSpeedCapTarget = 0.0f; // updated per frame, max speed based on length of move vector and velocity direction vs facing
-   Float2 moveVector = { 0.0f, 0.0f };   // vector length 0-1 for movement amount/direction
-   Float2 velocity = { 0.0f, 0.0f };      // actual delta pos per frame, moveVector*accel is added per frame, capped at moveSpeed
-
-   Float2 faceVector = { 0.0f, 0.0f };  // unit vector for target facing, facing will interpolate toward this angle
-   Float2 facing = { 1, 0 };  // unit vector for character facing  
-
-   int island = -1;
-   int islandMailbox = -1;
-
-   union {
-      struct {
-         f32 size;
-      } circle;
-   };
-};
 
 struct Behavior {
    Float2 targetPos = { 0,0 };
@@ -186,40 +165,6 @@ static bool leftStickActive() {
    return fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE;
 }
 
-const f32 dudeSpeedCapEasing = 0.01f;
-const f32 dudeAcceleration = 0.001f;
-const f32 dudeMoveSpeed = 0.4f;
-const f32 dudeRotationSpeed = 0.01f;
-
-void phyUpdateVelocity(PhyObject& p) {
-   // we assume at this point the moveVector is current
-
-   // scale mvspeed based on facing;
-   f32 facedot = v2Dot(v2Normalized(p.velocity), p.facing);
-   auto scaledSpeed = (dudeMoveSpeed * 0.85f) + (dudeMoveSpeed * 0.15f * facedot);
-
-   // set the target speed
-   p.moveSpeedCapTarget = scaledSpeed * v2Len(p.moveVector);
-
-   // ease speed cap toward target
-   if (p.moveSpeedCap < p.moveSpeedCapTarget) {
-      p.moveSpeedCap += dudeSpeedCapEasing;
-   }
-   else {
-      p.moveSpeedCap -= dudeSpeedCapEasing;
-   }
-
-   // add the movevector scaled against acceleration to velocity and cap it
-   p.velocity = v2CapLength(p.velocity + p.moveVector * dudeAcceleration, p.moveSpeedCap);
-}
-
-// rotate facing vector toward the facevector
-void phyUpdateRotation(PhyObject& p) {
-   if (v2LenSquared(p.faceVector) > 0.0f) {
-      p.facing = v2Normalized(v2RotateTowards(p.facing, p.faceVector, v2FromAngle(dudeRotationSpeed)));
-   }
-}
-
 void phyApplyInputMovement(PhyObject& p) {
    auto& io = gameDataGet()->io;
 
@@ -244,274 +189,6 @@ void phyApplyInputMovement(PhyObject& p) {
    if (v2LenSquared(aimStick) > 0) {
       p.faceVector = v2Normalized(aimStick);
    }
-}
-
-
-// Intersects ray r = p + td, |d| = 1, with sphere co,cr and, if intersecting,
-// returns t value of intersection and intersection point q
-int intersectRaySphere(Float2 p, Float2 d, Float2 co, f32 cr, f32& t, Float2& q) {
-   auto m = p - co;
-   auto b = v2Dot(m, d);
-   auto c = v2Dot(m, m) - cr * cr;
-
-   // exit if r's origin outside s (c>0) and r pointing away from s (b>0)
-   if (c > 0.0f && b > 0.0f) return 0;
-   auto discr = b * b - c;
-   // a negative discriminant corresponds to ray missing sphere
-   if (discr < 0.0f) return 0;
-   // ray now found to intersect sphere, compute smallest t value of intersection
-   t = -b - sqrtf(discr);
-   // if t is negative, ray started inside sphere so clamp t to zero
-   if (t < 0.0f)  t = 0.0f;
-   q = p + d * t;
-
-   return 1;
-}
-
-struct PhyCollision {
-   PhyObject* a = nullptr;
-   PhyObject* b = nullptr;
-   f32 time = 0.0f;
-};
-
-
-void getAllPhyCollisions(DynamicArray<PhyObject*>& objs, DynamicArray<PhyCollision>& collisions, f32 &timeRemaining) {
-
-   auto oe = objs.end();
-   for (auto i = objs.begin(); i != oe; ++i){
-      for (auto j = i + 1; j != oe; ++j) {
-         auto& a = *i;
-         auto& b = *j;
-         
-         auto combinedSize = a->circle.size + b->circle.size;
-         f32 rangeCheck = //v2DistSquared(a->pos + a->velocity, b->pos + b->velocity);
-            v2LenSquared({
-               (a->pos.x + a->velocity.x) - (b->pos.x + b->velocity.x),
-               (a->pos.y + a->velocity.y) - (b->pos.y + b->velocity.y)
-            });
-
-         if (rangeCheck < combinedSize*combinedSize) {
-            f32 t = 0.0f;
-            Float2 q = { 0,0 };
-
-            auto avelscaled = a->velocity * timeRemaining;
-            auto bvelscaled = b->velocity * timeRemaining;
-
-            auto dirvec = avelscaled - bvelscaled;
-            auto len = v2Len(dirvec);
-            dirvec /= len;
-
-            if (intersectRaySphere(a->pos, dirvec, b->pos, combinedSize, t, q) && t <= len && t > 0.0f) {
-               PhyCollision c = { a, b, (t / len) * timeRemaining };
-               collisions.push_back(c);
-            }
-         }
-      }
-   }
-}
-
-struct IslandPartition {
-   int mailbox = 0;
-   DynamicArray<PhyObject*> objs;
-};
-
-struct IslandPartitionSet {
-   int mailbox = 0;
-   DynamicArray<IslandPartition> islands;
-
-   int next() {
-      int i = 0;
-      for (auto && island : islands) {
-         if (island.mailbox != mailbox) {
-            island.mailbox = mailbox;
-            island.objs.clear();
-            return i;
-         }
-         else if (island.objs.empty()) {
-            return i;
-         }
-         ++i;
-      }
-
-      islands.push_back({ mailbox, {} });
-      return i;
-   }
-};
-
-void partitionSetReset(IslandPartitionSet* pSet) {
-   ++pSet->mailbox;
-}
-
-void partitionSetAddObjs(IslandPartitionSet* pSet, PhyObject*a, PhyObject* b, bool connected) {
-
-   // if updating a for first time, add it to its own island
-   if (a->islandMailbox != pSet->mailbox) {
-      a->islandMailbox = pSet->mailbox;
-      a->island = pSet->next();
-      pSet->islands[a->island].objs.push_back(a);
-   }
-
-   if (connected) {
-
-      // if updating b for first time and its connected, add it to a's island
-      if (b->islandMailbox != pSet->mailbox) {
-         b->islandMailbox = pSet->mailbox;
-         b->island = a->island;
-         pSet->islands[a->island].objs.push_back(b);
-      }
-
-      // if b is part of an island, merge them to a
-      else if(a->island != b->island){
-         int from = 0, to = 0;
-         if (pSet->islands[a->island].objs.size() > pSet->islands[b->island].objs.size()) {
-            from = b->island;
-            to = a->island;
-         }
-         else {
-            from = a->island;
-            to = b->island;
-         }
-         
-         for (auto&& obj : pSet->islands[from].objs) {
-            obj->island = to;            
-         }
-         pSet->islands[to].objs.insert(pSet->islands[to].objs.begin(), pSet->islands[from].objs.begin(), pSet->islands[from].objs.end());
-         pSet->islands[from].objs.clear();
-      }
-   }
-
-   // if updating b for first time and not connected, add to its own island
-   else if (b->islandMailbox != pSet->mailbox) {
-      b->islandMailbox = pSet->mailbox;
-      b->island = pSet->next();
-      pSet->islands[b->island].objs.push_back(b);
-   }
-}
-
-void resolveOverlaps(DynamicArray<PhyObject*>& objs, IslandPartitionSet* pSet) {
-   bool overlap = false;
-   int attemptsToResolve = 0;
-
-   partitionSetReset(pSet);
-
-   do {
-      overlap = false;
-
-      auto oe = objs.end();
-      for (auto i = objs.begin(); i != oe; ++i) {
-         for (auto j = i + 1; j != oe; ++j) {
-            auto& a = *i;
-            auto& b = *j;
-
-            auto combinedSize = a->circle.size + b->circle.size;
-            auto connectRange = combinedSize + (dudeMoveSpeed * 2);
-            f32 distanceSquared = v2LenSquared({ a->pos.x - b->pos.x, a->pos.y - b->pos.y });
-
-            bool connected = distanceSquared < connectRange * connectRange;
-
-            if (!attemptsToResolve) {
-               partitionSetAddObjs(pSet, a, b, connected);
-            }
-
-            if (connected) {
-
-               if (distanceSquared < combinedSize * combinedSize) {
-                  auto dist = sqrtf(distanceSquared);
-
-                  auto overlap = combinedSize - dist;
-                  auto impulse = v2Normalized(b->pos - a->pos) * (overlap / 2 + 0.01f) / (a->invMass + b->invMass);
-
-                  a->pos -= impulse * a->invMass;
-                  b->pos += impulse * b->invMass;
-                  overlap = true;
-               }
-            }
-         }
-      }
-
-   } while (overlap && attemptsToResolve++ < 32);
-}
-
-void applyCollisionImpulse(Float2 pos1, Float2 pos2, Float2& vel1, Float2& vel2, float invMass1, float invMass2, float restitution)
-{
-   Float2 direction = v2Normalized(pos2 - pos1);
-   Float2 relativeVelocity = vel2 - vel1;
-
-   float d = v2Dot(direction, relativeVelocity);
-   if (d > 0.0f) //moving away from each other?  nothing to do?
-      return;
-
-   float moveAmount = -(1 + restitution) * d / (invMass1 + invMass2);
-
-   Float2 impulse = direction * moveAmount;
-
-   vel1 -= impulse * invMass1;
-   vel2 += impulse * invMass2;
-}
-
-
-
-void updatePhyPositions(DynamicArray<PhyObject*>& objs) {
-
-   static IslandPartitionSet pSet;
-   DynamicArray<PhyCollision> collisions;
-
-   resolveOverlaps(objs, &pSet);
-
-   for (auto&& island : pSet.islands) {
-      if (island.mailbox != pSet.mailbox) {
-         continue;
-
-      }
-      
-
-      f32 timeRemaining = 1.0f;
-      int attemptsToResolve = 0;
-
-      while (timeRemaining > 0.0f && attemptsToResolve < 32) {
-         collisions.clear();
-         getAllPhyCollisions(island.objs, collisions, timeRemaining);
-
-         auto cCount = collisions.size();
-
-         if (!cCount) {
-            for (auto&& o : island.objs) {
-               o->pos += o->velocity * timeRemaining;
-            }
-
-            timeRemaining = 0.0f;
-            break; //...yatta
-         }
-
-         // get soonest collision
-         PhyCollision c = { nullptr, nullptr, FLT_MAX };
-         if (cCount == 1) {
-            c = collisions[0];
-         }
-         else {
-            for (auto&& dc : collisions) {
-               if (dc.time < c.time) {
-                  c = dc;
-               }
-            }
-         }
-
-         auto&a = *c.a;
-         auto&b = *c.b;
-
-         for (auto&& d : island.objs) {
-            d->pos += d->velocity * c.time;
-         }
-
-         applyCollisionImpulse(a.pos, b.pos, a.velocity, b.velocity, a.invMass, b.invMass, 0.01f);
-
-         timeRemaining -= c.time;
-         ++attemptsToResolve;
-      }
-   }
-
-
-   
 }
 
 
@@ -662,15 +339,16 @@ void gameBegin(Game*game) {
    _createGraphicsObjects(game);
    game->maindude = _createDude(game);
 
-   game->dudes.push_back(game->maindude);
-   game->phyObjs.push_back(&game->maindude->phy);
+   
 
-   for (int i = 0; i < 150; ++i) {
+   for (int i = 0; i < DUDE_COUNT; ++i) {
       auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 }, 30.0f);
       game->dudes.push_back(e);
       game->phyObjs.push_back(&e->phy);
    }
 
+   game->dudes.push_back(game->maindude);
+   game->phyObjs.push_back(&game->maindude->phy);
    
   // game->dudes.push_back(_createEnemy({ 300, 300 }, 50.0f));
    //game->dudes.push_back(_createEnemy({ 800, 600 }, 20.0f));
@@ -693,6 +371,7 @@ static void _renderSwing(Dude&dude) {
    render::meshRender(g_game->meshUncentered);
 }
 
+
 static void _renderDude(Dude& dude) {
    auto model = Matrix::identity();
    auto texmat = Matrix::identity();
@@ -710,16 +389,10 @@ static void _renderDude(Dude& dude) {
    render::meshRender(g_game->mesh);
 
    if (gameDataGet()->imgui.showCollisionDebugging) {
-      static DynamicArray<ColorRGBAf> islandCols;
-
-      if (dude.phy.island >= islandCols.size()) {
-         islandCols.push_back(sRgbToLinear(ColorRGBA{(byte)(rand()%256), (byte)(rand() % 256), (byte)(rand() % 256), 255 }));
-      }
-
 
       model = Matrix::translate2f(dude.phy.pos);
       model *= Matrix::scale2f({ dude.phy.circle.size * 2, dude.phy.circle.size * 2 });
-      render::uSetColor(u::color, islandCols[dude.phy.island]);
+      render::uSetColor(u::color, Cyan);
       render::uSetMatrix(u::modelMatrix, model);
       render::textureBind(g_textures[GameTextures_Circle], 0);
       render::meshRender(g_game->mesh);
@@ -787,14 +460,14 @@ static void _populateLightLayer(Game* game) {
 
    _addLight({ 500, 500 }, game->maindude->phy.pos, Yellow);
 
-   f32 lsz = 500;
-   //_addLight({ lsz, lsz }, { 200, 600 }, Yellow);
-   //_addLight({ lsz, lsz }, { 800, 300 }, Yellow);
-   //_addLight({ lsz, lsz }, { 100, 1000 }, Yellow);
-   //_addLight({ lsz, lsz }, { 1200, 500 }, Yellow);
-   //_addLight({ lsz, lsz }, { 1800, 200 }, Yellow);
-   //_addLight({ lsz, lsz }, { 1800, 800 }, Yellow);
-   //_addLight({ lsz, lsz }, { 900, 800 }, Yellow);
+   f32 lsz = 250;
+   _addLight({ lsz, lsz }, { 200, 600 }, Yellow);
+   _addLight({ lsz, lsz }, { 800, 300 }, Yellow);
+   _addLight({ lsz, lsz }, { 100, 1000 }, Yellow);
+   _addLight({ lsz, lsz }, { 1200, 500 }, Yellow);
+   _addLight({ lsz, lsz }, { 1800, 200 }, Yellow);
+   _addLight({ lsz, lsz }, { 1800, 800 }, Yellow);
+   _addLight({ lsz, lsz }, { 900, 800 }, Yellow);
 
 
    render::shaderSetActive(game->colorShader);
@@ -1182,10 +855,10 @@ void dueUpdateBehavior(Dude& dude) {
    }
 }
 
-static void _updateDude(Game* game) {
+static void _updateDude(Game* game, Milliseconds ms) {
    auto time = appGetTime();
-   auto dt = time;
-   if (dt.toMilliseconds() == 0) {
+   
+   if (ms == 0) {
       return;
    }
 
@@ -1234,7 +907,7 @@ static void _updateDude(Game* game) {
          }
 
          auto radsPerMs = (dude.swing.swipeAngle * DEG2RAD) / dude.swing.swingDur.toMilliseconds();
-         dude.weaponVector = v2Rotate(dude.weaponVector, v2FromAngle(-dude.swingDir * radsPerMs * dt.toMilliseconds()));
+         dude.weaponVector = v2Rotate(dude.weaponVector, v2FromAngle(-dude.swingDir * radsPerMs * ms));
 
          if (dude.swing.lungeSpeed > 0.0f) {
             //Float2 lungeVel = dude.facing * dude.swing.lungeSpeed;
@@ -1301,9 +974,12 @@ void gameUpdate(Game* game) {
       game->lastUpdate = time - timeMillis(ms);
    }
 
+   _updateDude(game, ms);
+
    for (Milliseconds i = 0; i < ms; ++i) {
 
-      phyApplyInputMovement(game->maindude->phy);      
+      phyApplyInputMovement(game->maindude->phy);   
+      
 
       for (auto && d : game->dudes) {
          if (d != game->maindude) {

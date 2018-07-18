@@ -78,6 +78,9 @@
     <ClCompile Include="lpp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="phy.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h">
@@ -115,6 +118,9 @@
     </ClInclude>
     <ClInclude Include="dynarray.h">
       <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="phy.h">
+      <Filter>Header Files\game</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

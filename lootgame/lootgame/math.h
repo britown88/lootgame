@@ -134,3 +134,7 @@ public:
    float const &operator[](size_t index) const;
 
 };
+
+// Intersects ray r = p + td, |d| = 1, with sphere co,cr and, if intersecting,
+// returns t value of intersection and intersection point q
+int intersectRaySphere(Float2 p, Float2 d, Float2 co, f32 cr, f32& t, Float2& q);
