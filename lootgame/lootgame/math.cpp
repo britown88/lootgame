@@ -592,3 +592,24 @@ int intersectRaySphere(Float2 p, Float2 d, Float2 co, f32 cr, f32& t, Float2& q)
 
    return 1;
 }
+
+
+f32 clamp(f32 f, f32 min, f32 max) {
+   return f > max ? max : (f < min ? min : f);
+}
+
+// interps
+f32 lerp(f32 v1, f32 v2, f32 t) {
+   return (v2 - v1) * t;
+}
+f32 cosInterp(f32 t) {
+   return (1.0f - cosf(t * PI)) / 2;
+}
+f32 cosInterp(f32 v1, f32 v2, f32 t) {
+   f32 t2 = cosInterp(t);
+   return lerp(v1, v2, t2);
+}
+f32 smoothstep(f32 v1, f32 v2, f32 t) {
+   t = clamp((t - v1) / (v2 - v1), 0.0f, 1.0f);
+   return t * t * (3.0f - 2.0f * t);
+}

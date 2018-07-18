@@ -138,3 +138,11 @@ public:
 // Intersects ray r = p + td, |d| = 1, with sphere co,cr and, if intersecting,
 // returns t value of intersection and intersection point q
 int intersectRaySphere(Float2 p, Float2 d, Float2 co, f32 cr, f32& t, Float2& q);
+
+f32 clamp(f32 f, f32 min, f32 max);
+
+// interps
+f32 lerp(f32 v1, f32 v2, f32 t);
+f32 cosInterp(f32 t);
+f32 cosInterp(f32 v1, f32 v2, f32 t);
+f32 smoothstep(f32 v1, f32 v2, f32 t);

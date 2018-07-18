@@ -11,8 +11,6 @@
 #include <SDL2/SDL.h>
 #include <stb/stb_image.h>
 
-
-
 #define AXIS_DEADZONE 0.25f
 #define DUDE_COUNT 100
 
@@ -143,7 +141,40 @@ struct Dude {
 
 
 
+static bool rightStickActive() {
+   auto &io = gameDataGet()->io;
+   return fabs(io.rightStick.x) > AXIS_DEADZONE || fabs(io.rightStick.y) > AXIS_DEADZONE;
+}
+static bool leftStickActive() {
+   auto &io = gameDataGet()->io;
+   return fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE;
+}
 
+void dudeApplyInputMovement(Dude& d) {
+   auto& io = gameDataGet()->io;
+
+   d.mv.moveVector = io.leftStick;
+
+   bool rstick = rightStickActive();
+   bool lstick = leftStickActive();
+
+   Float2 aimStick;
+   if (rstick) {
+      aimStick = io.rightStick;
+     // g_game->mouseActive = false;
+   }
+   else if (lstick) {
+      aimStick = io.leftStick;
+   }
+
+   //if (g_game->mouseActive) {
+   //   aimStick = io.mousePos - d.phy.pos;
+   //}
+
+   if (v2LenSquared(aimStick) > 0) {
+      d.mv.faceVector = v2Normalized(aimStick);
+   }
+}
 
 void dudeUpdateVelocity(Dude& d) {
    // we assume at this point the moveVector is current
@@ -174,6 +205,149 @@ void dudeUpdateRotation(Dude& d) {
    }
 }
 
+bool _attackCollision(Dude& attacker, Dude& defender) {
+   auto origin = attacker.phy.pos + attacker.weaponVector * attacker.phy.circle.size;
+   auto defendPos = v2Rotate(defender.phy.pos - origin, v2Conjugate(attacker.weaponVector));
+
+   auto wbox = attacker.moveset.swings[attacker.combo].hitbox;
+   //wbox.x += origin.x;
+   //wbox.y += origin.y;
+
+   return circleVsAabb(defendPos, defender.phy.circle.size, wbox);
+}
+
+static void _beginAttack(Dude& dude, Time t, int dir, int combo) {
+   dude.combo = combo;
+   dude.swing = dude.moveset.swings[combo];
+
+   dude.state = Dude::State_ATTACKING;
+   dude.mv.moveVector = dude.mv.faceVector = { 0.0f, 0.0f };
+
+   dude.weaponVector = v2Normalized(v2Rotate(dude.mv.facing, v2FromAngle(dir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
+   dude.swingPhase = SwingPhase_Windup;
+   dude.phaseStart = t;
+   dude.swingDir = dir;
+
+   dude.swingTimingSuccess = true;
+}
+
+void dudeUpdateBehavior(Dude& dude) {
+   if (v2Dist(dude.phy.pos, dude.ai.targetPos) < dude.phy.circle.size || appGetTime() - dude.ai.started > timeSecs(10)) {
+      dude.ai.targetPos = { (f32)(rand() % 1820), (f32)(rand() % 980) };
+      dude.ai.started = appGetTime();
+   }
+   else {
+      auto vec = v2Normalized(dude.ai.targetPos - dude.phy.pos);
+      dude.mv.moveVector = dude.mv.faceVector = vec;
+   }
+}
+
+//static void _updateDude(Game* game, Milliseconds ms) {
+//   auto time = appGetTime();
+//
+//   if (ms == 0) {
+//      return;
+//   }
+//
+//   auto&m = game->data.io.mousePos;
+//   auto& dp = game->maindude.phy.pos;
+//   auto& io = game->data.io;
+//   auto& dude = game->maindude;
+//
+//   auto& c = ConstantsGet();
+//
+//   // handle inputs
+//   if (game->maindude.state == Dude::State_FREE) {
+//
+//      auto freedt = time - dude.lastFree;
+//      if (freedt > timeMillis(500) && dude.stamina < dude.staminaMax) {
+//         dude.stamina = dude.staminaMax;
+//      }
+//
+//      // triggers
+//      if (dude.stamina > 0 && io.buttonPressed[GameButton_RT]) {
+//         _beginAttack(game->maindude, time, -1, 0);
+//      }
+//   }
+//   else if (game->maindude.state == Dude::State_ATTACKING) {
+//      auto swingdt = time - game->maindude.phaseStart;
+//
+//      switch (dude.swingPhase) {
+//      case SwingPhase_Windup:
+//         if (io.buttonPressed[GameButton_RT]) {
+//            dude.swingTimingSuccess = false;
+//         }
+//         if (swingdt > dude.swing.windupDur) {
+//            dude.phaseStart += dude.swing.windupDur;
+//            dude.swingPhase = SwingPhase_Swing;
+//            dude.stamina -= 1;
+//         }
+//         break;
+//      case SwingPhase_Swing: {
+//
+//         if (io.buttonPressed[GameButton_RT]) {
+//            dude.swingTimingSuccess = false;
+//         }
+//
+//         auto radsPerMs = (dude.swing.swipeAngle * DEG2RAD) / dude.swing.swingDur.toMilliseconds();
+//         dude.weaponVector = v2Rotate(dude.weaponVector, v2FromAngle(-dude.swingDir * radsPerMs * ms));
+//
+//         if (dude.swing.lungeSpeed > 0.0f) {
+//            //Float2 lungeVel = dude.facing * dude.swing.lungeSpeed;
+//            //bool collided = true;
+//            //int tries = 0;
+//            //while (collided) {
+//            //   collided = false;
+//            //   for (auto& d : g_game->dudes) {
+//            //      if (_dudeCollision(dude.size, dude.pos, lungeVel, d.size, d.pos, dt, lungeVel)) {
+//            //         collided = true;
+//            //         ++tries;
+//            //         break;
+//            //      }
+//            //   }
+//            //   if (tries >= 3) {
+//            //      lungeVel = { 0,0 };
+//            //      break;
+//            //   }
+//            //}
+//            //dp += lungeVel * (f32)dt.toMilliseconds();
+//         }
+//
+//
+//
+//
+//
+//         if (swingdt > dude.swing.swingDur) {
+//            dude.phaseStart += dude.swing.swingDur;
+//            dude.weaponVector = v2Normalized(v2Rotate(dude.mv.facing, v2FromAngle(-dude.swingDir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
+//            dude.swingPhase = SwingPhase_Cooldown;
+//         }
+//      }  break;
+//      case SwingPhase_Cooldown:
+//         if (io.buttonPressed[GameButton_RT] && dude.swingTimingSuccess && ++dude.combo < dude.moveset.swings.size()) {
+//            if (dude.stamina > 0) {
+//               _beginAttack(game->maindude, time, -dude.swingDir, dude.combo);
+//            }
+//            else {
+//               dude.swingTimingSuccess = false;
+//            }
+//         }
+//         else {
+//            if (swingdt > dude.swing.cooldownDur) {
+//               dude.phaseStart += dude.swing.cooldownDur;
+//               dude.state = Dude::State_FREE;
+//               dude.lastFree = time;
+//            }
+//         }
+//
+//         break;
+//      }
+//   }
+//
+//}
+
+
+
 
 struct Game {
    GameData data;
@@ -196,50 +370,10 @@ GameData* gameDataGet() {
    return &g_game->data;
 }
 
-
-static bool rightStickActive() {
-   auto &io = g_game->data.io;
-   return fabs(io.rightStick.x) > AXIS_DEADZONE || fabs(io.rightStick.y) > AXIS_DEADZONE;
-}
-static bool leftStickActive() {
-   auto &io = g_game->data.io;
-   return fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE;
-}
-
-void dudeApplyInputMovement(Dude& d) {
-   auto& io = gameDataGet()->io;
-
-   d.mv.moveVector = io.leftStick;
-
-   bool rstick = rightStickActive();
-   bool lstick = leftStickActive();
-
-   Float2 aimStick;
-   if (rstick) {
-      aimStick = io.rightStick;
-      g_game->mouseActive = false;
-   }
-   else if (lstick) {
-      aimStick = io.leftStick;
-   }
-
-   if (g_game->mouseActive) {
-      aimStick = io.mousePos - d.phy.pos;
-   }
-
-   if (v2LenSquared(aimStick) > 0) {
-      d.mv.faceVector = v2Normalized(aimStick);
-   }
-}
-
-
-
-
 static void _gameDataInit(GameData* game, StringView assetsFolder) {
 #ifndef  _DEBUG
    game->imgui.showUI = false;
 #endif //  NDEBUG
-
 }
 
 Game* gameCreate(StringView assetsFolder) {
@@ -247,6 +381,15 @@ Game* gameCreate(StringView assetsFolder) {
    _gameDataInit(&g_game->data, assetsFolder);
    return g_game;
 }
+
+void gameDestroy(Game* game) {
+   delete game;
+}
+
+FBO const& gameGetOutputFBO(Game* game) { return game->fbo; }
+
+
+
 
 static TextureHandle _textureBuildFromFile(const char* path, TextureConfig const& cfg = {}) {
    u64 sz = 0;
@@ -258,32 +401,6 @@ static TextureHandle _textureBuildFromFile(const char* path, TextureConfig const
 
    free(mem);
    free(png);
-   return out;
-}
-
-static TextureHandle _mklighttexture() {
-   Float2 sz = { 720, 720 };
-   auto mem = new ColorRGBA[sz.x * sz.y];
-   for (int y = 0; y < sz.y; ++y) {
-      for (int x = 0; x < sz.x; ++x) {
-         auto dist = v2Dist({ (f32)x, (f32)y }, { 360.0f, 360.0f }) / 360.0f;
-         auto idx = y * 360 + x;
-
-         ColorRGBAf fc;
-
-         if (dist > 0) {
-            fc = { 1 - dist , 1 - dist , 1 - dist , 1 - dist };
-         }
-         else {
-            fc = { 0 , 0 , 0 , 0 };
-         }
-
-         mem[idx] = linearToSrgb(fc);
-      }
-   }
-
-   auto out = render::textureBuild((ColorRGBA*)mem, { 720, 720 }, { RepeatType_CLAMP , FilterType_NEAREST });
-   delete[] mem;
    return out;
 }
 
@@ -372,8 +489,6 @@ static Dude _createEnemy(Float2 pos, f32 size) {
    return out;
 }
 
-
-
 void gameBegin(Game*game) {
    game->lastUpdate = appGetTime();
 
@@ -386,6 +501,9 @@ void gameBegin(Game*game) {
    }
 
 }
+
+
+
 
 static void _renderSwing(Dude&dude) {
    auto origin = dude.phy.pos + dude.weaponVector * dude.phy.circle.size;
@@ -401,7 +519,6 @@ static void _renderSwing(Dude&dude) {
    render::textureBind(g_textures[GameTextures_ShittySword], 0);
    render::meshRender(g_game->meshUncentered);
 }
-
 
 static void _renderDude(Dude& dude) {
    auto model = Matrix::identity();
@@ -448,7 +565,6 @@ static void _renderTarget(Float2 pos, ColorRGBAf color, f32 sz) {
    render::textureBind(g_textures[GameTextures_Target], 0);
    render::meshRender(g_game->mesh);
 }
-
 
 static void _addLight(Float2 size, Float2 pos, ColorRGBAf c) {
    auto model = Matrix::translate2f(pos);
@@ -656,6 +772,15 @@ static void _renderScene(Game* game) {
 
 }
 
+void gameRender(Game*game) {
+   
+   _renderScene(game);
+   
+}
+
+
+
+
 bool gameProcessEvent(Game*game, SDL_Event* event) {
    auto &io = game->data.io;
 
@@ -664,12 +789,12 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
    case SDL_KEYDOWN: {
       bool pressed = event->type == SDL_KEYDOWN;
       GameButton btn;
-      
-      switch (event->key.keysym.scancode) {
-      case SDL_SCANCODE_W: 
-         btn = GameButton_UP; 
 
-         if (pressed) {            
+      switch (event->key.keysym.scancode) {
+      case SDL_SCANCODE_W:
+         btn = GameButton_UP;
+
+         if (pressed) {
             if (!event->key.repeat) io.leftStick.y = -1.0f;
          }
          else if (!io.buttonDown[GameButton_DOWN]) {
@@ -713,7 +838,7 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
       if (!event->key.repeat) {
          io.leftStick = v2Normalized(io.leftStick);
       }
-      
+
       if (!io.buttonDown[btn] && pressed) {
          io.buttonPressed[btn] = true;
       }
@@ -744,7 +869,7 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
       io.buttonDown[GameButton_RT] = pressed;
       return true;
    }
-      
+
 
    case SDL_CONTROLLERDEVICEADDED:
       SDL_GameControllerOpen(0);
@@ -768,7 +893,7 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
       case SDL_CONTROLLER_BUTTON_DPAD_LEFT: break;
       case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: break;
       default: return false;
-      }      
+      }
       return true;
 
    case SDL_CONTROLLERAXISMOTION:
@@ -825,162 +950,8 @@ void gameHandleInput(Game*game) {
    }
 }
 
-void gameRender(Game*game) {
-   
-   _renderScene(game);
-   
-}
 
 
-
-
-bool _attackCollision(Dude& attacker, Dude& defender) {
-   auto origin = attacker.phy.pos + attacker.weaponVector * attacker.phy.circle.size;
-   auto defendPos = v2Rotate(defender.phy.pos - origin, v2Conjugate(attacker.weaponVector));
-
-   auto wbox = attacker.moveset.swings[attacker.combo].hitbox;
-   //wbox.x += origin.x;
-   //wbox.y += origin.y;
-
-   return circleVsAabb(defendPos, defender.phy.circle.size, wbox);
-}
-
-
-static void _beginAttack(Dude& dude, Time t, int dir, int combo) {
-   dude.combo = combo;
-   dude.swing = dude.moveset.swings[combo];
-
-   dude.state = Dude::State_ATTACKING;
-   dude.mv.moveVector = dude.mv.faceVector = { 0.0f, 0.0f };
-   
-   dude.weaponVector = v2Normalized(v2Rotate(dude.mv.facing, v2FromAngle(dir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
-   dude.swingPhase = SwingPhase_Windup;
-   dude.phaseStart = t;
-   dude.swingDir = dir;
-
-   dude.swingTimingSuccess = true;
-}
-
-
-
-void dudeUpdateBehavior(Dude& dude) {
-   if (v2Dist(dude.phy.pos, dude.ai.targetPos) < dude.phy.circle.size || appGetTime() - dude.ai.started > timeSecs(10)) {
-      dude.ai.targetPos = { (f32)(rand() % 1820), (f32)(rand() % 980) };
-      dude.ai.started = appGetTime();
-   }
-   else{
-      auto vec = v2Normalized(dude.ai.targetPos - dude.phy.pos);
-      dude.mv.moveVector = dude.mv.faceVector = vec;
-   }
-}
-
-static void _updateDude(Game* game, Milliseconds ms) {
-   auto time = appGetTime();
-   
-   if (ms == 0) {
-      return;
-   }
-
-   auto&m = game->data.io.mousePos;
-   auto& dp = game->maindude.phy.pos;
-   auto& io = game->data.io;
-   auto& dude = game->maindude;
-
-   auto& c = ConstantsGet();
-
-
-   // movement/aiming
-   
-
-   // handle inputs
-   if (game->maindude.state == Dude::State_FREE) {
-
-      auto freedt = time - dude.lastFree;
-      if (freedt > timeMillis(500) && dude.stamina < dude.staminaMax) {
-         dude.stamina = dude.staminaMax;
-      }
-
-      // triggers
-      if (dude.stamina > 0 && io.buttonPressed[GameButton_RT]) {
-         _beginAttack(game->maindude, time, -1, 0);
-      }
-   }
-   else if (game->maindude.state == Dude::State_ATTACKING) {
-      auto swingdt = time - game->maindude.phaseStart;
-
-      switch (dude.swingPhase) {
-      case SwingPhase_Windup:
-         if (io.buttonPressed[GameButton_RT]) {
-            dude.swingTimingSuccess = false;
-         }
-         if (swingdt > dude.swing.windupDur) {
-            dude.phaseStart += dude.swing.windupDur;
-            dude.swingPhase = SwingPhase_Swing;
-            dude.stamina -= 1;
-         }
-         break;
-      case SwingPhase_Swing: {
-
-         if (io.buttonPressed[GameButton_RT]) {
-            dude.swingTimingSuccess = false;
-         }
-
-         auto radsPerMs = (dude.swing.swipeAngle * DEG2RAD) / dude.swing.swingDur.toMilliseconds();
-         dude.weaponVector = v2Rotate(dude.weaponVector, v2FromAngle(-dude.swingDir * radsPerMs * ms));
-
-         if (dude.swing.lungeSpeed > 0.0f) {
-            //Float2 lungeVel = dude.facing * dude.swing.lungeSpeed;
-            //bool collided = true;
-            //int tries = 0;
-            //while (collided) {
-            //   collided = false;
-            //   for (auto& d : g_game->dudes) {
-            //      if (_dudeCollision(dude.size, dude.pos, lungeVel, d.size, d.pos, dt, lungeVel)) {
-            //         collided = true;
-            //         ++tries;
-            //         break;
-            //      }
-            //   }
-            //   if (tries >= 3) {
-            //      lungeVel = { 0,0 };
-            //      break;
-            //   }
-            //}
-            //dp += lungeVel * (f32)dt.toMilliseconds();
-         }
-         
-         
-
-         
-
-         if (swingdt > dude.swing.swingDur) {
-            dude.phaseStart += dude.swing.swingDur;
-            dude.weaponVector = v2Normalized(v2Rotate(dude.mv.facing, v2FromAngle(-dude.swingDir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
-            dude.swingPhase = SwingPhase_Cooldown;
-         }
-      }  break;
-      case SwingPhase_Cooldown:
-         if (io.buttonPressed[GameButton_RT] && dude.swingTimingSuccess && ++dude.combo < dude.moveset.swings.size()) {
-            if (dude.stamina > 0) {
-               _beginAttack(game->maindude, time, -dude.swingDir, dude.combo);
-            }
-            else {
-               dude.swingTimingSuccess = false;
-            }
-         }
-         else {
-            if (swingdt > dude.swing.cooldownDur) {
-               dude.phaseStart += dude.swing.cooldownDur;
-               dude.state = Dude::State_FREE;
-               dude.lastFree = time;
-            }
-         }
-         
-         break;
-      }
-   }
-
-}
 
 void gameUpdate(Game* game) {   
    auto time = appGetTime();
@@ -1020,12 +991,4 @@ void gameUpdate(Game* game) {
 
    // imgui output
    gameDoUI(game);
-}
-
-void gameDestroy(Game* game) {
-   delete game;
-}
-
-FBO const& gameGetOutputFBO(Game* game) {
-   return game->fbo;
 }
