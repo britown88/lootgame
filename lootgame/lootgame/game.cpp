@@ -12,6 +12,7 @@
 #include <stb/stb_image.h>
 
 #define AXIS_DEADZONE 0.25f
+#define AXIS_AIM_DEADZONE 0.5f
 #define DUDE_COUNT 1
 
 static Constants g_const;
@@ -93,7 +94,9 @@ static MoveSet _createMoveSet() {
 f32 dudeAcceleration =     0.005f;
 f32 dudeRotationSpeed =    0.010f;
 f32 dudeMoveSpeed =        0.600f;
+f32 dudeDashSpeed =        1.500f;
 f32 dudeSpeedCapEasing =   0.004f;
+f32 dudeBackwardsPenalty = 0.250f;
 
 struct Movement {
    f32 moveSpeedCap = 0.0f;       // updated per frame, interpolates toward moveSpeedCapTarget
@@ -111,22 +114,28 @@ struct Behavior {
 struct Dude {
    enum State {
       State_FREE = 0,
+      State_DASH,
       State_ATTACKING,
    };
 
    State state = State_FREE;
 
+
+   TextureHandle texture = 0;
    Float2 renderSize;
    ColorRGBAf c;
+
 
    PhyObject phy;
    Movement mv;
    Behavior ai;
 
-   TextureHandle texture = 0;
-   Time lastFree; // tracked for time since entering free state
+   
+   Milliseconds dashStart;
+   Milliseconds freeStart;
 
    int stamina, staminaMax;
+
 
    Float2 weaponVector;
    MoveSet moveset;
@@ -138,6 +147,31 @@ struct Dude {
    int combo = 0;
    
 };
+
+void dudeDash(Dude& d) {
+   if (d.stamina > 0) {
+      --d.stamina;
+      d.state = Dude::State_DASH;
+      d.dashStart = 0;
+
+      if (v2LenSquared(d.mv.moveVector) > 0.0f) {
+         d.mv.moveVector = v2Normalized(d.mv.moveVector);
+      }
+      else {
+         d.mv.moveVector = d.mv.faceVector;
+      }
+
+      
+      d.phy.maxSpeed = dudeDashSpeed;
+      d.mv.moveSpeedCapTarget = d.mv.moveSpeedCap = d.phy.maxSpeed;
+      d.phy.velocity = d.mv.moveVector * d.mv.moveSpeedCap;
+   }
+}
+void dudeEndDash(Dude& d) {
+   d.freeStart = 0;
+   d.state = Dude::State_FREE;
+   d.phy.maxSpeed = dudeMoveSpeed;
+}
 
 
 
@@ -158,7 +192,7 @@ static void uiEditDude(Dude& dude){
 
 static bool rightStickActive() {
    auto &io = gameDataGet()->io;
-   return fabs(io.rightStick.x) > AXIS_DEADZONE || fabs(io.rightStick.y) > AXIS_DEADZONE;
+   return fabs(io.rightStick.x) > AXIS_AIM_DEADZONE || fabs(io.rightStick.y) > AXIS_AIM_DEADZONE;
 }
 static bool leftStickActive() {
    auto &io = gameDataGet()->io;
@@ -191,12 +225,32 @@ void dudeApplyInputMovement(Dude& d) {
    }
 }
 
+void dudeApplyInputActions(Dude& d) {
+   auto& io = gameDataGet()->io;
+   if (io.buttonPressed[GameButton_LT]){
+      dudeDash(d);
+   }
+}
+
+void dudeApplyInput(Dude& d) {
+   switch (d.state) {
+   case Dude::State_FREE:
+      dudeApplyInputMovement(d);
+      dudeApplyInputActions(d);
+      break;
+   case Dude::State_DASH:
+      break;
+   case Dude::State_ATTACKING:
+      break;
+   }
+}
+
 void dudeUpdateVelocity(Dude& d) {
    // we assume at this point the moveVector is current
 
    // scale mvspeed based on facing;
    f32 facedot = v2Dot(v2Normalized(d.phy.velocity), d.mv.facing);
-   auto scaledSpeed = (d.phy.maxSpeed * 0.85f) + (d.phy.maxSpeed * 0.15f * facedot);
+   auto scaledSpeed = (d.phy.maxSpeed * (1 - dudeBackwardsPenalty)) + (d.phy.maxSpeed * dudeBackwardsPenalty * facedot);
 
    // set the target speed
    d.mv.moveSpeedCapTarget = scaledSpeed * v2Len(d.mv.moveVector);
@@ -362,7 +416,23 @@ void dudeUpdateBehavior(Dude& dude) {
 //
 //}
 
-
+void dudeUpdateState(Dude& d) {
+   switch (d.state) {
+   case Dude::State_FREE:
+      if (d.freeStart++ > 500 && d.stamina < d.staminaMax) {
+         ++d.stamina;
+         d.freeStart = 0;
+      }
+      break;
+   case Dude::State_DASH:
+      if (d.dashStart++ > 30) {
+         dudeEndDash(d);
+      }
+      break;
+   case Dude::State_ATTACKING:
+      break;
+   }
+}
 
 
 struct Game {
@@ -474,7 +544,7 @@ static Dude _createDude(Game* game) {
    out.c = White;
    out.moveset = _createMoveSet();
    out.phy.pos = { 50,50 };
-   out.phy.circle.size = 30.0f;
+   out.phy.circle.size = 20.0f;
    out.phy.maxSpeed = dudeMoveSpeed;
    out.phy.invMass = 0.0f;
    out.renderSize = { 60, 100 };
@@ -495,7 +565,7 @@ static Dude _createEnemy(Float2 pos, f32 size) {
    out.phy.velocity = { 0,0 };
    out.phy.maxSpeed = dudeMoveSpeed;
    out.phy.invMass =(f32)(rand()%50 + 5) / 100.0f;
-   out.renderSize = { size * 2.5f, size * 4.2f };
+   out.renderSize = { 60, 100 };
    out.texture = g_textures[GameTextures_Dude];
    out.stamina = out.staminaMax = 4;
 
@@ -512,7 +582,7 @@ void gameBegin(Game*game) {
    game->maindude = _createDude(game);
 
    for (int i = 0; i < DUDE_COUNT; ++i) {
-      auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 }, 30.0f);
+      auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 }, 20.0f);
       game->baddudes.push_back(e);
    }
 
@@ -994,12 +1064,15 @@ void gameUpdate(Game* game) {
 
    for (Milliseconds i = 0; i < ms; ++i) {
 
-      dudeApplyInputMovement(game->maindude);   
+
+      dudeUpdateState(game->maindude);
+      dudeApplyInput(game->maindude);   
       dudeUpdateRotation(game->maindude);
       dudeUpdateVelocity(game->maindude);
       
 
       for (auto && d : game->baddudes) {
+         dudeUpdateState(d);
          dudeUpdateBehavior(d);  
          dudeUpdateRotation(d);
          dudeUpdateVelocity(d);
