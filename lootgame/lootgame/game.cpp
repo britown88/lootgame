@@ -101,6 +101,7 @@ f32 cDudeBackwardsPenalty = 0.250f;
 Milliseconds cDudePostDashCooldown = 300;
 Milliseconds cDudeDashDuration = 100;
 Milliseconds cDudeBaseStaminaTickRecoveryTime = 1000;
+Milliseconds cDudeStaminaEmptyCooldown = 1000;
 
 struct Movement {
    f32 moveSpeedCap = 0.0f;       // updated per frame, interpolates toward moveSpeedCapTarget
@@ -124,7 +125,7 @@ struct AttackState {
    AttackSwing swing;
    SwingPhase swingPhase;
    int swingDir;
-   int combo = 0;
+   int combo;
 };
 
 struct CooldownState {
@@ -170,7 +171,7 @@ struct Dude {
    Status status;
 
    
-   Milliseconds stateStart;
+   Milliseconds stateClock; // incremented by one every ms
 
    
    MoveSet moveset;   
@@ -197,11 +198,12 @@ bool dudeSpendStamina(Dude &d, int stam) {
    }
 
    d.status.stamina = MAX(0, d.status.stamina - stam);
+   return true;
 }
 
 void dudeSetState(Dude& d, DudeState state, Milliseconds startTimeOffset = 0) {
    d.state = state;
-   d.stateStart = startTimeOffset;
+   d.stateClock = startTimeOffset;
 }
 
 Milliseconds calcNextStaminaTickTime(int stam, int max) {
@@ -230,7 +232,7 @@ void dudeBeginCooldown(Dude&d, Milliseconds duration) {
 }
 
 void dudeUpdateStateCooldown(Dude& d) {
-   if (d.stateStart++ > d.cd.duration) {
+   if (d.stateClock > d.cd.duration) {
       dudeSetState(d, DudeState_FREE);
    }
 }
@@ -257,12 +259,99 @@ void dudeBeginDash(Dude& d, f32 speed, Milliseconds dur) {
 
 
 void dudeUpdateStateDash(Dude& d) {
-   if (d.stateStart++ > d.dash.duration) {
-      dudeBeginCooldown(d, cDudePostDashCooldown);
+   if (d.stateClock > d.dash.duration) {
+      Milliseconds cd = cDudePostDashCooldown;
+      if (d.status.stamina == 0) {
+         cd = cDudeStaminaEmptyCooldown;
+      }
+
+      dudeBeginCooldown(d, cd);
 
       d.mv.moveVector = { 0,0 };
       d.phy.maxSpeed = cDudeMoveSpeed;
    }
+}
+
+void dudeBeginAttack(Dude& d, int swingDir, int combo) {
+   if (dudeSpendStamina(d, 1)) {
+      dudeSetState(d, DudeState_ATTACKING);
+
+      if (combo >= d.moveset.swings.size()) {
+         combo = 0;
+      }
+
+      d.atk.combo = combo;
+      d.atk.swing = d.moveset.swings[combo];
+
+      // stop, setting face to 0 is fine here because rotation checks so you stop at your current facing and cease any facevector rotation
+      d.mv.moveVector = d.mv.faceVector = { 0.0f, 0.0f };
+
+      // setup the weapon vector
+      d.atk.weaponVector = v2Normalized(v2Rotate(d.mv.facing, v2FromAngle(swingDir * d.atk.swing.swipeAngle / 2.0f * DEG2RAD)));
+      d.atk.swingPhase = SwingPhase_Windup;
+
+      d.atk.swingDir = swingDir;
+   }
+}
+
+void dudeUpdateStateAttack(Dude& d) {
+
+   switch (d.atk.swingPhase) {
+   case SwingPhase_Windup:
+      if (d.stateClock >= d.atk.swing.windupDur) {
+         d.stateClock -= d.atk.swing.windupDur;
+         d.atk.swingPhase = SwingPhase_Swing;
+      }
+      break;
+   case SwingPhase_Swing: {
+
+      auto radsPerMs = (d.atk.swing.swipeAngle * DEG2RAD) / d.atk.swing.swingDur;
+      d.atk.weaponVector = v2Rotate(d.atk.weaponVector, v2FromAngle(-d.atk.swingDir * radsPerMs));
+
+      // mess with lunge later
+      //if (dude.swing.lungeSpeed > 0.0f) {
+      //   Float2 lungeVel = dude.facing * dude.swing.lungeSpeed;
+      //   bool collided = true;
+      //   int tries = 0;
+      //   while (collided) {
+      //      collided = false;
+      //      for (auto& d : g_game->dudes) {
+      //         if (_dudeCollision(dude.size, dude.pos, lungeVel, d.size, d.pos, dt, lungeVel)) {
+      //            collided = true;
+      //            ++tries;
+      //            break;
+      //         }
+      //      }
+      //      if (tries >= 3) {
+      //         lungeVel = { 0,0 };
+      //         break;
+      //      }
+      //   }
+      //   dp += lungeVel * (f32)dt.toMilliseconds();
+      //}
+
+      if (d.stateClock >= d.atk.swing.swingDur) {
+         d.stateClock -= d.atk.swing.swingDur;
+         d.atk.weaponVector = v2Normalized(v2Rotate(d.mv.facing, v2FromAngle(-d.atk.swingDir * d.atk.swing.swipeAngle / 2.0f * DEG2RAD)));
+         d.atk.swingPhase = SwingPhase_Cooldown;
+      }
+   }  break;
+   case SwingPhase_Cooldown:
+      if (d.stateClock >= d.atk.swing.cooldownDur) {
+         dudeSetState(d, DudeState_FREE);
+      }
+      break;
+   }
+}
+
+void dudeUpdateState(Dude& d) {
+   switch (d.state) {
+   case DudeState_FREE: dudeUpdateStateFree(d); break;
+   case DudeState_COOLDOWN: dudeUpdateStateCooldown(d); break;
+   case DudeState_DASH: dudeUpdateStateDash(d); break;
+   case DudeState_ATTACKING: dudeUpdateStateAttack(d); break;
+   }
+   ++d.stateClock;
 }
 
 
@@ -303,10 +392,26 @@ void dudeApplyInputMovement(Dude& d) {
    }
 }
 
-void dudeApplyInputActions(Dude& d) {
+void dudeApplyInputFreeActions(Dude& d) {
    auto& io = gameDataGet()->io;
    if (io.buttonPressed[GameButton_LT]){
       dudeBeginDash(d, cDudeDashSpeed, cDudeDashDuration);
+   }
+   else if (io.buttonPressed[GameButton_RT]) {
+      dudeBeginAttack(d, 1, 0);
+   }
+}
+
+void dudeApplyInputAttack(Dude& d) {
+   auto& io = gameDataGet()->io;
+   if (io.buttonPressed[GameButton_RT]) {
+      switch (d.atk.swingPhase) {
+      case SwingPhase_Cooldown:
+         dudeBeginAttack(d, -d.atk.swingDir, d.atk.combo + 1);
+         break;
+      }
+
+      
    }
 }
 
@@ -314,11 +419,12 @@ void dudeApplyInput(Dude& d) {
    switch (d.state) {
    case DudeState_FREE:
       dudeApplyInputMovement(d);
-      dudeApplyInputActions(d);
+      dudeApplyInputFreeActions(d);
       break;
    case DudeState_DASH:
       break;
    case DudeState_ATTACKING:
+      dudeApplyInputAttack(d);
       break;
    }
 }
@@ -383,19 +489,6 @@ void dudeUpdateBehavior(Dude& dude) {
            
 
    }
-
-
-
-
-
-   //if (v2Dist(dude.phy.pos, dude.ai.targetPos) < dude.phy.circle.size || appGetTime() - dude.ai.started > timeSecs(10)) {
-   //   dude.ai.targetPos = { (f32)(rand() % 1820), (f32)(rand() % 980) };
-   //   dude.ai.started = appGetTime();
-   //}
-   //else {
-   //   auto vec = v2Normalized(dude.ai.targetPos - dude.phy.pos);
-   //   dude.mv.moveVector = dude.mv.faceVector = vec;
-   //}
 }
 
 //bool _attackCollision(Dude& attacker, Dude& defender) {
@@ -408,139 +501,8 @@ void dudeUpdateBehavior(Dude& dude) {
 //
 //   return circleVsAabb(defendPos, defender.phy.circle.size, wbox);
 //}
-//static void _beginAttack(Dude& dude, Time t, int dir, int combo) {
-//   dude.combo = combo;
-//   dude.swing = dude.moveset.swings[combo];
-//
-//   dude.state = Dude::State_ATTACKING;
-//   dude.mv.moveVector = dude.mv.faceVector = { 0.0f, 0.0f };
-//
-//   dude.weaponVector = v2Normalized(v2Rotate(dude.mv.facing, v2FromAngle(dir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
-//   dude.swingPhase = SwingPhase_Windup;
-//   //dude.st = t;
-//   dude.swingDir = dir;
-//
-//   dude.swingTimingSuccess = true;
-//}
-//static void _updateDude(Game* game, Milliseconds ms) {
-//   auto time = appGetTime();
-//
-//   if (ms == 0) {
-//      return;
-//   }
-//
-//   auto&m = game->data.io.mousePos;
-//   auto& dp = game->maindude.phy.pos;
-//   auto& io = game->data.io;
-//   auto& dude = game->maindude;
-//
-//   auto& c = ConstantsGet();
-//
-//   // handle inputs
-//   if (game->maindude.state == Dude::State_FREE) {
-//
-//      auto freedt = time - dude.lastFree;
-//      if (freedt > timeMillis(500) && dude.stamina < dude.staminaMax) {
-//         dude.stamina = dude.staminaMax;
-//      }
-//
-//      // triggers
-//      if (dude.stamina > 0 && io.buttonPressed[GameButton_RT]) {
-//         _beginAttack(game->maindude, time, -1, 0);
-//      }
-//   }
-//   else if (game->maindude.state == Dude::State_ATTACKING) {
-//      auto swingdt = time - game->maindude.phaseStart;
-//
-//      switch (dude.swingPhase) {
-//      case SwingPhase_Windup:
-//         if (io.buttonPressed[GameButton_RT]) {
-//            dude.swingTimingSuccess = false;
-//         }
-//         if (swingdt > dude.swing.windupDur) {
-//            dude.phaseStart += dude.swing.windupDur;
-//            dude.swingPhase = SwingPhase_Swing;
-//            dude.stamina -= 1;
-//         }
-//         break;
-//      case SwingPhase_Swing: {
-//
-//         if (io.buttonPressed[GameButton_RT]) {
-//            dude.swingTimingSuccess = false;
-//         }
-//
-//         auto radsPerMs = (dude.swing.swipeAngle * DEG2RAD) / dude.swing.swingDur.toMilliseconds();
-//         dude.weaponVector = v2Rotate(dude.weaponVector, v2FromAngle(-dude.swingDir * radsPerMs * ms));
-//
-//         if (dude.swing.lungeSpeed > 0.0f) {
-//            Float2 lungeVel = dude.facing * dude.swing.lungeSpeed;
-//            bool collided = true;
-//            int tries = 0;
-//            while (collided) {
-//               collided = false;
-//               for (auto& d : g_game->dudes) {
-//                  if (_dudeCollision(dude.size, dude.pos, lungeVel, d.size, d.pos, dt, lungeVel)) {
-//                     collided = true;
-//                     ++tries;
-//                     break;
-//                  }
-//               }
-//               if (tries >= 3) {
-//                  lungeVel = { 0,0 };
-//                  break;
-//               }
-//            }
-//            dp += lungeVel * (f32)dt.toMilliseconds();
-//         }
-//
-//
-//
-//
-//
-//         if (swingdt > dude.swing.swingDur) {
-//            dude.phaseStart += dude.swing.swingDur;
-//            dude.weaponVector = v2Normalized(v2Rotate(dude.mv.facing, v2FromAngle(-dude.swingDir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
-//            dude.swingPhase = SwingPhase_Cooldown;
-//         }
-//      }  break;
-//      case SwingPhase_Cooldown:
-//         if (io.buttonPressed[GameButton_RT] && dude.swingTimingSuccess && ++dude.combo < dude.moveset.swings.size()) {
-//            if (dude.stamina > 0) {
-//               _beginAttack(game->maindude, time, -dude.swingDir, dude.combo);
-//            }
-//            else {
-//               dude.swingTimingSuccess = false;
-//            }
-//         }
-//         else {
-//            if (swingdt > dude.swing.cooldownDur) {
-//               dude.phaseStart += dude.swing.cooldownDur;
-//               dude.state = Dude::State_FREE;
-//               dude.lastFree = time;
-//            }
-//         }
-//
-//         break;
-//      }
-//   }
-//
-//}
 
 
-
-
-void dudeUpdateStateAttack(Dude& d) {
-
-}
-
-void dudeUpdateState(Dude& d) {
-   switch (d.state) {
-   case DudeState_FREE: dudeUpdateStateFree(d); break;
-   case DudeState_COOLDOWN: dudeUpdateStateCooldown(d); break;
-   case DudeState_DASH: dudeUpdateStateDash(d); break;
-   case DudeState_ATTACKING: dudeUpdateStateAttack(d); break;
-   }
-}
 
 
 struct Game {
@@ -698,18 +660,18 @@ void gameBegin(Game*game) {
 
 
 static void _renderSwing(Dude&dude) {
-   //auto origin = dude.phy.pos + dude.weaponVector * dude.phy.circle.size;
+   auto origin = dude.phy.pos + dude.atk.weaponVector * dude.phy.circle.size;
 
-   //auto model = Matrix::identity();
-   //model *= Matrix::translate2f(origin);
-   //model *= Matrix::rotate2D(v2Angle(dude.weaponVector));
-   //model *= Matrix::translate2f({dude.swing.hitbox.x, dude.swing.hitbox.y});
-   //model *= Matrix::scale2f({ dude.swing.hitbox.w, dude.swing.hitbox.h });
+   auto model = Matrix::identity();
+   model *= Matrix::translate2f(origin);
+   model *= Matrix::rotate2D(v2Angle(dude.atk.weaponVector));
+   model *= Matrix::translate2f({dude.atk.swing.hitbox.x, dude.atk.swing.hitbox.y});
+   model *= Matrix::scale2f({ dude.atk.swing.hitbox.w, dude.atk.swing.hitbox.h });
 
-   //render::uSetColor(u::color, White);
-   //render::uSetMatrix(u::modelMatrix, model);
-   //render::textureBind(g_textures[GameTextures_ShittySword], 0);
-   //render::meshRender(g_game->meshUncentered);
+   render::uSetColor(u::color, White);
+   render::uSetMatrix(u::modelMatrix, model);
+   render::textureBind(g_textures[GameTextures_ShittySword], 0);
+   render::meshRender(g_game->meshUncentered);
 }
 
 static void _renderDude(Dude& dude) {
