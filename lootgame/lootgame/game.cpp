@@ -13,7 +13,7 @@
 
 #define AXIS_DEADZONE 0.25f
 #define AXIS_AIM_DEADZONE 0.5f
-#define DUDE_COUNT 20
+#define DUDE_COUNT 5
 
 static Constants g_const;
 Constants &ConstantsGet() { return g_const; }
@@ -50,9 +50,9 @@ enum SwingPhase {
 struct AttackSwing {
    f32 lungeSpeed; // character will luinge forward during swingphase
    f32 swipeAngle; // full range of the weapon swipe, in degrees
-   Time swingDur; // total time for the attack
-   Time windupDur; // vulnerability period before swing
-   Time cooldownDur; // period before user is free again
+   Milliseconds swingDur; // total time for the attack
+   Milliseconds windupDur; // vulnerability period before swing
+   Milliseconds cooldownDur; // period before user is free again
    Rectf hitbox; // axis-aligned, The origin here is the bottom center of the attack while facing up
                  // attack will rotate around that origin
 };
@@ -68,35 +68,39 @@ static MoveSet _createMoveSet() {
 
    out.swings[0].swipeAngle = 90.0f;
    out.swings[0].lungeSpeed = 0.0f;
-   out.swings[0].windupDur = timeMillis(100);
-   out.swings[0].swingDur = timeMillis(250);
-   out.swings[0].cooldownDur = timeMillis(500);
+   out.swings[0].windupDur = 100;
+   out.swings[0].swingDur = 250;
+   out.swings[0].cooldownDur = 500;
    out.swings[0].hitbox = hitbox;
 
    out.swings[1].swipeAngle = 180.0f;
    out.swings[1].lungeSpeed = 0.25f;
-   out.swings[1].windupDur = timeMillis(100);
-   out.swings[1].swingDur = timeMillis(250);
-   out.swings[1].cooldownDur = timeMillis(250);
+   out.swings[1].windupDur = 100;
+   out.swings[1].swingDur = 250;
+   out.swings[1].cooldownDur = 250;
    out.swings[1].hitbox = hitbox;
 
    out.swings[2].swipeAngle = 0.0f;
    out.swings[2].lungeSpeed = 0.5f;
-   out.swings[2].windupDur = timeMillis(100);
-   out.swings[2].swingDur = timeMillis(250);
-   out.swings[2].cooldownDur = timeMillis(100);
+   out.swings[2].windupDur = 100;
+   out.swings[2].swingDur = 250;
+   out.swings[2].cooldownDur = 100;
    out.swings[2].hitbox = hitbox;
 
    return out;
 }
 
 
-f32 dudeAcceleration =     0.005f;
-f32 dudeRotationSpeed =    0.010f;
-f32 dudeMoveSpeed =        0.600f;
-f32 dudeDashSpeed =        1.500f;
-f32 dudeSpeedCapEasing =   0.004f;
-f32 dudeBackwardsPenalty = 0.250f;
+f32 cDudeAcceleration =     0.005f;
+f32 cDudeRotationSpeed =    0.010f;
+f32 cDudeMoveSpeed =        0.600f;
+f32 cDudeDashSpeed =        1.500f;
+f32 cDudeSpeedCapEasing =   0.004f;
+f32 cDudeBackwardsPenalty = 0.250f;
+
+Milliseconds cDudePostDashCooldown = 300;
+Milliseconds cDudeDashDuration = 100;
+Milliseconds cDudeBaseStaminaTickRecoveryTime = 1000;
 
 struct Movement {
    f32 moveSpeedCap = 0.0f;       // updated per frame, interpolates toward moveSpeedCapTarget
@@ -106,20 +110,53 @@ struct Movement {
    Float2 facing = { 1, 0 };  // unit vector for character facing  
 };
 
+struct Dude;
+
 struct Behavior {
-   Float2 targetPos = { 0,0 };
-   Time started;
+   Milliseconds started;
+   Dude* target = nullptr;
+   int dir = 1;
+};
+
+struct AttackState {
+   Float2 weaponVector;
+   
+   AttackSwing swing;
+   SwingPhase swingPhase;
+   int swingDir;
+   int combo = 0;
+};
+
+struct CooldownState {
+   Milliseconds duration;
+};
+
+struct DashState {
+   Milliseconds duration;
+};
+
+struct FreeState {
+   Milliseconds staminaClockStart;
+   Milliseconds nextTickAt;
+};
+
+enum DudeState {
+   DudeState_FREE = 0,
+   DudeState_COOLDOWN,
+   DudeState_DASH,
+   DudeState_ATTACKING,
+};
+
+struct Status {
+   int stamina, staminaMax;
 };
 
 struct Dude {
-   enum State {
-      State_FREE = 0,
-      State_COOLDOWN,
-      State_DASH,
-      State_ATTACKING,
-   };
-
-   State state = State_FREE;
+   DudeState state = DudeState_FREE;
+   AttackState atk;
+   CooldownState cd;
+   DashState dash;
+   FreeState free;
 
 
    TextureHandle texture = 0;
@@ -130,28 +167,80 @@ struct Dude {
    PhyObject phy;
    Movement mv;
    Behavior ai;
+   Status status;
 
    
    Milliseconds stateStart;
 
-   int stamina, staminaMax;
-
-
-   Float2 weaponVector;
-   MoveSet moveset;
-   AttackSwing swing;
-   SwingPhase swingPhase;
-   int swingDir;
-   bool swingTimingSuccess; // set to false if hitting attack again before cooldown phase
-   int combo = 0;
    
+   MoveSet moveset;   
 };
 
-void dudeStartDash(Dude& d) {
-   if (d.stamina > 0) {
-      --d.stamina;
-      d.state = Dude::State_DASH;
-      d.stateStart = 0;
+static void uiEditDude(Dude& dude) {
+   if (ImGui::Begin(format("Dude Editor##%p", &dude).c_str(), 0, ImGuiWindowFlags_AlwaysAutoResize)) {
+
+      ImGui::InputFloat("Acceleration", &cDudeAcceleration, 0.001f, 0.01f, 4);
+      ImGui::InputFloat("Rotation Speed", &cDudeRotationSpeed, 0.01f, 0.1f, 4);
+      ImGui::InputFloat("Move Speed", &dude.phy.maxSpeed, 0.01f, 0.1f, 4);
+      ImGui::InputFloat("Speed Cap", &cDudeSpeedCapEasing, 0.001f, 0.01f, 4);
+
+      f32 ratio = dude.mv.moveSpeedCap / 1.0f;
+      ImGui::ProgressBar(ratio);
+   }
+   ImGui::End();
+}
+
+
+bool dudeSpendStamina(Dude &d, int stam) {
+   if (d.status.stamina == 0) {
+      return false;
+   }
+
+   d.status.stamina = MAX(0, d.status.stamina - stam);
+}
+
+void dudeSetState(Dude& d, DudeState state, Milliseconds startTimeOffset = 0) {
+   d.state = state;
+   d.stateStart = startTimeOffset;
+}
+
+Milliseconds calcNextStaminaTickTime(int stam, int max) {
+   auto ratio = (f32)stam / max;
+   return (Milliseconds)(cDudeBaseStaminaTickRecoveryTime * cosInterp(1 - ratio));
+}
+
+void dudeBeginFree(Dude&d) {
+   dudeSetState(d, DudeState_FREE);
+   d.free.staminaClockStart = 0;
+   d.free.nextTickAt = calcNextStaminaTickTime(d.status.stamina, d.status.staminaMax);
+}
+
+void dudeUpdateStateFree(Dude& d) {
+   // handle stamina regain
+   if (d.free.staminaClockStart++ > d.free.nextTickAt && d.status.stamina < d.status.staminaMax) {
+      ++d.status.stamina;
+      d.free.staminaClockStart = 0;
+      d.free.nextTickAt = calcNextStaminaTickTime(d.status.stamina, d.status.staminaMax);
+   }
+}
+
+void dudeBeginCooldown(Dude&d, Milliseconds duration) {
+   dudeSetState(d, DudeState_COOLDOWN);
+   d.cd.duration = duration;
+}
+
+void dudeUpdateStateCooldown(Dude& d) {
+   if (d.stateStart++ > d.cd.duration) {
+      dudeSetState(d, DudeState_FREE);
+   }
+}
+
+void dudeBeginDash(Dude& d, f32 speed, Milliseconds dur) {
+   if (dudeSpendStamina(d, 1)) {
+      
+      dudeSetState(d, DudeState_DASH);
+
+      d.dash.duration = dur;
 
       if (v2LenSquared(d.mv.moveVector) > 0.0f) {
          d.mv.moveVector = v2Normalized(d.mv.moveVector);
@@ -159,35 +248,24 @@ void dudeStartDash(Dude& d) {
       else {
          d.mv.moveVector = d.mv.faceVector;
       }
-
       
-      d.phy.maxSpeed = dudeDashSpeed;
+      d.phy.maxSpeed = speed;
       d.mv.moveSpeedCapTarget = d.mv.moveSpeedCap = d.phy.maxSpeed;
       d.phy.velocity = d.mv.moveVector * d.mv.moveSpeedCap;
    }
 }
-void dudeEndDash(Dude& d) {
-   d.stateStart = 0;
-   d.state = Dude::State_COOLDOWN;
-   d.mv.moveVector = { 0,0 };
-   d.phy.maxSpeed = dudeMoveSpeed;
-}
 
 
+void dudeUpdateStateDash(Dude& d) {
+   if (d.stateStart++ > d.dash.duration) {
+      dudeBeginCooldown(d, cDudePostDashCooldown);
 
-static void uiEditDude(Dude& dude){
-   if (ImGui::Begin(format("Dude Editor##%p", &dude).c_str(), 0, ImGuiWindowFlags_AlwaysAutoResize)) {
-
-      ImGui::InputFloat("Acceleration", &dudeAcceleration, 0.001f, 0.01f, 4);
-      ImGui::InputFloat("Rotation Speed", &dudeRotationSpeed, 0.01f, 0.1f, 4);
-      ImGui::InputFloat("Move Speed", &dude.phy.maxSpeed, 0.01f, 0.1f, 4);
-      ImGui::InputFloat("Speed Cap", &dudeSpeedCapEasing, 0.001f, 0.01f, 4);
-
-      f32 ratio = dude.mv.moveSpeedCap / 1.0f;
-      ImGui::ProgressBar(ratio);
+      d.mv.moveVector = { 0,0 };
+      d.phy.maxSpeed = cDudeMoveSpeed;
    }
-   ImGui::End();
 }
+
+
 
 
 static bool rightStickActive() {
@@ -228,19 +306,19 @@ void dudeApplyInputMovement(Dude& d) {
 void dudeApplyInputActions(Dude& d) {
    auto& io = gameDataGet()->io;
    if (io.buttonPressed[GameButton_LT]){
-      dudeStartDash(d);
+      dudeBeginDash(d, cDudeDashSpeed, cDudeDashDuration);
    }
 }
 
 void dudeApplyInput(Dude& d) {
    switch (d.state) {
-   case Dude::State_FREE:
+   case DudeState_FREE:
       dudeApplyInputMovement(d);
       dudeApplyInputActions(d);
       break;
-   case Dude::State_DASH:
+   case DudeState_DASH:
       break;
-   case Dude::State_ATTACKING:
+   case DudeState_ATTACKING:
       break;
    }
 }
@@ -250,68 +328,100 @@ void dudeUpdateVelocity(Dude& d) {
 
    // scale mvspeed based on facing;
    f32 facedot = v2Dot(v2Normalized(d.phy.velocity), d.mv.facing);
-   auto scaledSpeed = (d.phy.maxSpeed * (1 - dudeBackwardsPenalty)) + (d.phy.maxSpeed * dudeBackwardsPenalty * facedot);
+   auto scaledSpeed = (d.phy.maxSpeed * (1 - cDudeBackwardsPenalty)) + (d.phy.maxSpeed * cDudeBackwardsPenalty * facedot);
 
    // set the target speed
    d.mv.moveSpeedCapTarget = scaledSpeed * v2Len(d.mv.moveVector);
 
    // ease speed cap toward target
    if (d.mv.moveSpeedCap < d.mv.moveSpeedCapTarget) {
-      d.mv.moveSpeedCap += dudeSpeedCapEasing;      
+      d.mv.moveSpeedCap += cDudeSpeedCapEasing;      
    }
    else {
-      d.mv.moveSpeedCap -= dudeSpeedCapEasing;
+      d.mv.moveSpeedCap -= cDudeSpeedCapEasing;
    }
    clamp(d.mv.moveSpeedCap, 0, d.mv.moveSpeedCapTarget);
 
    // add the movevector scaled against acceleration to velocity and cap it
-   d.phy.velocity = v2CapLength(d.phy.velocity + d.mv.moveVector * dudeAcceleration, d.mv.moveSpeedCap);
+   d.phy.velocity = v2CapLength(d.phy.velocity + d.mv.moveVector * cDudeAcceleration, d.mv.moveSpeedCap);
 }
 
 // rotate facing vector toward the facevector
 void dudeUpdateRotation(Dude& d) {
    if (v2LenSquared(d.mv.faceVector) > 0.0f) {
-      d.mv.facing = v2Normalized(v2RotateTowards(d.mv.facing, d.mv.faceVector, v2FromAngle(dudeRotationSpeed)));
+      d.mv.facing = v2Normalized(v2RotateTowards(d.mv.facing, d.mv.faceVector, v2FromAngle(cDudeRotationSpeed)));
    }
 }
 
-bool _attackCollision(Dude& attacker, Dude& defender) {
-   auto origin = attacker.phy.pos + attacker.weaponVector * attacker.phy.circle.size;
-   auto defendPos = v2Rotate(defender.phy.pos - origin, v2Conjugate(attacker.weaponVector));
 
-   auto wbox = attacker.moveset.swings[attacker.combo].hitbox;
-   //wbox.x += origin.x;
-   //wbox.y += origin.y;
-
-   return circleVsAabb(defendPos, defender.phy.circle.size, wbox);
-}
-
-static void _beginAttack(Dude& dude, Time t, int dir, int combo) {
-   dude.combo = combo;
-   dude.swing = dude.moveset.swings[combo];
-
-   dude.state = Dude::State_ATTACKING;
-   dude.mv.moveVector = dude.mv.faceVector = { 0.0f, 0.0f };
-
-   dude.weaponVector = v2Normalized(v2Rotate(dude.mv.facing, v2FromAngle(dir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
-   dude.swingPhase = SwingPhase_Windup;
-   //dude.st = t;
-   dude.swingDir = dir;
-
-   dude.swingTimingSuccess = true;
-}
 
 void dudeUpdateBehavior(Dude& dude) {
-   if (v2Dist(dude.phy.pos, dude.ai.targetPos) < dude.phy.circle.size || appGetTime() - dude.ai.started > timeSecs(10)) {
-      dude.ai.targetPos = { (f32)(rand() % 1820), (f32)(rand() % 980) };
-      dude.ai.started = appGetTime();
-   }
-   else {
-      auto vec = v2Normalized(dude.ai.targetPos - dude.phy.pos);
+   auto& target = *dude.ai.target;
+   auto dist = v2Dist(dude.phy.pos, target.phy.pos);
+
+   // move to range
+   if (dist > 300.0f) {
+      auto vec = v2Normalized(target.phy.pos - dude.phy.pos);
       dude.mv.moveVector = dude.mv.faceVector = vec;
    }
+   else {
+      auto unitToTarget = v2Normalized(target.phy.pos - dude.phy.pos);
+      dude.mv.faceVector = unitToTarget;
+
+      if (dist < 200.0f) {
+         // too close, back up
+         dude.mv.moveVector = -unitToTarget;
+      }
+      else {
+         if (dude.ai.started++ > (rand() % 3000) + 3000) {
+            dude.ai.dir = -dude.ai.dir;
+            dude.ai.started = 0;
+         }
+         dude.mv.moveVector = v2Orthogonal(unitToTarget) * 0.1f * dude.ai.dir;
+      }
+
+           
+
+   }
+
+
+
+
+
+   //if (v2Dist(dude.phy.pos, dude.ai.targetPos) < dude.phy.circle.size || appGetTime() - dude.ai.started > timeSecs(10)) {
+   //   dude.ai.targetPos = { (f32)(rand() % 1820), (f32)(rand() % 980) };
+   //   dude.ai.started = appGetTime();
+   //}
+   //else {
+   //   auto vec = v2Normalized(dude.ai.targetPos - dude.phy.pos);
+   //   dude.mv.moveVector = dude.mv.faceVector = vec;
+   //}
 }
 
+//bool _attackCollision(Dude& attacker, Dude& defender) {
+//   auto origin = attacker.phy.pos + attacker.weaponVector * attacker.phy.circle.size;
+//   auto defendPos = v2Rotate(defender.phy.pos - origin, v2Conjugate(attacker.weaponVector));
+//
+//   auto wbox = attacker.moveset.swings[attacker.combo].hitbox;
+//   //wbox.x += origin.x;
+//   //wbox.y += origin.y;
+//
+//   return circleVsAabb(defendPos, defender.phy.circle.size, wbox);
+//}
+//static void _beginAttack(Dude& dude, Time t, int dir, int combo) {
+//   dude.combo = combo;
+//   dude.swing = dude.moveset.swings[combo];
+//
+//   dude.state = Dude::State_ATTACKING;
+//   dude.mv.moveVector = dude.mv.faceVector = { 0.0f, 0.0f };
+//
+//   dude.weaponVector = v2Normalized(v2Rotate(dude.mv.facing, v2FromAngle(dir * dude.swing.swipeAngle / 2.0f * DEG2RAD)));
+//   dude.swingPhase = SwingPhase_Windup;
+//   //dude.st = t;
+//   dude.swingDir = dir;
+//
+//   dude.swingTimingSuccess = true;
+//}
 //static void _updateDude(Game* game, Milliseconds ms) {
 //   auto time = appGetTime();
 //
@@ -363,24 +473,24 @@ void dudeUpdateBehavior(Dude& dude) {
 //         dude.weaponVector = v2Rotate(dude.weaponVector, v2FromAngle(-dude.swingDir * radsPerMs * ms));
 //
 //         if (dude.swing.lungeSpeed > 0.0f) {
-//            //Float2 lungeVel = dude.facing * dude.swing.lungeSpeed;
-//            //bool collided = true;
-//            //int tries = 0;
-//            //while (collided) {
-//            //   collided = false;
-//            //   for (auto& d : g_game->dudes) {
-//            //      if (_dudeCollision(dude.size, dude.pos, lungeVel, d.size, d.pos, dt, lungeVel)) {
-//            //         collided = true;
-//            //         ++tries;
-//            //         break;
-//            //      }
-//            //   }
-//            //   if (tries >= 3) {
-//            //      lungeVel = { 0,0 };
-//            //      break;
-//            //   }
-//            //}
-//            //dp += lungeVel * (f32)dt.toMilliseconds();
+//            Float2 lungeVel = dude.facing * dude.swing.lungeSpeed;
+//            bool collided = true;
+//            int tries = 0;
+//            while (collided) {
+//               collided = false;
+//               for (auto& d : g_game->dudes) {
+//                  if (_dudeCollision(dude.size, dude.pos, lungeVel, d.size, d.pos, dt, lungeVel)) {
+//                     collided = true;
+//                     ++tries;
+//                     break;
+//                  }
+//               }
+//               if (tries >= 3) {
+//                  lungeVel = { 0,0 };
+//                  break;
+//               }
+//            }
+//            dp += lungeVel * (f32)dt.toMilliseconds();
 //         }
 //
 //
@@ -416,27 +526,19 @@ void dudeUpdateBehavior(Dude& dude) {
 //
 //}
 
+
+
+
+void dudeUpdateStateAttack(Dude& d) {
+
+}
+
 void dudeUpdateState(Dude& d) {
    switch (d.state) {
-   case Dude::State_FREE:
-      if (d.stateStart++ > 500 && d.stamina < d.staminaMax) {
-         ++d.stamina;
-         d.stateStart = 0;
-      }
-      break;
-   case Dude::State_COOLDOWN:
-      if (d.stateStart++ > 300) {
-         d.state = Dude::State_FREE;
-         d.stateStart = 0;
-      }
-      break;
-   case Dude::State_DASH:
-      if (d.stateStart++ > 30) {
-         dudeEndDash(d);
-      }
-      break;
-   case Dude::State_ATTACKING:
-      break;
+   case DudeState_FREE: dudeUpdateStateFree(d); break;
+   case DudeState_COOLDOWN: dudeUpdateStateCooldown(d); break;
+   case DudeState_DASH: dudeUpdateStateDash(d); break;
+   case DudeState_ATTACKING: dudeUpdateStateAttack(d); break;
    }
 }
 
@@ -551,12 +653,12 @@ static Dude _createDude(Game* game) {
    out.moveset = _createMoveSet();
    out.phy.pos = { 50,50 };
    out.phy.circle.size = 20.0f;
-   out.phy.maxSpeed = dudeMoveSpeed;
+   out.phy.maxSpeed = cDudeMoveSpeed;
    out.phy.invMass = 0.0f;
    out.renderSize = { 60, 100 };
    out.texture = g_textures[GameTextures_Dude];
 
-   out.stamina = out.staminaMax = 4;
+   out.status.stamina = out.status.staminaMax = 4;
 
    return out;
 }
@@ -569,14 +671,11 @@ static Dude _createEnemy(Float2 pos, f32 size) {
    out.phy.pos = pos;
    out.phy.circle.size = size;
    out.phy.velocity = { 0,0 };
-   out.phy.maxSpeed = dudeMoveSpeed;
+   out.phy.maxSpeed = cDudeMoveSpeed;
    out.phy.invMass =(f32)(rand()%50 + 5) / 100.0f;
    out.renderSize = { 60, 100 };
    out.texture = g_textures[GameTextures_Dude];
-   out.stamina = out.staminaMax = 4;
-
-   out.ai.targetPos = { (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 };
-   out.ai.started = appGetTime();
+   out.status.stamina = out.status.staminaMax = 4;
 
    return out;
 }
@@ -589,6 +688,7 @@ void gameBegin(Game*game) {
 
    for (int i = 0; i < DUDE_COUNT; ++i) {
       auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 }, 20.0f);
+      e.ai.target = &game->maindude;
       game->baddudes.push_back(e);
    }
 
@@ -598,18 +698,18 @@ void gameBegin(Game*game) {
 
 
 static void _renderSwing(Dude&dude) {
-   auto origin = dude.phy.pos + dude.weaponVector * dude.phy.circle.size;
+   //auto origin = dude.phy.pos + dude.weaponVector * dude.phy.circle.size;
 
-   auto model = Matrix::identity();
-   model *= Matrix::translate2f(origin);
-   model *= Matrix::rotate2D(v2Angle(dude.weaponVector));
-   model *= Matrix::translate2f({dude.swing.hitbox.x, dude.swing.hitbox.y});
-   model *= Matrix::scale2f({ dude.swing.hitbox.w, dude.swing.hitbox.h });
+   //auto model = Matrix::identity();
+   //model *= Matrix::translate2f(origin);
+   //model *= Matrix::rotate2D(v2Angle(dude.weaponVector));
+   //model *= Matrix::translate2f({dude.swing.hitbox.x, dude.swing.hitbox.y});
+   //model *= Matrix::scale2f({ dude.swing.hitbox.w, dude.swing.hitbox.h });
 
-   render::uSetColor(u::color, White);
-   render::uSetMatrix(u::modelMatrix, model);
-   render::textureBind(g_textures[GameTextures_ShittySword], 0);
-   render::meshRender(g_game->meshUncentered);
+   //render::uSetColor(u::color, White);
+   //render::uSetMatrix(u::modelMatrix, model);
+   //render::textureBind(g_textures[GameTextures_ShittySword], 0);
+   //render::meshRender(g_game->meshUncentered);
 }
 
 static void _renderDude(Dude& dude) {
@@ -638,7 +738,7 @@ static void _renderDude(Dude& dude) {
       render::meshRender(g_game->mesh);
    }
    
-   if (dude.state == Dude::State_ATTACKING) {
+   if (dude.state == DudeState_ATTACKING) {
       _renderSwing(dude);
    }
 }
@@ -767,17 +867,23 @@ static void _renderGameUI(Game* game) {
    render::uSetTextureSlot(u::diffuse, 0);
    render::uSetMatrix(u::texMatrix, Matrix::identity());
    render::uSetColor(u::color, White);
+   
+   /*if (game->maindude.stamina < game->maindude.staminaMax)*/ {
+      Float2 gemSize = { 24, 38 };
+      f32 gemSpace = 0.0f;
+      auto w = (gemSize.x + gemSpace) * game->maindude.status.staminaMax;
 
-   Float2 staminaCorner = { 5,5 };
-   Float2 gemSize = { 25, 50 };
-   f32 gemSpace = 5.0f;
+      //Float2 staminaCorner = { game->maindude.phy.pos.x - w / 2.0f, game->maindude.phy.pos.y + game->maindude.phy.circle.size + 20 };
+      Float2 staminaCorner = { 10,10 };
 
-   for (int i = 0; i < game->maindude.staminaMax; ++i) {
-      auto model = Matrix::translate2f(staminaCorner + Float2{(gemSize.x + gemSpace) * i, 0}) *  Matrix::scale2f(gemSize);
-      render::uSetMatrix(u::modelMatrix, model);
-      render::textureBind(g_textures[i < game->maindude.stamina ? GameTextures_GemFilled : GameTextures_GemEmpty], 0);
-      render::meshRender(g_game->meshUncentered);
+      for (int i = 0; i < game->maindude.status.staminaMax; ++i) {
+         auto model = Matrix::translate2f(staminaCorner + Float2{ (gemSize.x + gemSpace) * i, 0 }) *  Matrix::scale2f(gemSize);
+         render::uSetMatrix(u::modelMatrix, model);
+         render::textureBind(g_textures[i < game->maindude.status.stamina ? GameTextures_GemFilled : GameTextures_GemEmpty], 0);
+         render::meshRender(g_game->meshUncentered);
+      }
    }
+   
 
 }
 
