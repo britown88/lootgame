@@ -18,13 +18,7 @@
 static Constants g_const;
 Constants &ConstantsGet() { return g_const; }
 
-namespace u {
-   static StringView color = "uColor";
-   static StringView diffuse = "uDiffuse";
-   static StringView texMatrix = "uTexMatrix";
-   static StringView modelMatrix = "uModelMatrix";
-   static StringView viewMatrix = "uViewMatrix";
-}
+
 
 enum {
    GameTextures_Dude = 0,
@@ -537,7 +531,7 @@ void dudeUpdateBehavior(Dude& dude) {
 struct Game {
    GameData data;
 
-   ShaderHandle shader = 0, colorShader = 0;
+   ShaderHandle shader = 0;
 
    Mesh mesh, meshUncentered;
    FBO fbo, lightfbo;
@@ -591,11 +585,9 @@ static TextureHandle _textureBuildFromFile(const char* path, TextureConfig const
 
 static void _createGraphicsObjects(Game* game){
    auto vertex = fileReadString("assets/vertex.glsl");
-   auto colorfrag = fileReadString("assets/coloronlyfrag.glsl");
    auto fragment = fileReadString("assets/fragment.glsl");
 
    game->shader = render::shaderBuild(vertex, fragment);
-   game->colorShader = render::shaderBuild(vertex, colorfrag);
 
    Vertex vbo[] = { 
       { { -0.5f, -0.5f },{ 0.0f, 0.0f } },
@@ -697,35 +689,33 @@ static void _renderSwing(Dude&dude) {
    model *= Matrix::translate2f({dude.atk.swing.hitbox.x, dude.atk.swing.hitbox.y});
    model *= Matrix::scale2f({ dude.atk.swing.hitbox.w, dude.atk.swing.hitbox.h });
 
-   render::uSetColor(u::color, White);
-   render::uSetMatrix(u::modelMatrix, model);
-   render::textureBind(g_textures[GameTextures_ShittySword], 0);
+   uber::resetToDefault();
+   uber::set(Uniform_ModelMatrix, model);
+   render::textureBind(g_textures[GameTextures_ShittySword]);
    render::meshRender(g_game->meshUncentered);
 }
 
 static void _renderDude(Dude& dude) {
    auto model = Matrix::identity();
-   auto texmat = Matrix::identity();
 
    model *= Matrix::translate2f(dude.phy.pos);
    model *= Matrix::rotate2D(v2Angle(dude.mv.facing));
    model *= Matrix::scale2f(dude.renderSize);
 
-   render::uSetColor(u::color, dude.c);
-   render::uSetMatrix(u::texMatrix, texmat);
-   render::uSetMatrix(u::modelMatrix, model);
-   
-   render::uSetTextureSlot(u::diffuse, 0);
-   render::textureBind(dude.texture, 0);
+   uber::resetToDefault();
+   uber::set(Uniform_Color, dude.c);
+   uber::set(Uniform_ModelMatrix, model);
+   render::textureBind(dude.texture);
    render::meshRender(g_game->mesh);
 
    if (gameDataGet()->imgui.showCollisionDebugging) {
 
       model = Matrix::translate2f(dude.phy.pos);
       model *= Matrix::scale2f({ dude.phy.circle.size * 2, dude.phy.circle.size * 2 });
-      render::uSetColor(u::color, Cyan);
-      render::uSetMatrix(u::modelMatrix, model);
-      render::textureBind(g_textures[GameTextures_Circle], 0);
+      uber::set(Uniform_Color, Cyan);
+      uber::set(Uniform_ModelMatrix, model);
+
+      render::textureBind(g_textures[GameTextures_Circle]);
       render::meshRender(g_game->mesh);
    }
    
@@ -736,16 +726,14 @@ static void _renderDude(Dude& dude) {
 
 static void _renderTarget(Float2 pos, ColorRGBAf color, f32 sz) {
    auto model = Matrix::identity();
-   auto texmat = Matrix::identity();
 
    model *= Matrix::translate2f(pos);
    model *= Matrix::scale2f({ sz,sz });
 
-   render::uSetColor(u::color, color);
-   render::uSetMatrix(u::texMatrix, texmat);
-   render::uSetMatrix(u::modelMatrix, model);
-   render::uSetTextureSlot(u::diffuse, 0);
-   render::textureBind(g_textures[GameTextures_Target], 0);
+   uber::resetToDefault();
+   uber::set(Uniform_Color, color);
+   uber::set(Uniform_ModelMatrix, model);
+   render::textureBind(g_textures[GameTextures_Target]);
    render::meshRender(g_game->mesh);
 }
 
@@ -753,25 +741,26 @@ static void _addLight(Float2 size, Float2 pos, ColorRGBAf c) {
    auto model = Matrix::translate2f(pos);
    model *= Matrix::scale2f(size);
 
-   render::uSetColor(u::color, c);
-   render::uSetMatrix(u::modelMatrix, model);
-   render::textureBind(g_textures[GameTextures_Light], 0);
+   uber::set(Uniform_Color, c);
+   uber::set(Uniform_ModelMatrix, model);
+   render::textureBind(g_textures[GameTextures_Light]);
    render::meshRender(g_game->mesh);
-
 }
 
 static void _populateLightLayer(Game* game) {
    auto& c = ConstantsGet();
    auto& res = c.resolution;
 
+   uber::resetToDefault();
+
    auto view = Matrix::ortho(0, (float)res.x, 0, (float)res.y, -1, 1);
-   render::shaderSetActive(game->shader);
-   render::uSetMatrix(u::viewMatrix, view);
+   uber::set(Uniform_ViewMatrix, view);
+
 
    render::fboBind(game->lightfbo);
    render::setBlendMode(BlendMode_PURE_ADD);
-   render::viewport({ 0,0, res.x, res.y });
-   
+
+   render::viewport({ 0,0, res.x, res.y });   
    render::clear({0.f,0.f,0.f,0.0f});
 
    _addLight({ 500, 500 }, game->maindude.phy.pos, Yellow);
@@ -789,16 +778,13 @@ static void _populateLightLayer(Game* game) {
    //_addLight({ lsz, lsz }, { 1800, 200 }, Yellow);
    //_addLight({ lsz, lsz }, { 1800, 800 }, Yellow);
    //_addLight({ lsz, lsz }, { 900, 800 }, Yellow);
-
-
-   render::shaderSetActive(game->colorShader);
-   render::uSetMatrix(u::viewMatrix, view);
+   
 
    auto model = Matrix::scale2f({ (f32)res.x, (f32)res.y});
    auto al = gameDataGet()->imgui.ambientLight;
-   render::uSetColor(u::color, sRgbToLinear(ColorRGBAf{ al,al,al,al }));
-   render::uSetMatrix(u::modelMatrix, model);
-   render::textureBind(0, 0);
+   uber::set(Uniform_ColorOnly, true);
+   uber::set(Uniform_Color, sRgbToLinear(ColorRGBAf{ al,al,al,al }));
+   uber::set(Uniform_ModelMatrix, model);
    render::meshRender(g_game->meshUncentered);
 }
 
@@ -808,26 +794,20 @@ static void _renderFloor(Game* game) {
 
    Float2 fres = { (f32)res.x, (f32)res.y };
    f32 r = fres.x / fres.y;
-
-   auto texmat = Matrix::scale2f({ fres.x / 50, fres.y/50});
-   auto model = Matrix::scale2f(fres);
-
-   render::uSetColor(u::color, White);
-   render::uSetMatrix(u::texMatrix, texmat);
-   render::uSetMatrix(u::modelMatrix, model);
-   render::uSetTextureSlot(u::diffuse, 0);
-   render::textureBind(g_textures[GameTextures_Tile], 0);
+   
+   uber::resetToDefault();
+   uber::set(Uniform_TextureMatrix, Matrix::scale2f({ fres.x / 50, fres.y / 50 }));
+   uber::set(Uniform_ModelMatrix, Matrix::scale2f(fres));
+   render::textureBind(g_textures[GameTextures_Tile]);
    render::meshRender(g_game->meshUncentered);
 
    if (gameDataGet()->imgui.showCollisionDebugging) {
       Rectf testrect = { 300,300, 500, 200 };
-      render::shaderSetActive(game->colorShader);
-      render::uSetColor(u::color, circleVsAabb(game->maindude.phy.pos, game->maindude.phy.circle.size, testrect) ? Red : Cyan);
-      render::uSetMatrix(u::modelMatrix, Matrix::translate2f({ testrect.x, testrect.y }) * Matrix::scale2f({ testrect.w, testrect.h }));
-      render::textureBind(0, 0);
-      render::meshRender(g_game->meshUncentered);
 
-      render::shaderSetActive(game->shader);
+      uber::set(Uniform_ColorOnly, true);
+      uber::set(Uniform_Color, circleVsAabb(game->maindude.phy.pos, game->maindude.phy.circle.size, testrect) ? Red : Cyan);
+      uber::set(Uniform_ModelMatrix, Matrix::translate2f({ testrect.x, testrect.y }) * Matrix::scale2f({ testrect.w, testrect.h }));
+      render::meshRender(g_game->meshUncentered);
    }
 
 
@@ -840,24 +820,16 @@ static void _renderLightLayer(Game* game) {
    auto model = Matrix::identity();
    auto texmat = Matrix::identity();
 
-   model *= Matrix::scale2f({ (float)game->lightfbo.sz.x, (float)game->lightfbo.sz.y });
-
-   render::uSetColor(u::color, White);
-   render::uSetMatrix(u::texMatrix, texmat);
-   render::uSetMatrix(u::modelMatrix, model);
-   render::uSetTextureSlot(u::diffuse, 0);
-
-   render::textureBind(game->lightfbo.tex, 0);
+   uber::resetToDefault();
+   uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (float)game->lightfbo.sz.x, (float)game->lightfbo.sz.y }));
+   render::textureBind(game->lightfbo.tex);
    render::meshRender(g_game->meshUncentered);
-
 }
 
 static void _renderGameUI(Game* game) {
    render::setBlendMode(BlendMode_NORMAL);
 
-   render::uSetTextureSlot(u::diffuse, 0);
-   render::uSetMatrix(u::texMatrix, Matrix::identity());
-   render::uSetColor(u::color, White);
+   uber::resetToDefault();
    
    /*if (game->maindude.stamina < game->maindude.staminaMax)*/ {
       Float2 gemSize = { 24, 38 };
@@ -869,8 +841,8 @@ static void _renderGameUI(Game* game) {
 
       for (int i = 0; i < game->maindude.status.staminaMax; ++i) {
          auto model = Matrix::translate2f(staminaCorner + Float2{ (gemSize.x + gemSpace) * i, 0 }) *  Matrix::scale2f(gemSize);
-         render::uSetMatrix(u::modelMatrix, model);
-         render::textureBind(g_textures[i < game->maindude.status.stamina ? GameTextures_GemFilled : GameTextures_GemEmpty], 0);
+         uber::set(Uniform_ModelMatrix, model);
+         render::textureBind(g_textures[i < game->maindude.status.stamina ? GameTextures_GemFilled : GameTextures_GemEmpty]);
          render::meshRender(g_game->meshUncentered);
       }
    }
@@ -886,7 +858,10 @@ static void _renderScene(Game* game) {
 
    auto view = Matrix::ortho(0, (float)res.x, 0, (float)res.y, -1, 1);
    render::shaderSetActive(game->shader);
-   render::uSetMatrix(u::viewMatrix, view);
+
+   uber::resetToDefault(true);
+   uber::set(Uniform_ViewMatrix, view, true);   
+
 
    render::fboBind(game->fbo);
 
@@ -940,7 +915,7 @@ static void _renderScene(Game* game) {
    //render::uSetMatrix(u::texMatrix, Matrix::identity());
    //render::uSetMatrix(u::modelMatrix, Matrix::scale2f({ (float)game->outputfbo.sz.x, (float)game->outputfbo.sz.y }));
    //render::uSetTextureSlot(u::diffuse, 0);
-   //render::textureBind(game->fbo.tex, 0);
+   //render::textureBind(game->fbo.tex);
 
    //glEnable(GL_FRAMEBUFFER_SRGB);
    //render::meshRender(g_game->meshUncentered);
@@ -958,7 +933,7 @@ static void _renderScene(Game* game) {
    //render::uSetMatrix(u::texMatrix, Matrix::identity());
    //render::uSetMatrix(u::modelMatrix, Matrix::scale2f({ (float)game->outputfbo.sz.x, (float)game->outputfbo.sz.y }));
    //render::uSetTextureSlot(u::diffuse, 0);
-   //render::textureBind(game->outputfbo.tex, 0);
+   //render::textureBind(game->outputfbo.tex);
 
    //
    //render::meshRender(g_game->meshUncentered);

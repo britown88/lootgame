@@ -8,6 +8,135 @@ using namespace render;
 
 static ShaderHandle g_activeShader = 0;
 
+struct UberShader {
+   struct Defaults {
+      Matrix texMatrix = Matrix::identity();
+      Matrix modelMatrix = Matrix::identity();
+      Matrix viewMatrix = Matrix::identity();
+      TextureSlot textureSlot = 0;
+
+      ColorRGBAf color = {1,1,1,1};
+      f32 alpha = 1;
+
+      bool colorOnly = false;
+   } defaults;
+
+   struct UData {
+      enum Type {
+         Matrix,
+         TextureSlot,
+         Color,
+         Float,
+         Bool
+      };
+      StringView name;
+      size_t offset;
+      Type type;
+   };
+
+   UData dataMap[Uniform_COUNT] = {
+      { "uTexMatrix",   offsetof(Defaults, texMatrix),   UData::Matrix },
+      { "uModelMatrix", offsetof(Defaults, modelMatrix), UData::Matrix },
+      { "uViewMatrix",  offsetof(Defaults, viewMatrix),  UData::Matrix },
+      { "uDiffuse",     offsetof(Defaults, textureSlot), UData::TextureSlot },
+
+      { "uColor",       offsetof(Defaults, color),       UData::Color },
+      { "uAlpha",       offsetof(Defaults, alpha),       UData::Float },
+
+      { "uColorOnly",   offsetof(Defaults, colorOnly),   UData::Bool },
+   };
+
+   bool modified[Uniform_COUNT] = { 0 };
+
+   void resetToDefault(bool pushAll = false) {
+      for(int i = 0; i < Uniform_COUNT; ++i){
+         if (modified[i] || pushAll) {
+            modified[i] = false;
+            switch (dataMap[i].type) {
+            case UData::Matrix:
+               render::uSetMatrix(dataMap[i].name, *(Matrix*)(((byte*)&defaults) + dataMap[i].offset));
+               break;
+            case UData::TextureSlot:
+               render::uSetTextureSlot(dataMap[i].name, *(TextureSlot*)(((byte*)&defaults) + dataMap[i].offset));
+               break;
+            case UData::Color:
+               render::uSetColor(dataMap[i].name, *(ColorRGBAf*)(((byte*)&defaults) + dataMap[i].offset));
+               break;
+            case UData::Float:
+               render::uSetFloat(dataMap[i].name, *(float*)(((byte*)&defaults) + dataMap[i].offset));
+               break;
+            case UData::Bool:
+               render::uSetBool(dataMap[i].name, *(bool*)(((byte*)&defaults) + dataMap[i].offset));
+               break;
+            }
+         }
+      }
+   }
+
+   void set(Uniform u, Matrix const& m) {
+      render::uSetMatrix(dataMap[u].name, m);
+      modified[u] = true;
+   }
+   void set(Uniform u, TextureSlot t) {
+      render::uSetTextureSlot(dataMap[u].name, t);
+      modified[u] = true;
+   }
+   void set(Uniform u, ColorRGBAf const& c) {
+      render::uSetColor(dataMap[u].name, c);
+      modified[u] = true;
+   }
+   void set(Uniform u, float f) {
+      render::uSetFloat(dataMap[u].name, f);
+      modified[u] = true;
+   }
+   void set(Uniform u, bool b) {
+      render::uSetBool(dataMap[u].name, b);
+      modified[u] = true;
+   }
+};
+
+UberShader g_uberShader;
+
+// ubershader
+void uber::resetToDefault(bool pushAll) {
+   g_uberShader.resetToDefault(pushAll);
+}
+
+void uber::set(Uniform u, Matrix const& m, bool setAsDefault) {
+   g_uberShader.set(u, m);
+   if (setAsDefault) {
+      *(Matrix*)(((byte*)&g_uberShader.defaults) + g_uberShader.dataMap[u].offset) = m;
+      g_uberShader.modified[u] = false;
+   }
+}
+void uber::set(Uniform u, TextureSlot t, bool setAsDefault) {
+   g_uberShader.set(u, t);
+   if (setAsDefault) {
+      *(TextureSlot*)(((byte*)&g_uberShader.defaults) + g_uberShader.dataMap[u].offset) = t;
+      g_uberShader.modified[u] = false;
+   }
+}
+void uber::set(Uniform u, ColorRGBAf const& c, bool setAsDefault) {
+   g_uberShader.set(u, c);
+   if (setAsDefault) {
+      *(ColorRGBAf*)(((byte*)&g_uberShader.defaults) + g_uberShader.dataMap[u].offset) = c;
+      g_uberShader.modified[u] = false;
+   }
+}
+void uber::set(Uniform u, float f, bool setAsDefault) {
+   g_uberShader.set(u, f);
+   if (setAsDefault) {
+      *(float*)(((byte*)&g_uberShader.defaults) + g_uberShader.dataMap[u].offset) = f;
+      g_uberShader.modified[u] = false;
+   }
+}
+void uber::set(Uniform u, bool b, bool setAsDefault) {
+   g_uberShader.set(u, b);
+   if (setAsDefault) {
+      *(bool*)(((byte*)&g_uberShader.defaults) + g_uberShader.dataMap[u].offset) = b;
+      g_uberShader.modified[u] = false;
+   }
+}
 
 void render::clear(ColorRGBAf const& c) {
    glClearColor(c.r, c.g, c.b, c.a);
@@ -219,6 +348,10 @@ void render::uSetBool(const char* u, bool value) {
 void render::uSetUint(const char* u, u32 value) {
    auto uHandle = glGetUniformLocation(g_activeShader, u);
    glUniform1ui(uHandle, value);
+}
+void render::uSetFloat(const char* u, f32 value) {
+   auto uHandle = glGetUniformLocation(g_activeShader, u);
+   glUniform1f(uHandle, value);
 }
 void render::uSetFloat2(const char* u, Float2 const& value) {
    auto uHandle = glGetUniformLocation(g_activeShader, u);

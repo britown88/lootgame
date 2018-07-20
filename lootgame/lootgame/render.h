@@ -57,6 +57,32 @@ enum BlendMode {
    BlendMode_LIGHTING
 };
 
+enum Uniform_ {
+   Uniform_TextureMatrix = 0,
+   Uniform_ModelMatrix,
+   Uniform_ViewMatrix,
+   Uniform_TextureSlot,
+
+   Uniform_Color,
+   Uniform_Alpha,
+   
+   Uniform_ColorOnly,
+
+   Uniform_COUNT
+};
+typedef u32 Uniform;
+
+namespace uber {
+   void resetToDefault(bool pushAll = false);
+
+   void set(Uniform u, Matrix const& m, bool setAsDefault = false);
+   void set(Uniform u, TextureSlot t, bool setAsDefault = false);
+   void set(Uniform u, ColorRGBAf const& c, bool setAsDefault = false);
+   void set(Uniform u, float f, bool setAsDefault = false);
+   void set(Uniform u, bool b, bool setAsDefault = false);
+}
+
+
 namespace render{
 
    void clear(ColorRGBAf const& c);
@@ -71,11 +97,12 @@ namespace render{
    // textures
    TextureHandle textureBuild(ColorRGBA const* pixels, Int2 const& sz, TextureConfig const& cfg);
    void textureDestroy(TextureHandle t);
-   void textureBind(TextureHandle t, TextureSlot slot);
+   void textureBind(TextureHandle t, TextureSlot slot = 0);
 
    // uniform sets
    void uSetBool(const char* u, bool value);
    void uSetUint(const char* u, u32 value);
+   void uSetFloat(const char* u, f32 value);
    void uSetFloat2(const char* u, Float2 const& value);
    void uSetMatrix(const char* u, Matrix const& value);
    void uSetColor(const char* u, ColorRGBAf const& value);
