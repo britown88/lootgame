@@ -244,12 +244,13 @@ void render::shaderSetActive(ShaderHandle s) {
 }
 
 // textures
-TextureHandle render::textureBuild(ColorRGBA const* pixels, Int2 const& sz, TextureConfig const& cfg) {
-   TextureHandle out = 0;
+Texture render::textureBuild(ColorRGBA const* pixels, Int2 const& sz, TextureConfig const& cfg) {
+   Texture out;
+   out.sz = sz;
    
    glEnable(GL_TEXTURE_2D);
-   glGenTextures(1, &out);
-   glBindTexture(GL_TEXTURE_2D, out);
+   glGenTextures(1, &out.handle);
+   glBindTexture(GL_TEXTURE_2D, out.handle);
    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
    switch (cfg.filterType)

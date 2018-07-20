@@ -26,6 +26,11 @@ struct TextureConfig {
    FilterType filterType = FilterType_NEAREST;
 };
 
+struct Texture {
+   Int2 sz;
+   TextureHandle handle;
+};
+
 struct FBO {
    Int2 sz;
    TextureHandle tex;
@@ -95,7 +100,7 @@ namespace render{
    void shaderSetActive(ShaderHandle s);
       
    // textures
-   TextureHandle textureBuild(ColorRGBA const* pixels, Int2 const& sz, TextureConfig const& cfg);
+   Texture textureBuild(ColorRGBA const* pixels, Int2 const& sz, TextureConfig const& cfg);
    void textureDestroy(TextureHandle t);
    void textureBind(TextureHandle t, TextureSlot slot = 0);
 
