@@ -117,6 +117,7 @@ struct Behavior {
    Milliseconds started;
    Dude* target = nullptr;
    int dir = 1;
+   bool attack = false;
 };
 
 struct AttackState {
@@ -462,13 +463,43 @@ void dudeUpdateRotation(Dude& d) {
 
 
 void dudeUpdateBehavior(Dude& dude) {
+
+   if (dude.state != DudeState_FREE) {
+      return;
+   }
+
    auto& target = *dude.ai.target;
    auto dist = v2Dist(dude.phy.pos, target.phy.pos);
+
+   if (dude.ai.attack) {
+      auto unitToTarget = v2Normalized(target.phy.pos - dude.phy.pos);
+      dude.mv.faceVector = unitToTarget;
+
+      if (dist > 100.0f) {
+         auto vec = v2Normalized(target.phy.pos - dude.phy.pos);
+         dude.mv.moveVector = dude.mv.faceVector = vec;
+      }
+      else {
+         dudeBeginAttack(dude, 1, 0);
+         dude.ai.attack = false;
+      }
+      return;
+   }
+
+   if (dude.ai.started++ > (rand() % 3000) + 3000) {
+      dude.ai.dir = -dude.ai.dir;
+      dude.ai.started = 0;
+
+      if (v2Dot(-target.mv.faceVector, dude.mv.faceVector) < -0.5f) {
+         dude.ai.attack = true;
+      }
+   }
 
    // move to range
    if (dist > 300.0f) {
       auto vec = v2Normalized(target.phy.pos - dude.phy.pos);
-      dude.mv.moveVector = dude.mv.faceVector = vec;
+       dude.mv.faceVector = vec;
+       dude.mv.moveVector = v2Normalized(vec + v2Orthogonal(vec) * dude.ai.dir);
    }
    else {
       auto unitToTarget = v2Normalized(target.phy.pos - dude.phy.pos);
@@ -476,18 +507,16 @@ void dudeUpdateBehavior(Dude& dude) {
 
       if (dist < 200.0f) {
          // too close, back up
-         dude.mv.moveVector = -unitToTarget;
+         dude.mv.moveVector = v2Normalized(-unitToTarget + v2Orthogonal(unitToTarget) * dude.ai.dir);
+
+         //if (dist < 100.0f) {
+         //   dudeBeginAttack(dude, 1, 0);
+         //}
       }
       else {
-         if (dude.ai.started++ > (rand() % 3000) + 3000) {
-            dude.ai.dir = -dude.ai.dir;
-            dude.ai.started = 0;
-         }
+         
          dude.mv.moveVector = v2Orthogonal(unitToTarget) * 0.1f * dude.ai.dir;
       }
-
-           
-
    }
 }
 
