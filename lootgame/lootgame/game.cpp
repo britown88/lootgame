@@ -74,29 +74,29 @@ struct MoveSet {
 
 static MoveSet _createMoveSet() {
    MoveSet out;
-   out.swings.resize(3);
-   Rectf hitbox = { 0, -10, 50, 20 };
+   out.swings.resize(1);
+   Rectf hitbox = { -2.0f, -4.5f, 28, 9 };
 
    out.swings[0].swipeAngle = 90.0f;
    out.swings[0].lungeSpeed = 0.0f;
-   out.swings[0].windupDur = 100;
-   out.swings[0].swingDur = 250;
+   out.swings[0].windupDur = 10;
+   out.swings[0].swingDur = 100;
    out.swings[0].cooldownDur = 500;
    out.swings[0].hitbox = hitbox;
 
-   out.swings[1].swipeAngle = 180.0f;
-   out.swings[1].lungeSpeed = 0.25f;
-   out.swings[1].windupDur = 100;
-   out.swings[1].swingDur = 250;
-   out.swings[1].cooldownDur = 250;
-   out.swings[1].hitbox = hitbox;
+   //out.swings[1].swipeAngle = 180.0f;
+   //out.swings[1].lungeSpeed = 0.25f;
+   //out.swings[1].windupDur = 100;
+   //out.swings[1].swingDur = 250;
+   //out.swings[1].cooldownDur = 250;
+   //out.swings[1].hitbox = hitbox;
 
-   out.swings[2].swipeAngle = 0.0f;
-   out.swings[2].lungeSpeed = 0.5f;
-   out.swings[2].windupDur = 100;
-   out.swings[2].swingDur = 250;
-   out.swings[2].cooldownDur = 100;
-   out.swings[2].hitbox = hitbox;
+   //out.swings[2].swipeAngle = 0.0f;
+   //out.swings[2].lungeSpeed = 0.5f;
+   //out.swings[2].windupDur = 100;
+   //out.swings[2].swingDur = 250;
+   //out.swings[2].cooldownDur = 100;
+   //out.swings[2].hitbox = hitbox;
 
    return out;
 }
@@ -661,7 +661,7 @@ static void _createGraphicsObjects(Game* game){
    g_textures[GameTextures_Target] = _textureBuildFromFile("assets/target.png");
    g_textures[GameTextures_Light] = _textureBuildFromFile("assets/light3.png");
    g_textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png", { RepeatType_CLAMP , FilterType_LINEAR });
-   g_textures[GameTextures_ShittySword] = _textureBuildFromFile("assets/shittysword.png");
+   g_textures[GameTextures_ShittySword] = _textureBuildFromFile("assets/sword.png");
    g_textures[GameTextures_GemEmpty] = _textureBuildFromFile("assets/gemempty.png");
    g_textures[GameTextures_GemFilled] = _textureBuildFromFile("assets/gemfilled.png");
    g_textures[GameTextures_Tile] = _textureBuildFromFile("assets/tile.png", { RepeatType_REPEAT , FilterType_NEAREST });
