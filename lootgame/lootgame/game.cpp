@@ -37,6 +37,8 @@ enum {
    GameTextures_Tile,
    GameTextures_GemEmpty,
    GameTextures_GemFilled,
+   GameTextures_HeartEmpty,
+   GameTextures_HeartFilled,
 
    GameTexture_COUNT
 }GameTextures_;
@@ -162,6 +164,7 @@ enum DudeState {
 
 struct Status {
    int stamina, staminaMax;
+   int health, healthMax;
 };
 
 struct Dude {
@@ -664,6 +667,8 @@ static void _createGraphicsObjects(Game* game){
    g_textures[GameTextures_ShittySword] = _textureBuildFromFile("assets/sword.png");
    g_textures[GameTextures_GemEmpty] = _textureBuildFromFile("assets/gemempty.png");
    g_textures[GameTextures_GemFilled] = _textureBuildFromFile("assets/gemfilled.png");
+   g_textures[GameTextures_HeartEmpty] = _textureBuildFromFile("assets/heartempty.png");
+   g_textures[GameTextures_HeartFilled] = _textureBuildFromFile("assets/heartfilled.png");
    g_textures[GameTextures_Tile] = _textureBuildFromFile("assets/tile.png", { RepeatType_REPEAT , FilterType_NEAREST });
    
    
@@ -684,6 +689,7 @@ static Dude _createDude(Game* game) {
    out.texture = tex.handle;
 
    out.status.stamina = out.status.staminaMax = 4;
+   out.status.health = out.status.healthMax = 1;
 
    return out;
 }
@@ -703,6 +709,7 @@ static Dude _createEnemy(Float2 pos) {
    out.renderSize = { (f32)tex.sz.x, (f32)tex.sz.y };
    out.texture = tex.handle;
    out.status.stamina = out.status.staminaMax = 4;
+   out.status.health = out.status.healthMax = 1;
 
    return out;
 }
@@ -921,11 +928,26 @@ void renderUI(Game* game) {
       Float2 staminaCorner = { 10,10 };
 
       for (int i = 0; i < game->maindude.status.staminaMax; ++i) {
-         auto model = Matrix::translate2f(staminaCorner + Float2{ (gemSize.x + gemSpace) * i, 0 }) *  Matrix::scale2f(gemSize);
+         
+         auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
          uber::set(Uniform_ModelMatrix, model);
          render::textureBind(gameTextureHandle(i < game->maindude.status.stamina ? GameTextures_GemFilled : GameTextures_GemEmpty));
          render::meshRender(g_game->meshUncentered);
+
+         staminaCorner.x += gemSize.x + gemSpace;
       }
+
+      for (int i = 0; i < game->maindude.status.healthMax; ++i) {
+
+         auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
+         uber::set(Uniform_ModelMatrix, model);
+         render::textureBind(gameTextureHandle(i < game->maindude.status.health ? GameTextures_HeartFilled : GameTextures_HeartEmpty));
+         render::meshRender(g_game->meshUncentered);
+
+         staminaCorner.x += gemSize.x + gemSpace;
+      }
+
+
    }
 }
 
