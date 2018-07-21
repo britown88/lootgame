@@ -6,27 +6,24 @@
 
 using namespace render;
 
+typedef bool Bool;
+
 static ShaderHandle g_activeShader = 0;
 
 struct UberShader {
    struct Defaults {
-      Matrix texMatrix = Matrix::identity();
-      Matrix modelMatrix = Matrix::identity();
-      Matrix viewMatrix = Matrix::identity();
-      TextureSlot textureSlot = 0;
-
-      ColorRGBAf color = {1,1,1,1};
-      f32 alpha = 1;
-
-      bool colorOnly = false;
+#define UNIFORM(name, enumName, type, ...) type name = __VA_ARGS__;
+#include "uniforms.x"
+#undef UNIFORM
    } defaults;
 
    struct UData {
       enum Type {
          Matrix,
          TextureSlot,
-         Color,
-         Float,
+         ColorRGBAf,
+         f32,
+         Float2,
          Bool
       };
       StringView name;
@@ -35,15 +32,9 @@ struct UberShader {
    };
 
    UData dataMap[Uniform_COUNT] = {
-      { "uTexMatrix",   offsetof(Defaults, texMatrix),   UData::Matrix },
-      { "uModelMatrix", offsetof(Defaults, modelMatrix), UData::Matrix },
-      { "uViewMatrix",  offsetof(Defaults, viewMatrix),  UData::Matrix },
-      { "uDiffuse",     offsetof(Defaults, textureSlot), UData::TextureSlot },
-
-      { "uColor",       offsetof(Defaults, color),       UData::Color },
-      { "uAlpha",       offsetof(Defaults, alpha),       UData::Float },
-
-      { "uColorOnly",   offsetof(Defaults, colorOnly),   UData::Bool },
+#define UNIFORM(name, enumName, type, ...) {#name, offsetof(Defaults, name), UData::type},
+#include "uniforms.x"
+#undef UNIFORM
    };
 
    bool modified[Uniform_COUNT] = { 0 };
@@ -59,11 +50,14 @@ struct UberShader {
             case UData::TextureSlot:
                render::uSetTextureSlot(dataMap[i].name, *(TextureSlot*)(((byte*)&defaults) + dataMap[i].offset));
                break;
-            case UData::Color:
+            case UData::ColorRGBAf:
                render::uSetColor(dataMap[i].name, *(ColorRGBAf*)(((byte*)&defaults) + dataMap[i].offset));
                break;
-            case UData::Float:
+            case UData::f32:
                render::uSetFloat(dataMap[i].name, *(float*)(((byte*)&defaults) + dataMap[i].offset));
+               break;
+            case UData::Float2:
+               render::uSetFloat2(dataMap[i].name, *(Float2*)(((byte*)&defaults) + dataMap[i].offset));
                break;
             case UData::Bool:
                render::uSetBool(dataMap[i].name, *(bool*)(((byte*)&defaults) + dataMap[i].offset));
@@ -91,6 +85,10 @@ struct UberShader {
    }
    void set(Uniform u, bool b) {
       render::uSetBool(dataMap[u].name, b);
+      modified[u] = true;
+   }
+   void set(Uniform u, Float2 v) {
+      render::uSetFloat2(dataMap[u].name, v);
       modified[u] = true;
    }
 };
@@ -127,6 +125,13 @@ void uber::set(Uniform u, float f, bool setAsDefault) {
    g_uberShader.set(u, f);
    if (setAsDefault) {
       *(float*)(((byte*)&g_uberShader.defaults) + g_uberShader.dataMap[u].offset) = f;
+      g_uberShader.modified[u] = false;
+   }
+}
+void uber::set(Uniform u, Float2 v, bool setAsDefault) {
+   g_uberShader.set(u, v);
+   if (setAsDefault) {
+      *(Float2*)(((byte*)&g_uberShader.defaults) + g_uberShader.dataMap[u].offset) = v;
       g_uberShader.modified[u] = false;
    }
 }

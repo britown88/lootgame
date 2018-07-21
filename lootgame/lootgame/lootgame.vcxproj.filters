@@ -130,5 +130,8 @@
     <None Include="assets\vertex.glsl">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="uniforms.x">
+      <Filter>Header Files\app</Filter>
+    </None>
   </ItemGroup>
 </Project>

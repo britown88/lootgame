@@ -62,20 +62,18 @@ enum BlendMode {
    BlendMode_LIGHTING
 };
 
-enum Uniform_ {
-   Uniform_TextureMatrix = 0,
-   Uniform_ModelMatrix,
-   Uniform_ViewMatrix,
-   Uniform_TextureSlot,
 
-   Uniform_Color,
-   Uniform_Alpha,
-   
-   Uniform_ColorOnly,
+
+enum Uniform_ {
+#define UNIFORM(name, enumName, type, ...) Uniform_##enumName,
+#include "uniforms.x"
+#undef UNIFORM
 
    Uniform_COUNT
 };
 typedef u32 Uniform;
+
+
 
 namespace uber {
    void resetToDefault(bool pushAll = false);
@@ -84,6 +82,7 @@ namespace uber {
    void set(Uniform u, TextureSlot t, bool setAsDefault = false);
    void set(Uniform u, ColorRGBAf const& c, bool setAsDefault = false);
    void set(Uniform u, float f, bool setAsDefault = false);
+   void set(Uniform u, Float2 v, bool setAsDefault = false);
    void set(Uniform u, bool b, bool setAsDefault = false);
 }
 

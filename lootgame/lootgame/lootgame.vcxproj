@@ -133,7 +133,8 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;D:/LivePP/API/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SDL_MAIN_HANDLED;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -191,6 +192,7 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
   <ItemGroup>
     <None Include="assets\fragment.glsl" />
     <None Include="assets\vertex.glsl" />
+    <None Include="uniforms.x" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

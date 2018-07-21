@@ -13,7 +13,7 @@
 
 #define AXIS_DEADZONE 0.25f
 #define AXIS_AIM_DEADZONE 0.5f
-#define DUDE_COUNT 5
+#define DUDE_COUNT 50
 
 static Constants g_const;
 Constants &ConstantsGet() { return g_const; }
@@ -75,7 +75,7 @@ struct MoveSet {
 static MoveSet _createMoveSet() {
    MoveSet out;
    out.swings.resize(3);
-   Rectf hitbox = { 0, -25, 80, 50 };
+   Rectf hitbox = { 0, -10, 50, 20 };
 
    out.swings[0].swipeAngle = 90.0f;
    out.swings[0].lungeSpeed = 0.0f;
@@ -104,7 +104,7 @@ static MoveSet _createMoveSet() {
 
 f32 cDudeAcceleration =     0.005f;
 f32 cDudeRotationSpeed =    0.010f;
-f32 cDudeMoveSpeed =        0.600f;
+f32 cDudeMoveSpeed =        0.200f;
 f32 cDudeDashSpeed =        1.500f;
 f32 cDudeSpeedCapEasing =   0.004f;
 f32 cDudeBackwardsPenalty = 0.250f;
@@ -396,7 +396,7 @@ void dudeApplyInputMovement(Dude& d) {
    }
 
    //if (g_game->mouseActive) {
-   //   aimStick = io.mousePos - d.phy.pos;
+      //aimStick = io.mousePos - d.phy.pos;
    //}
 
    if (v2LenSquared(aimStick) > 0) {
@@ -510,7 +510,7 @@ void dudeUpdateBehavior(Dude& dude) {
    if (dist > 300.0f) {
       auto vec = v2Normalized(target.phy.pos - dude.phy.pos);
        dude.mv.faceVector = vec;
-       dude.mv.moveVector = v2Normalized(vec + v2Orthogonal(vec) * dude.ai.dir);
+       dude.mv.moveVector = v2Normalized(vec + v2Orthogonal(vec) * (f32)dude.ai.dir);
    }
    else {
       auto unitToTarget = v2Normalized(target.phy.pos - dude.phy.pos);
@@ -518,7 +518,7 @@ void dudeUpdateBehavior(Dude& dude) {
 
       if (dist < 200.0f) {
          // too close, back up
-         dude.mv.moveVector = v2Normalized(-unitToTarget + v2Orthogonal(unitToTarget) * dude.ai.dir);
+         dude.mv.moveVector = v2Normalized(-unitToTarget + v2Orthogonal(unitToTarget) * (f32)dude.ai.dir);
 
          //if (dist < 100.0f) {
          //   dudeBeginAttack(dude, 1, 0);
@@ -526,7 +526,7 @@ void dudeUpdateBehavior(Dude& dude) {
       }
       else {
          
-         dude.mv.moveVector = v2Orthogonal(unitToTarget) * 0.1f * dude.ai.dir;
+         dude.mv.moveVector = v2Orthogonal(unitToTarget) * 0.1f * (f32)dude.ai.dir;
       }
    }
 }
@@ -561,7 +561,7 @@ struct Game {
    bool mouseActive;
 
    Map map = { {10000, 10000} };
-   Camera cam = { { 0, 0, 640, 360 } };
+   Camera cam = { { 0, 0, 426, 240} };// 640, 360 } };
 };
 
 static Game* g_game = nullptr;
@@ -633,8 +633,8 @@ static void _createGraphicsObjects(Game* game){
    game->meshUncentered = render::meshBuild(vboUncentered, 6);
 
    auto& res = ConstantsGet().resolution;
-   game->fbo = render::fboBuild({ res.x, res.y });
-   game->lightfbo = render::fboBuild({ res.x, res.y });
+   game->fbo = render::fboBuild({ res.x*2, res.y*2 });
+   game->lightfbo = render::fboBuild({ res.x*2, res.y*2 });
 
    g_textures[GameTextures_Dude] = _textureBuildFromFile("assets/dude.png");
    g_textures[GameTextures_Target] = _textureBuildFromFile("assets/target.png");
@@ -737,6 +737,7 @@ static void _renderDude(Dude& dude) {
       model = Matrix::translate2f(dude.phy.pos);
       model *= Matrix::scale2f({ dude.phy.circle.size * 2, dude.phy.circle.size * 2 });
       uber::set(Uniform_Color, Cyan);
+      uber::set(Uniform_Alpha, 01.0f);
       uber::set(Uniform_ModelMatrix, model);
 
       render::textureBind(gameTextureHandle(GameTextures_Circle));
@@ -773,24 +774,27 @@ static void _addLight(Float2 size, Float2 pos, ColorRGBAf c) {
 
 static void _populateLightLayer(Game* game) {
    auto& c = ConstantsGet();
-   auto& res = c.resolution;
+   //auto& res = c.resolution;
+   auto& vp = game->cam.viewport;
 
-   uber::resetToDefault();
+   
 
-   auto view = Matrix::ortho(0, (float)res.x, 0, (float)res.y, -1, 1);
-   uber::set(Uniform_ViewMatrix, view);
+   //auto view = Matrix::ortho(0, (float)res.x, 0, (float)res.y, -1, 1);
+   //uber::set(Uniform_ViewMatrix, view);
 
 
    render::fboBind(game->lightfbo);
    render::setBlendMode(BlendMode_PURE_ADD);
 
-   render::viewport({ 0,0, res.x, res.y });   
+   render::viewport({ 0,0, game->lightfbo.sz.x, game->lightfbo.sz.y });
    render::clear({0.f,0.f,0.f,0.0f});
 
-   _addLight({ 500, 500 }, game->maindude.phy.pos, Yellow);
+   uber::resetToDefault();
+
+   _addLight({ 100, 100 }, game->maindude.phy.pos, Yellow);
 
    for (auto&& d : game->baddudes) {
-      f32 lsz = 250;
+      f32 lsz = 100;
       _addLight({ lsz, lsz }, d.phy.pos, Yellow);
    }
 
@@ -802,13 +806,12 @@ static void _populateLightLayer(Game* game) {
    //_addLight({ lsz, lsz }, { 1800, 200 }, Yellow);
    //_addLight({ lsz, lsz }, { 1800, 800 }, Yellow);
    //_addLight({ lsz, lsz }, { 900, 800 }, Yellow);
-   
 
-   auto model = Matrix::scale2f({ (f32)res.x, (f32)res.y});
    auto al = gameDataGet()->imgui.ambientLight;
    uber::set(Uniform_ColorOnly, true);
    uber::set(Uniform_Color, sRgbToLinear(ColorRGBAf{ al,al,al,al }));
-   uber::set(Uniform_ModelMatrix, model);
+   uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (f32)vp.w, (f32)vp.h }));
+   uber::set(Uniform_ViewMatrix, Matrix::ortho(0, vp.w, 0, vp.h, -1, 1));
    render::meshRender(g_game->meshUncentered);
 }
 
@@ -840,11 +843,12 @@ static void _renderFloor(Game* game) {
 static void _renderLightLayer(Game* game) {
 
    render::setBlendMode(BlendMode_LIGHTING);
-   auto model = Matrix::identity();
-   auto texmat = Matrix::identity();
 
    uber::resetToDefault();
-   uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (float)game->lightfbo.sz.x, (float)game->lightfbo.sz.y }));
+   auto& vp = game->cam.viewport;
+   auto view = Matrix::ortho(0, vp.w, 0, vp.h, -1, 1);
+   uber::set(Uniform_ViewMatrix, view);
+   uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (float)vp.w, (float)vp.h }));
    render::textureBind(game->lightfbo.tex);
    render::meshRender(g_game->meshUncentered);
 }
@@ -853,9 +857,14 @@ static void _renderGameUI(Game* game) {
    render::setBlendMode(BlendMode_NORMAL);
 
    uber::resetToDefault();
+   auto& vp = game->cam.viewport;
+   auto view = Matrix::ortho(0, vp.w, 0, vp.h, -1, 1);
+   uber::set(Uniform_ViewMatrix, view);
+
    
    /*if (game->maindude.stamina < game->maindude.staminaMax)*/ {
-      Float2 gemSize = { 24, 38 };
+      auto tsz = gameTexture(GameTextures_GemFilled).sz;
+      Float2 gemSize = { (f32)tsz.x, (f32)tsz.y };
       f32 gemSpace = 0.0f;
       auto w = (gemSize.x + gemSpace) * game->maindude.status.staminaMax;
 
@@ -875,22 +884,21 @@ static void _renderGameUI(Game* game) {
 
 static void _renderScene(Game* game) {
    auto& c = ConstantsGet();
-   auto& res = ConstantsGet().resolution;
-
-   //_populateLightLayer(game);
+   //auto& res = ConstantsGet().resolution;   
 
    auto vp = game->cam.viewport;
    auto view = Matrix::ortho(vp.x, vp.x + vp.w, vp.y, vp.y + vp.h, 1, -1);
    render::shaderSetActive(game->shader);
 
    uber::resetToDefault(true);
-   uber::set(Uniform_ViewMatrix, view, true);   
+   uber::set(Uniform_ViewMatrix, view, true);
 
+   _populateLightLayer(game);
 
    render::fboBind(game->fbo);
 
    render::setBlendMode(BlendMode_NORMAL);
-   render::viewport({ 0,0, res.x, res.y });
+   render::viewport({ 0,0, game->fbo.sz.x, game->fbo.sz.y });
    render::clear(White);
 
    _renderFloor(game);
@@ -919,9 +927,9 @@ static void _renderScene(Game* game) {
       _renderTarget(dude.phy.pos + dude.mv.faceVector * aimTargetDist, LtGray, 30);
    }
    
-   //_renderLightLayer(game);
+   _renderLightLayer(game);
 
-   //_renderGameUI(game);
+   _renderGameUI(game);
 
    
 
@@ -1125,16 +1133,18 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
 }
 
 void gameHandleInput(Game*game) {
-   auto& res = ConstantsGet().resolution;
+   //auto& res = ConstantsGet().resolution;
    auto& vpScreen = game->data.imgui.vpScreenArea;
+   auto& vpCamera = game->cam.viewport;
+
    auto &imio = ImGui::GetIO();
    auto& mPos = ImGui::GetIO().MousePos;
 
    auto& io = game->data.io;
 
    io.mousePos = {
-      (mPos.x - vpScreen.x) / vpScreen.w * res.x,
-      (mPos.y - vpScreen.y) / vpScreen.h * res.y
+      vpCamera.x + (mPos.x - vpScreen.x) / vpScreen.w * vpCamera.w,
+      vpCamera.y + (mPos.y - vpScreen.y) / vpScreen.h * vpCamera.h
    };
 
    // update buttons
@@ -1153,6 +1163,7 @@ void gameUpdate(Game* game) {
 
    auto&vp = game->cam.viewport;
    auto&dudePos = game->maindude.phy.pos;
+   auto&dudeFace = game->maindude.mv.facing;
 
    
 
@@ -1194,6 +1205,6 @@ void gameUpdate(Game* game) {
    game->lastUpdate += timeMillis(ms);
 
    // imgui output
-   //uiEditDude(game->maindude);
+   uiEditDude(game->maindude);
    gameDoUI(game);
 }

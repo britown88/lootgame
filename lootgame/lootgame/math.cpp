@@ -523,7 +523,7 @@ static f32 s2lin(f32 x) {
       return x * (1.0f / 12.92f);
    }
    else {
-      return powf((x + 0.055f) * (1.0 / 1.055f), 2.4);
+      return powf((x + 0.055f) * (1.0f / 1.055f), 2.4f);
    }
 }
 
