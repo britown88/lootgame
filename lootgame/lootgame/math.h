@@ -21,6 +21,7 @@ struct Float2 {
    inline Float2 operator+(Float2 lhs) const { return { x + lhs.x, y + lhs.y }; }
    inline Float2 operator*(f32 s) const { return { x * s, y * s }; }
    inline Float2 operator/(f32 s) const { return { x / s, y /s }; }
+   inline Float2 operator/(Float2 lhs) const { return { x / lhs.x, y / lhs.y }; }
 
    inline Float2& operator-=(Float2 lhs) { x -= lhs.x; y -= lhs.y; return *this; }
    inline Float2& operator+=(Float2 lhs) { x += lhs.x; y += lhs.y; return *this; }

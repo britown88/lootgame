@@ -156,23 +156,14 @@ void render::setBlendMode(BlendMode mode) {
    case BlendMode_DISABLED:
       glDisable(GL_BLEND);
       break;
-   case BlendMode_PURE_ADD:
+   case BlendMode_ADDITIVE:
       glEnable(GL_BLEND);
       glBlendFunc(GL_ONE, GL_ONE);
-      //glBlendEquation(GL_FUNC_SUBTRACT);
       break;
    case BlendMode_NORMAL:
       glEnable(GL_BLEND);
       glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-      //glBlendEquation(GL_FUNC_ADD);
       break;
-
-   case BlendMode_LIGHTING:
-      glEnable(GL_BLEND);
-      glBlendFunc(GL_ZERO, GL_SRC_COLOR);
-      //glBlendEquation(GL_FUNC_SUBTRACT);
-      break;
-
    }
 }
 
@@ -302,7 +293,7 @@ void render::textureBind(TextureHandle t, TextureSlot slot) {
 }
 
 // FBO
-FBO render::fboBuild(Int2 sz) {
+FBO render::fboBuild(Int2 sz, TextureConfig const& cfg) {
    FBO out;
 
    out.sz = sz;
@@ -310,11 +301,29 @@ FBO render::fboBuild(Int2 sz) {
    glGenTextures(1, &out.tex);
    glBindTexture(GL_TEXTURE_2D, out.tex);
 
-   //todo: format ops?
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+   switch (cfg.filterType)
+   {
+   case FilterType_LINEAR:
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      break;
+   case FilterType_NEAREST:
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      break;
+   };
+
+   switch (cfg.repeatType)
+   {
+   case RepeatType_REPEAT:
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+      break;
+   case RepeatType_CLAMP:
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      break;
+   };
 
    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, sz.x, sz.y, 0, GL_RGBA, GL_FLOAT, NULL);
 

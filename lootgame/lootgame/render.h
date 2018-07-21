@@ -58,8 +58,7 @@ struct Mesh {
 enum BlendMode {
    BlendMode_DISABLED = 0,
    BlendMode_NORMAL,
-   BlendMode_PURE_ADD,
-   BlendMode_LIGHTING
+   BlendMode_ADDITIVE
 };
 
 
@@ -113,7 +112,7 @@ namespace render{
    void uSetTextureSlot(const char* u, TextureSlot const& value);
 
    // FBO
-   FBO fboBuild(Int2 sz);
+   FBO fboBuild(Int2 sz, TextureConfig const& cfg = { RepeatType_CLAMP, FilterType_NEAREST });
    void fboDestroy(FBO& fbo);
 
    void fboBind(FBO const& fbo);

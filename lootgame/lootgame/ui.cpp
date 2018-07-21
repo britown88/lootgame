@@ -268,7 +268,7 @@ static void _renderViewerFBO(Game* game) {
 
    gameDataGet()->imgui.vpScreenArea = { a.x, a.y, b.x - a.x, b.y - a.y };
 
-
+   draw_list->AddRectFilled(a, b, IM_COL32_BLACK);
    draw_list->AddCallback([](auto, auto) { glEnable(GL_FRAMEBUFFER_SRGB); }, nullptr);
    draw_list->AddImage( (ImTextureID)(iPtr)fbo.tex, a, b );
    draw_list->AddCallback([](auto, auto) { glDisable(GL_FRAMEBUFFER_SRGB); }, nullptr);
