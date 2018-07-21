@@ -156,9 +156,13 @@ void render::setBlendMode(BlendMode mode) {
    case BlendMode_DISABLED:
       glDisable(GL_BLEND);
       break;
-   case BlendMode_ADDITIVE:
+   case BlendMode_ADDITION:
       glEnable(GL_BLEND);
       glBlendFunc(GL_ONE, GL_ONE);
+      break;
+   case BlendMode_MULITPLY:
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_ZERO, GL_SRC_COLOR);
       break;
    case BlendMode_NORMAL:
       glEnable(GL_BLEND);
@@ -325,7 +329,7 @@ FBO render::fboBuild(Int2 sz, TextureConfig const& cfg) {
       break;
    };
 
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, sz.x, sz.y, 0, GL_RGBA, GL_FLOAT, NULL);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, sz.x, sz.y, 0, GL_RGBA, GL_FLOAT, NULL);
 
    glGenFramebuffers(1, &out.fbo);
    glBindFramebuffer(GL_FRAMEBUFFER, out.fbo);

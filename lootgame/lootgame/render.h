@@ -58,7 +58,8 @@ struct Mesh {
 enum BlendMode {
    BlendMode_DISABLED = 0,
    BlendMode_NORMAL,
-   BlendMode_ADDITIVE
+   BlendMode_ADDITION,
+   BlendMode_MULITPLY
 };
 
 

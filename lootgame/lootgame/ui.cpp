@@ -317,9 +317,14 @@ static void _showWindowedViewer(Game* g) {
 
 }
 
-static void _doUIDebugger() {
+static void _doUIDebugger(Game* g) {
    ImGui::SetNextWindowSize(ImVec2(400, 1000), ImGuiCond_FirstUseEver);
    if (ImGui::Begin("Game Debugger", nullptr)) {
+
+      
+      if (ImGui::Button("Reload Shaders", ImVec2(ImGui::GetContentRegionAvailWidth(), 0))) {
+         gameReloadShaders(g);
+      }
 
       
       auto&io = gameDataGet()->io;
@@ -394,7 +399,7 @@ void gameDoUI(Game* g) {
          
          _doStatsWindow(g);
 
-         _doUIDebugger();
+         _doUIDebugger(g);
          _showWindowedViewer(g);
 
          ImGui::PopStyleVar(3);

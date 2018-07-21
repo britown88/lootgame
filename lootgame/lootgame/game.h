@@ -79,3 +79,5 @@ void gameDestroy(Game*game);
 void gameDoUI(Game*game);
 
 FBO const& gameGetOutputFBO(Game*game);
+
+void gameReloadShaders(Game* game);
