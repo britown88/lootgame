@@ -13,7 +13,7 @@
 
 #define AXIS_DEADZONE 0.25f
 #define AXIS_AIM_DEADZONE 0.5f
-#define DUDE_COUNT 50
+#define DUDE_COUNT 1
 
 static Constants g_const;
 Constants &ConstantsGet() { return g_const; }
@@ -657,7 +657,7 @@ static void _createGraphicsObjects(Game* game){
    game->litScene = render::fboBuild({ res.x, res.y });
    game->output = render::fboBuild({ res.x, res.y });
 
-   g_textures[GameTextures_Dude] = _textureBuildFromFile("assets/dude.png");
+   g_textures[GameTextures_Dude] = _textureBuildFromFile("assets/dude2.png");
    g_textures[GameTextures_Target] = _textureBuildFromFile("assets/target.png");
    g_textures[GameTextures_Light] = _textureBuildFromFile("assets/light3.png");
    g_textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png", { RepeatType_CLAMP , FilterType_LINEAR });
@@ -676,7 +676,7 @@ static Dude _createDude(Game* game) {
 
    out.c = White;
    out.moveset = _createMoveSet();
-   out.phy.pos = { 50,50 };
+   out.phy.pos = { 950,950 };
    out.phy.circle.size = 10.0f;
    out.phy.maxSpeed = cDudeMoveSpeed;
    out.phy.invMass = 0.0f;
@@ -688,7 +688,7 @@ static Dude _createDude(Game* game) {
    return out;
 }
 
-static Dude _createEnemy(Float2 pos, f32 size) {
+static Dude _createEnemy(Float2 pos) {
    Dude out;
 
    auto tex = gameTexture(GameTextures_Dude);
@@ -696,7 +696,7 @@ static Dude _createEnemy(Float2 pos, f32 size) {
    out.moveset = _createMoveSet();
    out.c = {1.0f, 0.3f, 0.3f, 1.0f};
    out.phy.pos = pos;
-   out.phy.circle.size = size;
+   out.phy.circle.size = 10.0f;
    out.phy.velocity = { 0,0 };
    out.phy.maxSpeed = cDudeMoveSpeed;
    out.phy.invMass =(f32)(rand()%50 + 5) / 100.0f;
@@ -713,11 +713,15 @@ void gameBegin(Game*game) {
    _createGraphicsObjects(game);
    game->maindude = _createDude(game);
 
-   for (int i = 0; i < DUDE_COUNT; ++i) {
-      auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 }, 10.0f);
-      e.ai.target = &game->maindude;
-      game->baddudes.push_back(e);
-   }
+   auto e = _createEnemy({ 1000, 1000 });
+   e.ai.target = &game->maindude;
+   game->baddudes.push_back(e);
+
+   //for (int i = 0; i < DUDE_COUNT; ++i) {
+   //   auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 }, 10.0f);
+   //   e.ai.target = &game->maindude;
+   //   game->baddudes.push_back(e);
+   //}
 
 }
 
@@ -851,7 +855,7 @@ void renderUnlitScene(Game* game) {
 static void _addLight(Float2 size, Float2 pos, ColorRGBAf c) {
    uber::set(Uniform_Color, c);
    uber::set(Uniform_Alpha, 1.0f);
-   uber::set(Uniform_PointLightIntensity, 1.0f);
+   uber::set(Uniform_LightIntensity, 1.0f);
    uber::set(Uniform_ModelMatrix, Matrix::translate2f(pos) * Matrix::scale2f(size));
    render::meshRender(g_game->mesh);
 }
@@ -869,6 +873,8 @@ void renderLightLayer(Game* game) {
    uber::resetToDefault();
 
    uber::set(Uniform_PointLight, true);
+
+   _addLight({ vp.w,vp.w }, { vp.w/2.0f, vp.h/2.0f }, Yellow);
 
    _addLight({ 80,80 }, game->maindude.phy.pos - Float2{ vp.x, vp.y }, Yellow);
 

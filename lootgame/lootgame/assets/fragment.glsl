@@ -8,7 +8,7 @@ uniform float uAlpha;
 uniform sampler2D uDiffuse;
 uniform bool uColorOnly;
 uniform bool uPointLight;
-uniform float uPointLightIntensity;
+uniform float uLightIntensity;
 
 in vec2 vTexCoords;
 
@@ -21,7 +21,7 @@ void main() {
    else if(uPointLight){
       float dist = distance(vTexCoords, vec2(0.5f, 0.5f)) ;
       float r = max(1.0f - (dist/0.5f), 0);
-      outputColor = (uColor * uAlpha) * r * uPointLightIntensity;
+      outputColor = (uColor * uAlpha) * r * uLightIntensity;
    }
    else{
       outputColor = texture(uDiffuse, vTexCoords) * uColor * uAlpha;
