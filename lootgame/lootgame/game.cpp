@@ -76,15 +76,25 @@ struct MoveSet {
 
 static MoveSet _createMoveSet() {
    MoveSet out;
-   out.swings.resize(1);
+   out.swings.resize(3);
    Rectf hitbox = { -2.0f, -4.5f, 28, 9 };
 
-   out.swings[0].swipeAngle = 90.0f;
-   out.swings[0].lungeSpeed = 0.0f;
-   out.swings[0].windupDur = 10;
-   out.swings[0].swingDur = 100;
-   out.swings[0].cooldownDur = 500;
+   out.swings[0].swipeAngle =    120.0f;
+   out.swings[0].lungeSpeed =    0.0f;
+   out.swings[0].windupDur =     150;
+   out.swings[0].swingDur =      250;
+   out.swings[0].cooldownDur =   300;
    out.swings[0].hitbox = hitbox;
+
+   out.swings[1] = out.swings[0];
+   out.swings[1].windupDur = 50;
+   out.swings[1].swingDur = 150;
+   out.swings[1].cooldownDur = 500;
+
+   out.swings[2] = out.swings[0];
+   out.swings[2].windupDur = 50;
+   out.swings[2].swingDur = 100;
+   out.swings[2].cooldownDur = 200;
 
    //out.swings[1].swipeAngle = 180.0f;
    //out.swings[1].lungeSpeed = 0.25f;
@@ -195,23 +205,66 @@ struct Dude {
 static void uiEditDude(Dude& dude) {
    if (ImGui::Begin(format("Dude Editor##%p", &dude).c_str(), 0, ImGuiWindowFlags_AlwaysAutoResize)) {
 
-      ImGui::InputFloat("Acceleration", &cDudeAcceleration, 0.001f, 0.01f, 4);
-      ImGui::InputFloat("Rotation Speed", &cDudeRotationSpeed, 0.01f, 0.1f, 4);
-      if (ImGui::InputFloat("Move Speed", &dude.phy.maxSpeed, 0.01f, 0.1f, 4)) {
-         cDudeMoveSpeed = dude.phy.maxSpeed;
+      ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
+      if (ImGui::CollapsingHeader("Movement")) {
+         ImGui::Indent();
+
+         //ImGui::InputFloat("Acceleration", &cDudeAcceleration, 0.001f, 0.01f, 4);
+         ImGui::InputFloat("Rotation Speed", &cDudeRotationSpeed, 0.01f, 0.1f, 4);
+         if (ImGui::InputFloat("Move Speed", &dude.phy.maxSpeed, 0.01f, 0.1f, 4)) {
+            cDudeMoveSpeed = dude.phy.maxSpeed;
+         }
+         ImGui::InputFloat("Dash Speed", &cDudeDashSpeed, 0.01f, 0.1f, 4);
+         ImGui::InputFloat("Speed Cap Accel", &cDudeSpeedCapEasing, 0.001f, 0.01f, 4);
+         ImGui::InputFloat("Backward Penalty", &cDudeBackwardsPenalty, 0.1f, 0.01f, 4);
+
+         f32 ratio = dude.mv.moveSpeedCap / 0.5f;
+         ImGui::ProgressBar(ratio, ImVec2(-1, 0), "Speed Cap");
+
+         ImGui::Unindent();
       }
-      ImGui::InputFloat("Dash Speed", &cDudeDashSpeed, 0.01f, 0.1f, 4);
-      ImGui::InputFloat("Speed Cap Accel", &cDudeSpeedCapEasing, 0.001f, 0.01f, 4);
-      ImGui::InputFloat("Backward Penalty", &cDudeBackwardsPenalty, 0.1f, 0.01f, 4);
 
-      f32 ratio = dude.mv.moveSpeedCap / 0.5f;
-      ImGui::ProgressBar(ratio, ImVec2(-1, 0), "Speed Cap" );
+      ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
+      if (ImGui::CollapsingHeader("Timing")) {
+         ImGui::Indent();
 
-      Milliseconds shrt = 50, lng = 100;
-      ImGui::InputScalar("Post-Dash CD", ImGuiDataType_U64, &cDudePostDashCooldown, &shrt, &lng);
-      ImGui::InputScalar("Dash Duration", ImGuiDataType_U64, &cDudeDashDuration, &shrt, &lng);
-      ImGui::InputScalar("Stamina Base Tick Speed", ImGuiDataType_U64, &cDudeBaseStaminaTickRecoveryTime, &shrt, &lng);
-      ImGui::InputScalar("Stamina Empty CD", ImGuiDataType_U64, &cDudeStaminaEmptyCooldown, &shrt, &lng);
+         Milliseconds shrt = 50, lng = 100;
+         ImGui::InputScalar("Post-Dash CD", ImGuiDataType_U64, &cDudePostDashCooldown, &shrt, &lng);
+         ImGui::InputScalar("Dash Duration", ImGuiDataType_U64, &cDudeDashDuration, &shrt, &lng);
+         ImGui::InputScalar("Stamina Base Tick Speed", ImGuiDataType_U64, &cDudeBaseStaminaTickRecoveryTime, &shrt, &lng);
+         ImGui::InputScalar("Stamina Empty CD", ImGuiDataType_U64, &cDudeStaminaEmptyCooldown, &shrt, &lng);
+         ImGui::Unindent();
+
+      }
+
+      ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
+      if (ImGui::CollapsingHeader("Attack")) {
+         ImGui::Indent();
+         int i = 0;
+         for (auto &&swing : dude.moveset.swings) {
+            ImGui::PushID(&swing);
+
+            if (ImGui::CollapsingHeader(format("Swing %d", i++).c_str())) {
+               ImGui::Indent();
+
+               ImGui::InputFloat("Angle", &swing.swipeAngle, 10.0f, 10.0f, 1);
+               Milliseconds shrt = 50, lng = 100;
+               ImGui::InputScalar("Swing Duration", ImGuiDataType_U64, &swing.swingDur, &shrt, &lng);
+               ImGui::InputScalar("Windup Duration", ImGuiDataType_U64, &swing.windupDur, &shrt, &lng);
+               ImGui::InputScalar("Cooldown Duration", ImGuiDataType_U64, &swing.cooldownDur, &shrt, &lng);
+
+               ImGui::Unindent();
+            }
+            
+            ImGui::PopID();
+         }
+
+         ImGui::Unindent();
+         
+      }
+      
+
+      
 
 
 
@@ -327,10 +380,14 @@ void dudeUpdateStateAttack(Dude& d) {
 
    switch (d.atk.swingPhase) {
    case SwingPhase_Windup:
+      
       if (d.stateClock >= d.atk.swing.windupDur) {
          d.stateClock -= d.atk.swing.windupDur;
          d.atk.swingPhase = SwingPhase_Swing;
+         // lock facing at time of swipe
+         d.mv.faceVector = d.mv.facing;
       }
+      d.atk.weaponVector = v2Normalized(v2Rotate(d.mv.facing, v2FromAngle(d.atk.swingDir * d.atk.swing.swipeAngle / 2.0f * DEG2RAD)));
       break;
    case SwingPhase_Swing: {
 
@@ -399,6 +456,11 @@ void dudeApplyInputMovement(Dude& d) {
    auto& io = gameDataGet()->io;
 
    d.mv.moveVector = io.leftStick;
+}
+
+void dudeApplyInputAiming(Dude& d) {
+   auto& io = gameDataGet()->io;
+
 
    bool rstick = rightStickActive();
    bool lstick = leftStickActive();
@@ -406,14 +468,14 @@ void dudeApplyInputMovement(Dude& d) {
    Float2 aimStick;
    if (rstick) {
       aimStick = io.rightStick;
-     // g_game->mouseActive = false;
+      // g_game->mouseActive = false;
    }
    else if (lstick) {
       aimStick = io.leftStick;
    }
 
    //if (g_game->mouseActive) {
-      //aimStick = io.mousePos - d.phy.pos;
+   //aimStick = io.mousePos - d.phy.pos;
    //}
 
    if (v2LenSquared(aimStick) > 0) {
@@ -432,6 +494,14 @@ void dudeApplyInputFreeActions(Dude& d) {
 }
 
 void dudeApplyInputAttack(Dude& d) {
+
+   switch (d.atk.swingPhase) {
+   case SwingPhase_Windup:
+      // apply aiming during windup 
+      dudeApplyInputAiming(d);
+      break;
+   }
+
    auto& io = gameDataGet()->io;
    if (io.buttonPressed[GameButton_RT]) {
       switch (d.atk.swingPhase) {
@@ -439,8 +509,6 @@ void dudeApplyInputAttack(Dude& d) {
          dudeBeginAttack(d, -d.atk.swingDir, d.atk.combo + 1);
          break;
       }
-
-      
    }
 }
 
@@ -448,6 +516,7 @@ void dudeApplyInput(Dude& d) {
    switch (d.state) {
    case DudeState_FREE:
       dudeApplyInputMovement(d);
+      dudeApplyInputAiming(d);
       dudeApplyInputFreeActions(d);
       break;
    case DudeState_DASH:
