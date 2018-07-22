@@ -56,12 +56,15 @@ TextureHandle gameTextureHandle(GameTexture t) {
 
 enum SwingPhase {
    SwingPhase_Windup = 0,
+   SwingPhase_Lunge,
    SwingPhase_Swing,
    SwingPhase_Cooldown
 };
 
 struct AttackSwing {
-   f32 lungeSpeed; // character will luinge forward during swingphase
+   f32 lungeDist; // character will luinge forward between windup and swing
+   f32 lungeSpeed; // perms
+
    f32 swipeAngle; // full range of the weapon swipe, in degrees
    Milliseconds swingDur; // total time for the attack
    Milliseconds windupDur; // vulnerability period before swing
@@ -80,7 +83,8 @@ static MoveSet _createMoveSet() {
    Rectf hitbox = { -2.0f, -4.5f, 28, 9 };
 
    out.swings[0].swipeAngle =    120.0f;
-   out.swings[0].lungeSpeed =    0.0f;
+   out.swings[0].lungeSpeed =    0.3f;
+   out.swings[0].lungeDist =     20.0f;
    out.swings[0].windupDur =     150;
    out.swings[0].swingDur =      250;
    out.swings[0].cooldownDur =   300;
@@ -180,7 +184,8 @@ struct Status {
 // shoves can happen independant of state
 struct Shove {
    Float2 startPos;
-   f32 sqDist;
+   Milliseconds start;
+   Milliseconds dur;
    f32 speed; // only stored so we can restore speed correctly
 };
 
@@ -304,7 +309,8 @@ Milliseconds calcNextStaminaTickTime(int stam, int max) {
 
 void dudeShove(Dude&d, Float2 dir, f32 speed, f32 distance) {
    d.shoved = true;
-   d.shove.sqDist = distance * distance;
+   d.shove.start = 0;
+   d.shove.dur = (Milliseconds)(distance / speed);
    d.shove.startPos = d.phy.pos;
    d.shove.speed = speed;
 
@@ -316,7 +322,7 @@ void dudeShove(Dude&d, Float2 dir, f32 speed, f32 distance) {
 }
 void dudeUpdateShove(Dude& d) {
    if (d.shoved) {
-      if (v2DistSquared(d.phy.pos, d.shove.startPos) >= d.shove.sqDist) {
+      if (d.shove.start++ >= d.shove.dur) {
          d.mv.moveVector = { 0,0 };
          if (d.shove.speed > cDudeMoveSpeed) {
             d.phy.maxSpeed = cDudeMoveSpeed;
@@ -412,11 +418,23 @@ void dudeUpdateStateAttack(Dude& d) {
       
       if (d.stateClock >= d.atk.swing.windupDur) {
          d.stateClock -= d.atk.swing.windupDur;
-         d.atk.swingPhase = SwingPhase_Swing;
          // lock facing at time of swipe
          d.mv.faceVector = d.mv.facing;
+
+         if (d.atk.swing.lungeDist > 0.0f) {
+            d.atk.swingPhase = SwingPhase_Lunge;
+            dudeShove(d, d.mv.faceVector, d.atk.swing.lungeSpeed, d.atk.swing.lungeDist);
+         }
+         else {
+            d.atk.swingPhase = SwingPhase_Swing;
+         }
       }
       d.atk.weaponVector = v2Normalized(v2Rotate(d.mv.facing, v2FromAngle(d.atk.swingDir * d.atk.swing.swipeAngle / 2.0f * DEG2RAD)));
+      break;
+   case SwingPhase_Lunge:
+      if (!d.shoved) {
+         d.atk.swingPhase = SwingPhase_Swing;
+      }
       break;
    case SwingPhase_Swing: {
 
