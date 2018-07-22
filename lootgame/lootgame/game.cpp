@@ -106,14 +106,14 @@ static MoveSet _createMoveSet() {
 
 f32 cDudeAcceleration =     0.005f;
 f32 cDudeRotationSpeed =    0.010f;
-f32 cDudeMoveSpeed =        0.200f;
-f32 cDudeDashSpeed =        1.500f;
-f32 cDudeSpeedCapEasing =   0.004f;
+f32 cDudeMoveSpeed =        0.100f;
+f32 cDudeDashSpeed =        0.300f;
+f32 cDudeSpeedCapEasing =   0.0003f;
 f32 cDudeBackwardsPenalty = 0.250f;
 
-Milliseconds cDudePostDashCooldown = 300;
-Milliseconds cDudeDashDuration = 100;
-Milliseconds cDudeBaseStaminaTickRecoveryTime = 1000;
+Milliseconds cDudePostDashCooldown = 100;
+Milliseconds cDudeDashDuration = 200;
+Milliseconds cDudeBaseStaminaTickRecoveryTime = 500;
 Milliseconds cDudeStaminaEmptyCooldown = 1000;
 
 struct Movement {
@@ -197,11 +197,24 @@ static void uiEditDude(Dude& dude) {
 
       ImGui::InputFloat("Acceleration", &cDudeAcceleration, 0.001f, 0.01f, 4);
       ImGui::InputFloat("Rotation Speed", &cDudeRotationSpeed, 0.01f, 0.1f, 4);
-      ImGui::InputFloat("Move Speed", &dude.phy.maxSpeed, 0.01f, 0.1f, 4);
-      ImGui::InputFloat("Speed Cap", &cDudeSpeedCapEasing, 0.001f, 0.01f, 4);
+      if (ImGui::InputFloat("Move Speed", &dude.phy.maxSpeed, 0.01f, 0.1f, 4)) {
+         cDudeMoveSpeed = dude.phy.maxSpeed;
+      }
+      ImGui::InputFloat("Dash Speed", &cDudeDashSpeed, 0.01f, 0.1f, 4);
+      ImGui::InputFloat("Speed Cap Accel", &cDudeSpeedCapEasing, 0.001f, 0.01f, 4);
+      ImGui::InputFloat("Backward Penalty", &cDudeBackwardsPenalty, 0.1f, 0.01f, 4);
 
-      f32 ratio = dude.mv.moveSpeedCap / 1.0f;
-      ImGui::ProgressBar(ratio);
+      f32 ratio = dude.mv.moveSpeedCap / 0.5f;
+      ImGui::ProgressBar(ratio, ImVec2(-1, 0), "Speed Cap" );
+
+      Milliseconds shrt = 50, lng = 100;
+      ImGui::InputScalar("Post-Dash CD", ImGuiDataType_U64, &cDudePostDashCooldown, &shrt, &lng);
+      ImGui::InputScalar("Dash Duration", ImGuiDataType_U64, &cDudeDashDuration, &shrt, &lng);
+      ImGui::InputScalar("Stamina Base Tick Speed", ImGuiDataType_U64, &cDudeBaseStaminaTickRecoveryTime, &shrt, &lng);
+      ImGui::InputScalar("Stamina Empty CD", ImGuiDataType_U64, &cDudeStaminaEmptyCooldown, &shrt, &lng);
+
+
+
    }
    ImGui::End();
 }
@@ -223,7 +236,7 @@ void dudeSetState(Dude& d, DudeState state, Milliseconds startTimeOffset = 0) {
 
 Milliseconds calcNextStaminaTickTime(int stam, int max) {
    auto ratio = (f32)stam / max;
-   return (Milliseconds)(cDudeBaseStaminaTickRecoveryTime * cosInterp(1 - ratio));
+   return cDudeBaseStaminaTickRecoveryTime + (Milliseconds)(cDudeBaseStaminaTickRecoveryTime * cosInterp(1 - ratio));
 }
 
 void dudeBeginFree(Dude&d) {
@@ -248,7 +261,7 @@ void dudeBeginCooldown(Dude&d, Milliseconds duration) {
 
 void dudeUpdateStateCooldown(Dude& d) {
    if (d.stateClock > d.cd.duration) {
-      dudeSetState(d, DudeState_FREE);
+      dudeBeginFree(d);
    }
 }
 
@@ -284,6 +297,7 @@ void dudeUpdateStateDash(Dude& d) {
 
       d.mv.moveVector = { 0,0 };
       d.phy.maxSpeed = cDudeMoveSpeed;
+      d.mv.moveSpeedCapTarget = d.mv.moveSpeedCap = d.phy.maxSpeed;
    }
 }
 
@@ -353,7 +367,7 @@ void dudeUpdateStateAttack(Dude& d) {
    }  break;
    case SwingPhase_Cooldown:
       if (d.stateClock >= d.atk.swing.cooldownDur) {
-         dudeSetState(d, DudeState_FREE);
+         dudeBeginFree(d);
       }
       break;
    }
@@ -447,24 +461,28 @@ void dudeApplyInput(Dude& d) {
 void dudeUpdateVelocity(Dude& d) {
    // we assume at this point the moveVector is current
 
-   // scale mvspeed based on facing;
-   f32 facedot = v2Dot(v2Normalized(d.phy.velocity), d.mv.facing);
-   auto scaledSpeed = (d.phy.maxSpeed * (1 - cDudeBackwardsPenalty)) + (d.phy.maxSpeed * cDudeBackwardsPenalty * facedot);
+   if (d.state != DudeState_DASH) {
+      // scale mvspeed based on facing;
+      f32 facedot = v2Dot(v2Normalized(d.phy.velocity), d.mv.facing);
+      auto scaledSpeed = (d.phy.maxSpeed * (1 - cDudeBackwardsPenalty)) + (d.phy.maxSpeed * cDudeBackwardsPenalty * facedot);
 
-   // set the target speed
-   d.mv.moveSpeedCapTarget = scaledSpeed * v2Len(d.mv.moveVector);
+      // set the target speed
+      d.mv.moveSpeedCapTarget = scaledSpeed * v2Len(d.mv.moveVector);
 
-   // ease speed cap toward target
-   if (d.mv.moveSpeedCap < d.mv.moveSpeedCapTarget) {
-      d.mv.moveSpeedCap += cDudeSpeedCapEasing;      
+      // ease speed cap toward target
+      if (d.mv.moveSpeedCap < d.mv.moveSpeedCapTarget) {
+         d.mv.moveSpeedCap += cDudeSpeedCapEasing;
+      }
+      else {
+         d.mv.moveSpeedCap -= cDudeSpeedCapEasing;
+      }
+      clamp(d.mv.moveSpeedCap, 0, d.mv.moveSpeedCapTarget);
    }
-   else {
-      d.mv.moveSpeedCap -= cDudeSpeedCapEasing;
-   }
-   clamp(d.mv.moveSpeedCap, 0, d.mv.moveSpeedCapTarget);
+
+   
 
    // add the movevector scaled against acceleration to velocity and cap it
-   d.phy.velocity = v2CapLength(d.phy.velocity + d.mv.moveVector * cDudeAcceleration, d.mv.moveSpeedCap);
+   d.phy.velocity = v2CapLength(d.phy.velocity + d.mv.moveVector , d.mv.moveSpeedCap);
 }
 
 // rotate facing vector toward the facevector
@@ -841,22 +859,6 @@ void renderUnlitScene(Game* game) {
    }
 
    _renderDude(game->maindude);
-
-   if (game->data.imgui.showMovementDebugging) {
-      const static f32 moveTargetDist = 10.0f;
-      const static f32 aimTargetDist = 20.0f;
-      auto &io = game->data.io;
-      auto &dude = game->maindude;
-
-      _renderTarget(dude.phy.pos + dude.phy.velocity * moveTargetDist, Cyan);
-      _renderTarget(dude.phy.pos + v2Normalized(dude.mv.facing) * aimTargetDist, Red);
-
-      _renderTarget(dude.phy.pos + io.leftStick * moveTargetDist, DkGreen);
-      _renderTarget(dude.phy.pos + dude.mv.moveVector * moveTargetDist, Magenta);
-
-      _renderTarget(dude.phy.pos + io.rightStick * aimTargetDist, Yellow);
-      _renderTarget(dude.phy.pos + dude.mv.faceVector * aimTargetDist, LtGray);
-   }
 }
 
 static void _addLight(Float2 size, Float2 pos, ColorRGBAf c) {
@@ -946,8 +948,25 @@ void renderUI(Game* game) {
 
          staminaCorner.x += gemSize.x + gemSpace;
       }
+   }
 
 
+   if (game->data.imgui.showMovementDebugging) {
+      const static f32 moveTargetDist = 50.0f;
+      const static f32 aimTargetDist = 100.0f;
+      auto &io = game->data.io;
+      auto &dude = game->maindude;
+
+      auto pos = dude.phy.pos - Float2{(f32)vp.x, (f32)vp.y};
+
+      _renderTarget(pos + dude.phy.velocity * 100, Cyan);
+      _renderTarget(pos + v2Normalized(dude.mv.facing) * aimTargetDist, Red);
+
+      _renderTarget(pos + io.leftStick * moveTargetDist, DkGreen);
+      _renderTarget(pos + dude.mv.moveVector * 10, Magenta);
+
+      //_renderTarget(pos + io.rightStick * aimTargetDist, Yellow);
+      _renderTarget(pos + dude.mv.faceVector * aimTargetDist, LtGray);
    }
 }
 
