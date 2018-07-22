@@ -120,9 +120,9 @@ f32 cDudeMoveSpeed =        0.100f;
 f32 cDudeDashSpeed =        0.300f;
 f32 cDudeSpeedCapEasing =   0.0003f;
 f32 cDudeBackwardsPenalty = 0.250f;
+f32 cDudeDashDistance =     50.0f;
 
 Milliseconds cDudePostDashCooldown = 100;
-Milliseconds cDudeDashDuration = 200;
 Milliseconds cDudeBaseStaminaTickRecoveryTime = 500;
 Milliseconds cDudeStaminaEmptyCooldown = 1000;
 
@@ -157,7 +157,6 @@ struct CooldownState {
 };
 
 struct DashState {
-   Milliseconds duration;
 };
 
 struct FreeState {
@@ -177,6 +176,14 @@ struct Status {
    int health, healthMax;
 };
 
+// shove keeps track of a push of constant speed for a distance
+// shoves can happen independant of state
+struct Shove {
+   Float2 startPos;
+   f32 sqDist;
+   f32 speed; // only stored so we can restore speed correctly
+};
+
 struct Dude {
    DudeState state = DudeState_FREE;
    AttackState atk;
@@ -194,6 +201,9 @@ struct Dude {
    Movement mv;
    Behavior ai;
    Status status;
+
+   bool shoved = false;
+   Shove shove;
 
    
    Milliseconds stateClock; // incremented by one every ms
@@ -215,6 +225,7 @@ static void uiEditDude(Dude& dude) {
             cDudeMoveSpeed = dude.phy.maxSpeed;
          }
          ImGui::InputFloat("Dash Speed", &cDudeDashSpeed, 0.01f, 0.1f, 4);
+         ImGui::InputFloat("Dash Distance", &cDudeDashDistance, 10.0f, 10.0f, 0);
          ImGui::InputFloat("Speed Cap Accel", &cDudeSpeedCapEasing, 0.001f, 0.01f, 4);
          ImGui::InputFloat("Backward Penalty", &cDudeBackwardsPenalty, 0.1f, 0.01f, 4);
 
@@ -230,7 +241,6 @@ static void uiEditDude(Dude& dude) {
 
          Milliseconds shrt = 50, lng = 100;
          ImGui::InputScalar("Post-Dash CD", ImGuiDataType_U64, &cDudePostDashCooldown, &shrt, &lng);
-         ImGui::InputScalar("Dash Duration", ImGuiDataType_U64, &cDudeDashDuration, &shrt, &lng);
          ImGui::InputScalar("Stamina Base Tick Speed", ImGuiDataType_U64, &cDudeBaseStaminaTickRecoveryTime, &shrt, &lng);
          ImGui::InputScalar("Stamina Empty CD", ImGuiDataType_U64, &cDudeStaminaEmptyCooldown, &shrt, &lng);
          ImGui::Unindent();
@@ -292,6 +302,32 @@ Milliseconds calcNextStaminaTickTime(int stam, int max) {
    return cDudeBaseStaminaTickRecoveryTime + (Milliseconds)(cDudeBaseStaminaTickRecoveryTime * cosInterp(1 - ratio));
 }
 
+void dudeShove(Dude&d, Float2 dir, f32 speed, f32 distance) {
+   d.shoved = true;
+   d.shove.sqDist = distance * distance;
+   d.shove.startPos = d.phy.pos;
+   d.shove.speed = speed;
+
+   d.mv.moveVector = dir;
+   d.phy.maxSpeed = speed;
+   d.mv.moveSpeedCapTarget = d.mv.moveSpeedCap = d.phy.maxSpeed;
+   d.phy.velocity = d.mv.moveVector * d.mv.moveSpeedCap;
+
+}
+void dudeUpdateShove(Dude& d) {
+   if (d.shoved) {
+      if (v2DistSquared(d.phy.pos, d.shove.startPos) >= d.shove.sqDist) {
+         d.mv.moveVector = { 0,0 };
+         if (d.shove.speed > cDudeMoveSpeed) {
+            d.phy.maxSpeed = cDudeMoveSpeed;
+         }
+         d.mv.moveSpeedCapTarget = d.mv.moveSpeedCap = d.phy.maxSpeed;
+         d.shoved = false;
+      }
+   }
+   
+}
+
 void dudeBeginFree(Dude&d) {
    dudeSetState(d, DudeState_FREE);
    d.free.staminaClockStart = 0;
@@ -318,39 +354,32 @@ void dudeUpdateStateCooldown(Dude& d) {
    }
 }
 
-void dudeBeginDash(Dude& d, f32 speed, Milliseconds dur) {
+void dudeBeginDash(Dude& d, f32 speed) {
    if (dudeSpendStamina(d, 1)) {
       
       dudeSetState(d, DudeState_DASH);
 
-      d.dash.duration = dur;
-
+      Float2 dashDir;
       if (v2LenSquared(d.mv.moveVector) > 0.0f) {
-         d.mv.moveVector = v2Normalized(d.mv.moveVector);
+         dashDir = v2Normalized(d.mv.moveVector);
       }
       else {
-         d.mv.moveVector = d.mv.faceVector;
+         dashDir = d.mv.faceVector;
       }
-      
-      d.phy.maxSpeed = speed;
-      d.mv.moveSpeedCapTarget = d.mv.moveSpeedCap = d.phy.maxSpeed;
-      d.phy.velocity = d.mv.moveVector * d.mv.moveSpeedCap;
+
+      dudeShove(d, dashDir, cDudeDashSpeed, cDudeDashDistance );
    }
 }
 
 
 void dudeUpdateStateDash(Dude& d) {
-   if (d.stateClock > d.dash.duration) {
+   if (!d.shoved) {
       Milliseconds cd = cDudePostDashCooldown;
-      if (d.status.stamina == 0) {
-         cd = cDudeStaminaEmptyCooldown;
-      }
+      //if (d.status.stamina == 0) {
+      //   cd = cDudeStaminaEmptyCooldown;
+      //}
 
       dudeBeginCooldown(d, cd);
-
-      d.mv.moveVector = { 0,0 };
-      d.phy.maxSpeed = cDudeMoveSpeed;
-      d.mv.moveSpeedCapTarget = d.mv.moveSpeedCap = d.phy.maxSpeed;
    }
 }
 
@@ -431,6 +460,9 @@ void dudeUpdateStateAttack(Dude& d) {
 }
 
 void dudeUpdateState(Dude& d) {
+
+   dudeUpdateShove(d);
+
    switch (d.state) {
    case DudeState_FREE: dudeUpdateStateFree(d); break;
    case DudeState_COOLDOWN: dudeUpdateStateCooldown(d); break;
@@ -486,7 +518,7 @@ void dudeApplyInputAiming(Dude& d) {
 void dudeApplyInputFreeActions(Dude& d) {
    auto& io = gameDataGet()->io;
    if (io.buttonPressed[GameButton_LT]){
-      dudeBeginDash(d, cDudeDashSpeed, cDudeDashDuration);
+      dudeBeginDash(d, cDudeDashSpeed);
    }
    else if (io.buttonPressed[GameButton_RT]) {
       dudeBeginAttack(d, 1, 0);
@@ -530,7 +562,7 @@ void dudeApplyInput(Dude& d) {
 void dudeUpdateVelocity(Dude& d) {
    // we assume at this point the moveVector is current
 
-   if (d.state != DudeState_DASH) {
+   if (!d.shoved) {
       // scale mvspeed based on facing;
       f32 facedot = v2Dot(v2Normalized(d.phy.velocity), d.mv.facing);
       auto scaledSpeed = (d.phy.maxSpeed * (1 - cDudeBackwardsPenalty)) + (d.phy.maxSpeed * cDudeBackwardsPenalty * facedot);
@@ -998,6 +1030,11 @@ void renderUI(Game* game) {
       //Float2 staminaCorner = { game->maindude.phy.pos.x - w / 2.0f, game->maindude.phy.pos.y + game->maindude.phy.circle.size + 20 };
       Float2 staminaCorner = { 10,10 };
 
+
+      if (game->maindude.status.stamina == 0) {
+         uber::set(Uniform_Alpha, 1.0f);
+         uber::set(Uniform_Color, Red);
+      }
       for (int i = 0; i < game->maindude.status.staminaMax; ++i) {
          
          auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
@@ -1008,6 +1045,7 @@ void renderUI(Game* game) {
          staminaCorner.x += gemSize.x + gemSpace;
       }
 
+      uber::resetToDefault();      
       for (int i = 0; i < game->maindude.status.healthMax; ++i) {
 
          auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
