@@ -35,6 +35,7 @@ struct GameData {
    struct {
       ColorRGBAf bgClearColor = { 0.45f, 0.55f, 0.60f, 1.0f };  // clear color behond all imgui windows
       bool showUI = true;                               // whether to show the ui or just a fullscreen viewer
+      bool mouseHovering = false;
       Rectf vpScreenArea = {0,0,1,1}; // set by imgui when the viewer moves (only in debug), necessary to track mouse position
    
       bool showMovementDebugging = false;
@@ -81,3 +82,5 @@ void gameDoUI(Game*game);
 FBO const& gameGetOutputFBO(Game*game);
 
 void gameReloadShaders(Game* game);
+
+void DEBUG_gameSpawnDude(Game* game);

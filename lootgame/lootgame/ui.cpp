@@ -268,7 +268,7 @@ static void _renderViewerFBO(Game* game) {
 
    gameDataGet()->imgui.vpScreenArea = { a.x, a.y, b.x - a.x, b.y - a.y };
 
-   draw_list->AddRectFilled(a, b, IM_COL32_BLACK);
+   //draw_list->AddRectFilled(a, b, IM_COL32_BLACK);
    draw_list->AddCallback([](auto, auto) { glEnable(GL_FRAMEBUFFER_SRGB); }, nullptr);
    draw_list->AddImage( (ImTextureID)(iPtr)fbo.tex, a, b );
    draw_list->AddCallback([](auto, auto) { glDisable(GL_FRAMEBUFFER_SRGB); }, nullptr);
@@ -289,6 +289,7 @@ static void _showFullScreenViewer(Game* g) {
 
    if (ImGui::Begin("GameWindow", nullptr, BorderlessFlags)) {
       _renderViewerFBO(g);
+      game->imgui.mouseHovering = true;
    }
    ImGui::End();
 
@@ -311,6 +312,8 @@ static void _showWindowedViewer(Game* g) {
 
       _renderViewerFBO(g);
 
+      game->imgui.mouseHovering = ImGui::IsWindowHovered();
+
 
    }
    ImGui::End();
@@ -324,6 +327,9 @@ static void _doUIDebugger(Game* g) {
       
       if (ImGui::Button("Reload Shaders", ImVec2(ImGui::GetContentRegionAvailWidth(), 0))) {
          gameReloadShaders(g);
+      }
+      if (ImGui::Button("Spawn Dude", ImVec2(ImGui::GetContentRegionAvailWidth(), 0))) {
+         DEBUG_gameSpawnDude(g);
       }
 
       

@@ -131,6 +131,14 @@ void resolveOverlaps(DynamicArray<PhyObject*>& objs, IslandPartitionSet* pSet) {
 
    partitionSetReset(pSet);
 
+   if (objs.size() == 1) {
+      auto&& a = objs[0];
+      a->islandMailbox = pSet->mailbox;
+      a->island = pSet->next();
+      pSet->islands[a->island].objs.push_back(a);
+      return;
+   }
+
    do {
       overlap = false;
 
