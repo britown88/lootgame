@@ -398,6 +398,7 @@ void dudeBeginFree(Dude&d) {
 void dudeUpdateStateFree(Dude& d) {
    // handle stamina regain
    if (d.free.staminaClockStart++ > d.free.nextTickAt && d.status.stamina < d.status.staminaMax) {
+      //d.status.stamina = d.status.staminaMax;
       ++d.status.stamina;
       d.free.staminaClockStart = 0;
       d.free.nextTickAt = calcNextStaminaTickTime(d.status.stamina, d.status.staminaMax);
@@ -606,6 +607,7 @@ void badDudeCheckAttackCollision(Dude& dude, Dude& t) {
 
       if (!dudeAlive(t)) {
          gameStateBeginYouDied(g_game);
+         t.mv.moveVector = { 0,0 };
       }
    }
 }
@@ -826,6 +828,8 @@ struct Game {
    Map map = { {10000, 10000} };
    Camera cam = { { 0, 0, 426, 240} };// 640, 360 } };
    bool reloadShader = false;
+
+   int waveSize = 1;
 };
 
 void gameStateBeginYouDied(Game* game) {
@@ -991,7 +995,7 @@ void DEBUG_gameSpawnDude(Game* game) {
 static void _gameInitNew() {
    auto lastUpdate = g_game->lastUpdate;
    *g_game = Game();
-
+   _gameDataInit(&g_game->data, nullptr);
    _createGraphicsObjects(g_game);
    g_game->lastUpdate = lastUpdate;
    g_game->maindude = _createDude(g_game);
@@ -1480,6 +1484,14 @@ void buildFrameData(Game*game, FrameData& fd) {
    for (auto && d : game->baddudes) {
       if (dudeAlive(d)) {
          fd.phyObjs.push_back(&d.phy);
+      }
+   }
+
+
+   if (fd.phyObjs.size() == 1) {
+      ++game->waveSize;
+      for (int i = 0; i < game->waveSize; ++i) {
+         DEBUG_gameSpawnDude(game);
       }
    }
 }
