@@ -15,6 +15,12 @@
 #define AXIS_AIM_DEADZONE 0.5f
 #define DUDE_COUNT 1
 
+
+struct Game;
+static Game* g_game = nullptr;
+void gameStateBeginYouDied(Game* game);
+void DEBUG_gameSpawnDude(Game* game);
+
 static Constants g_const;
 Constants &ConstantsGet() { return g_const; }
 
@@ -84,7 +90,7 @@ static MoveSet _createMoveSet() {
 
    out.swings[0].swipeAngle =    120.0f;
    out.swings[0].lungeSpeed =    0.3f;
-   out.swings[0].lungeDist =     20.0f;
+   out.swings[0].lungeDist =     0.0f;
    out.swings[0].windupDur =     150;
    out.swings[0].swingDur =      250;
    out.swings[0].cooldownDur =   300;
@@ -125,7 +131,7 @@ f32 cDudeDashSpeed =        0.300f;
 f32 cDudeSpeedCapEasing =   0.0003f;
 f32 cDudeBackwardsPenalty = 0.250f;
 f32 cDudeDashDistance =     50.0f;
-f32 cDudeKnockbackDistance = 50.0f;
+f32 cDudeKnockbackDistance = 0.0f;
 
 Milliseconds cDudePostDashCooldown = 100;
 Milliseconds cDudeBaseStaminaTickRecoveryTime = 500;
@@ -353,6 +359,10 @@ Milliseconds calcNextStaminaTickTime(int stam, int max) {
 }
 
 void dudeShove(Dude&d, Float2 dir, f32 speed, f32 distance) {
+   if (distance <= 0.0f || speed <= 0.0f) {
+      return;
+   }
+
    d.shoved = true;
    d.shove.start = 0;
    d.shove.dur = (Milliseconds)(distance / speed);
@@ -397,6 +407,9 @@ void dudeUpdateStateFree(Dude& d) {
 void dudeBeginCooldown(Dude&d, Milliseconds duration) {
    dudeSetState(d, DudeState_COOLDOWN);
    d.cd.duration = duration;
+   if (!d.shoved) {
+      d.mv.moveVector = { 0,0 };
+   }
 }
 
 void dudeUpdateStateCooldown(Dude& d) {
@@ -590,6 +603,10 @@ void badDudeCheckAttackCollision(Dude& dude, Dude& t) {
       auto pushdir = v2Normalized(t.phy.pos - dude.phy.pos);
       dudeShove(t, pushdir, cDudeDashSpeed, cDudeKnockbackDistance);
       dude.atk.hits.push_back(&t);
+
+      if (!dudeAlive(t)) {
+         gameStateBeginYouDied(g_game);
+      }
    }
 }
 
@@ -776,11 +793,23 @@ void dudeUpdateBehavior(Dude& dude) {
 
 
 
+enum GameState_ {
+   GameState_ACTION = 0,
+   GameState_YOUDIED
+};
+typedef u16 GameState;
+
+struct GameStateYouDied {
+   Milliseconds clock;
+};
 
 
 
 struct Game {
+   GameState state = GameState_ACTION;
    GameData data;
+
+   GameStateYouDied youdied;
 
    ShaderHandle shader = 0;
 
@@ -799,7 +828,13 @@ struct Game {
    bool reloadShader = false;
 };
 
-static Game* g_game = nullptr;
+void gameStateBeginYouDied(Game* game) {
+   game->state = GameState_YOUDIED;
+   game->youdied.clock = 0;
+}
+
+
+
 GameData* gameDataGet() {
    return &g_game->data;
 }
@@ -861,6 +896,19 @@ static Texture _textureBuildFromFile(const char* path, TextureConfig const& cfg 
    return out;
 }
 
+static void _buildGameTextures() {
+   g_textures[GameTextures_Dude] = _textureBuildFromFile("assets/dude2.png");
+   g_textures[GameTextures_Target] = _textureBuildFromFile("assets/target.png");
+   g_textures[GameTextures_Light] = _textureBuildFromFile("assets/light3.png");
+   g_textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png", { RepeatType_CLAMP , FilterType_LINEAR });
+   g_textures[GameTextures_ShittySword] = _textureBuildFromFile("assets/sword.png");
+   g_textures[GameTextures_GemEmpty] = _textureBuildFromFile("assets/gemempty.png");
+   g_textures[GameTextures_GemFilled] = _textureBuildFromFile("assets/gemfilled.png");
+   g_textures[GameTextures_HeartEmpty] = _textureBuildFromFile("assets/heartempty.png");
+   g_textures[GameTextures_HeartFilled] = _textureBuildFromFile("assets/heartfilled.png");
+   g_textures[GameTextures_Tile] = _textureBuildFromFile("assets/tile.png", { RepeatType_REPEAT , FilterType_NEAREST });
+}
+
 static void _createGraphicsObjects(Game* game){
    assert(_reloadShader(game));
 
@@ -891,19 +939,6 @@ static void _createGraphicsObjects(Game* game){
    game->unlitScene = render::fboBuild({ res.x, res.y });
    game->litScene = render::fboBuild({ res.x, res.y });
    game->output = render::fboBuild({ res.x, res.y });
-
-   g_textures[GameTextures_Dude] = _textureBuildFromFile("assets/dude2.png");
-   g_textures[GameTextures_Target] = _textureBuildFromFile("assets/target.png");
-   g_textures[GameTextures_Light] = _textureBuildFromFile("assets/light3.png");
-   g_textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png", { RepeatType_CLAMP , FilterType_LINEAR });
-   g_textures[GameTextures_ShittySword] = _textureBuildFromFile("assets/sword.png");
-   g_textures[GameTextures_GemEmpty] = _textureBuildFromFile("assets/gemempty.png");
-   g_textures[GameTextures_GemFilled] = _textureBuildFromFile("assets/gemfilled.png");
-   g_textures[GameTextures_HeartEmpty] = _textureBuildFromFile("assets/heartempty.png");
-   g_textures[GameTextures_HeartFilled] = _textureBuildFromFile("assets/heartfilled.png");
-   g_textures[GameTextures_Tile] = _textureBuildFromFile("assets/tile.png", { RepeatType_REPEAT , FilterType_NEAREST });
-   
-   
 }
 
 static Dude _createDude(Game* game) {
@@ -952,22 +987,30 @@ void DEBUG_gameSpawnDude(Game* game) {
    game->baddudes.push_back(e);
 }
 
-void gameBegin(Game*game) {
-   game->lastUpdate = appGetTime();
 
-   _createGraphicsObjects(game);
-   game->maindude = _createDude(game);
+static void _gameInitNew() {
+   auto lastUpdate = g_game->lastUpdate;
+   *g_game = Game();
+
+   _createGraphicsObjects(g_game);
+   g_game->lastUpdate = lastUpdate;
+   g_game->maindude = _createDude(g_game);
 
    auto e = _createEnemy({ 1000, 1000 });
-   e.ai.target = &game->maindude;
-   game->baddudes.push_back(e);
+   e.ai.target = &g_game->maindude;
+   g_game->baddudes.push_back(e);
 
    //for (int i = 0; i < DUDE_COUNT; ++i) {
    //   auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 }, 10.0f);
    //   e.ai.target = &game->maindude;
    //   game->baddudes.push_back(e);
    //}
+}
 
+void gameBegin(Game*game) {
+   _buildGameTextures();
+   game->lastUpdate = appGetTime();
+   _gameInitNew();
 }
 
 
@@ -1146,6 +1189,13 @@ void renderLitScene(Game* game) {
    render::setBlendMode(BlendMode_MULITPLY);
    render::textureBind(game->litScene.tex);
    render::meshRender(game->meshUncentered);
+
+   if (game->state == GameState_YOUDIED) {
+      auto ratio = cosInterp(1.0f - ((f32)game->youdied.clock / 3000));
+      uber::set(Uniform_Color, ColorRGBAf{1.0f, ratio, ratio, 1.0f});
+      uber::set(Uniform_ColorOnly, true);
+      render::meshRender(game->meshUncentered);
+   }
 }
 
 void renderUI(Game* game) {
@@ -1419,7 +1469,62 @@ void gameHandleInput(Game*game) {
    }
 }
 
+struct FrameData {
+   DynamicArray<PhyObject*> phyObjs;
+};
 
+void buildFrameData(Game*game, FrameData& fd) {
+   fd.phyObjs.clear();
+
+   fd.phyObjs.push_back(&game->maindude.phy);
+   for (auto && d : game->baddudes) {
+      if (dudeAlive(d)) {
+         fd.phyObjs.push_back(&d.phy);
+      }
+   }
+}
+
+
+void gameUpdateMilliStep(Game* game, FrameData& fd) {
+   //static Milliseconds ms = 0;
+   //if (ms++ % 2 != 0) {
+   //   return;
+   //}
+
+   dudeUpdateState(game->maindude);
+
+   if (dudeAlive(game->maindude)) {
+      dudeApplyInput(game->maindude);
+   }
+
+   dudeUpdateRotation(game->maindude);
+   dudeUpdateVelocity(game->maindude);
+
+   mainDudeCheckAttackCollisions(game->maindude, game->baddudes);
+
+   for (auto && d : game->baddudes) {
+      dudeUpdateState(d);
+
+      if (dudeAlive(d)) {
+         dudeUpdateBehavior(d);
+      }
+
+      dudeUpdateRotation(d);
+      dudeUpdateVelocity(d);
+
+      if (dudeAlive(d)) {
+         badDudeCheckAttackCollision(d, game->maindude);
+      }
+   }
+
+   updatePhyPositions(fd.phyObjs);
+
+   if (game->state == GameState_YOUDIED) {
+      if (++game->youdied.clock > 3000) {
+         _gameInitNew();
+      }
+   }
+}
 
 
 void gameUpdate(Game* game) {   
@@ -1429,9 +1534,7 @@ void gameUpdate(Game* game) {
 
    auto&vp = game->cam.viewport;
    auto&dudePos = game->maindude.phy.pos;
-   auto&dudeFace = game->maindude.mv.facing;
-
-   
+   auto&dudeFace = game->maindude.mv.facing;   
 
    if (ms > 32) {
       // something bad happened and we spiked hard
@@ -1440,47 +1543,12 @@ void gameUpdate(Game* game) {
    }
 
    // build physics system
-   DynamicArray<PhyObject*> pObjs;
-   pObjs.push_back(&game->maindude.phy);
-   for (auto && d : game->baddudes) {
-      if (dudeAlive(d)) {
-         pObjs.push_back(&d.phy);
-      }
-   }
-
-   auto sz = pObjs.size();
+   
+   static FrameData fd;
+   buildFrameData(game, fd);
 
    for (Milliseconds i = 0; i < ms; ++i) {
-
-
-      dudeUpdateState(game->maindude);
-
-      if (dudeAlive(game->maindude)) {
-         dudeApplyInput(game->maindude);
-      }
-      
-      dudeUpdateRotation(game->maindude);
-      dudeUpdateVelocity(game->maindude);
-
-      mainDudeCheckAttackCollisions(game->maindude, game->baddudes);
-      
-
-      for (auto && d : game->baddudes) {
-         dudeUpdateState(d);
-
-         if (dudeAlive(d)) {
-            dudeUpdateBehavior(d);
-         }
-           
-         dudeUpdateRotation(d);
-         dudeUpdateVelocity(d);
-
-         if (dudeAlive(d)) {
-            badDudeCheckAttackCollision(d, game->maindude);
-         }
-      }
-
-      updatePhyPositions(pObjs);
+      gameUpdateMilliStep(game, fd);
    }
 
    vp.x = clamp(dudePos.x - (vp.w / 2), 0, game->map.size.x - vp.w);
