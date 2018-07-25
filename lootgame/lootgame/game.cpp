@@ -36,11 +36,13 @@ struct Camera {
 
 enum {
    GameTextures_Dude = 0,
+   GameTextures_DudeNormals,
    GameTextures_Target,
    GameTextures_Light,
    GameTextures_Circle,
    GameTextures_ShittySword,
    GameTextures_Tile,
+   GameTextures_TileNormals,
    GameTextures_GemEmpty,
    GameTextures_GemFilled,
    GameTextures_HeartEmpty,
@@ -816,7 +818,7 @@ struct Game {
    ShaderHandle shader = 0;
 
    Mesh mesh, meshUncentered;
-   FBO unlitScene, litScene, output;
+   FBO unlitScene, litScene, output, normals;
 
    Dude maindude;
    DynamicArray<Dude> baddudes;
@@ -902,6 +904,7 @@ static Texture _textureBuildFromFile(const char* path, TextureConfig const& cfg 
 
 static void _buildGameTextures() {
    g_textures[GameTextures_Dude] = _textureBuildFromFile("assets/dude2.png");
+   g_textures[GameTextures_DudeNormals] = _textureBuildFromFile("assets/dudenormal.png", { RepeatType_CLAMP, FilterType_NEAREST, true });
    g_textures[GameTextures_Target] = _textureBuildFromFile("assets/target.png");
    g_textures[GameTextures_Light] = _textureBuildFromFile("assets/light3.png");
    g_textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png", { RepeatType_CLAMP , FilterType_LINEAR });
@@ -911,6 +914,7 @@ static void _buildGameTextures() {
    g_textures[GameTextures_HeartEmpty] = _textureBuildFromFile("assets/heartempty.png");
    g_textures[GameTextures_HeartFilled] = _textureBuildFromFile("assets/heartfilled.png");
    g_textures[GameTextures_Tile] = _textureBuildFromFile("assets/tile.png", { RepeatType_REPEAT , FilterType_NEAREST });
+   g_textures[GameTextures_TileNormals] = _textureBuildFromFile("assets/tilenormal.png", { RepeatType_REPEAT , FilterType_NEAREST, true });
 }
 
 static void _createGraphicsObjects(Game* game){
@@ -943,6 +947,7 @@ static void _createGraphicsObjects(Game* game){
    game->unlitScene = render::fboBuild({ res.x, res.y });
    game->litScene = render::fboBuild({ res.x, res.y });
    game->output = render::fboBuild({ res.x, res.y });
+   game->normals = render::fboBuild({ res.x, res.y });
 }
 
 static Dude _createDude(Game* game) {
@@ -952,7 +957,7 @@ static Dude _createDude(Game* game) {
 
    out.c = White;
    out.moveset = _createMoveSet();
-   out.phy.pos = { 950,950 };
+   out.phy.pos = { 10,10 };
    out.phy.circle.size = 10.0f;
    out.phy.maxSpeed = cDudeMoveSpeed;
    out.phy.invMass = 0.0f;
@@ -1057,13 +1062,17 @@ static void _renderDude(Dude& dude) {
       uber::set(Uniform_Color, DkRed);
       uber::set(Uniform_Alpha, 0.5f);
    }
-   
+
    uber::set(Uniform_ModelMatrix, model);
    render::textureBind(dude.texture);
    render::meshRender(g_game->mesh);
 
+   //uber::set(Uniform_OutlineOnly, true);
+   //render::meshRender(g_game->mesh);
+
    if (gameDataGet()->imgui.showCollisionDebugging) {
 
+      uber::resetToDefault();
       model = Matrix::translate2f(dude.phy.pos);
       model *= Matrix::scale2f({ dude.phy.circle.size * 2, dude.phy.circle.size * 2 });
       uber::set(Uniform_Color, Cyan);
@@ -1106,6 +1115,8 @@ static void _renderFloor(Game* game) {
    uber::set(Uniform_TextureMatrix, Matrix::scale2f({ fres.x / tileSize.x, fres.y / tileSize.y }));
    uber::set(Uniform_ModelMatrix, Matrix::scale2f(fres));
    render::textureBind(gameTextureHandle(GameTextures_Tile));
+   //uber::set(Uniform_ColorOnly, true);
+
    render::meshRender(g_game->meshUncentered);
 
    if (gameDataGet()->imgui.showCollisionDebugging) {
@@ -1116,6 +1127,13 @@ static void _renderFloor(Game* game) {
       uber::set(Uniform_ModelMatrix, Matrix::translate2f({ testrect.x, testrect.y }) * Matrix::scale2f({ testrect.w, testrect.h }));
       render::meshRender(g_game->meshUncentered);
    }
+
+   uber::set(Uniform_ColorOnly, false);
+   render::fboBind(game->normals);
+   render::textureBind(gameTextureHandle(GameTextures_TileNormals));
+   render::meshRender(g_game->meshUncentered);
+
+   render::fboBind(game->unlitScene);
 }
 
 
@@ -1130,16 +1148,25 @@ void renderUnlitScene(Game* game) {
    uber::set(Uniform_ViewMatrix, view, true);
 
    render::setBlendMode(BlendMode_NORMAL);
-   render::viewport({ 0,0, game->unlitScene.sz.x, game->unlitScene.sz.y });
    render::clear(Black);
 
    _renderFloor(game);
 
    for (auto&& d : game->baddudes) {
       _renderDude(d);
+      render::fboBind(game->normals);
+      render::textureBind(gameTextureHandle(GameTextures_DudeNormals));
+      render::meshRender(g_game->mesh);
+
+      render::fboBind(game->unlitScene);
    }
 
    _renderDude(game->maindude);
+   render::fboBind(game->normals);
+   render::textureBind(gameTextureHandle(GameTextures_DudeNormals));
+   render::meshRender(g_game->mesh);
+
+   render::fboBind(game->unlitScene);
 }
 
 static void _addLight(Float2 size, Float2 pos, ColorRGBAf c) {
@@ -1155,35 +1182,38 @@ void renderLightLayer(Game* game) {
 
    render::fboBind(game->litScene);
    render::setBlendMode(BlendMode_ADDITION);
-   render::viewport({ 0,0, game->litScene.sz.x, game->litScene.sz.y });
    auto al = gameDataGet()->imgui.ambientLight;
    render::clear({ al, al, al, al });
 
+   render::textureBind(game->normals.tex, 1);
    uber::set(Uniform_ViewMatrix, Matrix::ortho(0, vp.w, 0, vp.h, 1, -1), true);
    uber::resetToDefault();
 
    uber::set(Uniform_PointLight, true);
 
-   _addLight({ vp.w,vp.w }, { vp.w/2.0f, vp.h/2.0f }, Yellow);
+   //_addLight({ vp.w,vp.w }, { vp.w / 2.0f, vp.h / 2.0f }, Yellow);
 
-   _addLight({ 120, 120 }, game->maindude.phy.pos - Float2{ vp.x, vp.y }, Yellow);
+   //_addLight({ 120, 120 }, game->maindude.phy.pos - Float2{ vp.x, vp.y }, Yellow);
 
    int i = 0;
 
    for (auto&& d : game->baddudes) {
       static ColorRGBAf c[] = { Red, Green, Blue };
-      _addLight({ 80,80 }, d.phy.pos - Float2{ vp.x, vp.y }, c[i++ % 3]);
+     // _addLight({ 80,80 }, d.phy.pos - Float2{ vp.x, vp.y }, c[i++ % 3]);
    }
+
+   _addLight({ 150,150 }, game->data.io.mousePos - Float2{vp.x, vp.y}, White);
+
+   ImGui::Text("%f, %f", game->data.io.mousePos.x, game->data.io.mousePos.y);
 }
 
 void renderLitScene(Game* game) {
    auto vp = game->cam.viewport;
 
    render::fboBind(game->output);
-   render::setBlendMode(BlendMode_DISABLED);
+   render::setBlendMode(BlendMode_NORMAL);
    uber::resetToDefault();
 
-   render::viewport({ 0,0, game->output.sz.x, game->output.sz.y });
    render::clear(Black);
 
    uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (f32)vp.w, (f32)vp.h }));
@@ -1572,3 +1602,4 @@ void gameUpdate(Game* game) {
    uiEditDude(game->maindude);
    gameDoUI(game);
 }
+

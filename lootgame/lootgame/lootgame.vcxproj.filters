@@ -124,14 +124,14 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <None Include="uniforms.x">
+      <Filter>Header Files\app</Filter>
+    </None>
     <None Include="assets\fragment.glsl">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="assets\vertex.glsl">
       <Filter>Resource Files</Filter>
-    </None>
-    <None Include="uniforms.x">
-      <Filter>Header Files\app</Filter>
     </None>
   </ItemGroup>
 </Project>

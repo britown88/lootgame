@@ -24,6 +24,7 @@ typedef byte FilterType;
 struct TextureConfig {
    RepeatType repeatType = RepeatType_CLAMP;
    FilterType filterType = FilterType_NEAREST;
+   bool linear = false;
 };
 
 struct Texture {

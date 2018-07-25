@@ -282,7 +282,7 @@ Texture render::textureBuild(ColorRGBA const* pixels, Int2 const& sz, TextureCon
    }
 
    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, sz.x, sz.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+   glTexImage2D(GL_TEXTURE_2D, 0, cfg.linear ? GL_RGBA8 : GL_SRGB8_ALPHA8, sz.x, sz.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
    glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -357,6 +357,8 @@ void render::fboDestroy(FBO& fbo) {
 void render::fboBind(FBO const& fbo) {
    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo.fbo);
    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo.tex, 0);
+
+   render::viewport({ 0,0, fbo.sz.x, fbo.sz.y });
 }
 
 // uniform sets
