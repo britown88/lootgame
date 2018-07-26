@@ -49,10 +49,12 @@ void main() {
 
       if(uNormalLighting){
          // light against the normal map
-         vec3 lightDir = vec3(center - vTexCoords, uHeight);
+         
 
          vec2 normalCoord = gl_FragCoord.xy / textureSize(uNormals, 0);
-         vec3 normal = (texture(uNormals, normalCoord).rgb * 2.0) - 1.0;
+         vec4 normalData = texture(uNormals, normalCoord);
+         vec3 normal = (normalData.rgb * 2.0) - 1.0;
+         vec3 lightDir = vec3(center - vTexCoords, uHeight - normalData.a);
 
          lightDir = normalize(lightDir);
          normal = normalize(normal);
@@ -60,7 +62,7 @@ void main() {
          float d = max(dot(lightDir, normal), 0);
 
          vec4 diffuse = uColor * uAlpha;
-         outputColor =  ((0.5 * r) + (diffuse * d * r)) * uLightIntensity;
+         outputColor =  diffuse * d * r * uLightIntensity;
       }
       else {
          // just a colored point light
@@ -73,9 +75,8 @@ void main() {
 
       if(uOutputNormals){
          vec4 norm = texture(uNormals, vTexCoords);
-         //if(norm.a >= 1.0){
-            outputNormal = vec4(norm.rgb, 1.0);
-         //}         
+         norm.a = uHeight;
+         outputNormal = norm;        
       }
    }
 

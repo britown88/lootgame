@@ -261,7 +261,7 @@ Texture render::textureBuild(Int2 const& sz, TextureFlag flags, ColorRGBA const*
    glEnable(GL_TEXTURE_2D);
    glGenTextures(1, &out.handle);
    glBindTexture(GL_TEXTURE_2D, out.handle);
-   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+   //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
    if (flags & TextureFlag_FilterNearest) {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -288,20 +288,24 @@ Texture render::textureBuild(Int2 const& sz, TextureFlag flags, ColorRGBA const*
    }
 
    GLuint colorFormat = 0;
+   GLenum type = 0;
    if (flags&TextureFlag_Color_SRGBA) {
       colorFormat = GL_SRGB8_ALPHA8;
+      type = GL_UNSIGNED_BYTE;
    }
    else if (flags&TextureFlag_Color_RGBA8) {
       colorFormat = GL_RGBA8;
+      type = GL_UNSIGNED_BYTE;
    }
    else if (flags&TextureFlag_Color_RGBA16F) {
       colorFormat = GL_RGBA16F;
+      type = GL_FLOAT;
    }
 
    assert(colorFormat); 
 
-   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-   glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, sz.x, sz.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+   //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+   glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, sz.x, sz.y, 0, GL_RGBA, type, pixels);
 
    glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -368,7 +372,7 @@ void render::fboBind(FBO const& fbo) {
       GL_COLOR_ATTACHMENT3,
       GL_COLOR_ATTACHMENT4,
    };
-   glDrawBuffers(fbo.out.size(), attachments);
+   glDrawBuffers((GLsizei)fbo.out.size(), attachments);
 
    render::viewport({ 0,0, fbo.sz.x, fbo.sz.y });
 }

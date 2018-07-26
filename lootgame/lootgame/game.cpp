@@ -125,6 +125,11 @@ static MoveSet _createMoveSet() {
    return out;
 }
 
+f32 cFloorHeight = 0.0f;
+f32 cDudeHeight = 1.0f;
+f32 cLightHeight = 0.5f;
+f32 cLightIntensity = 1.0f;
+
 
 f32 cDudeAcceleration =     0.005f;
 f32 cDudeRotationSpeed =    0.010f;
@@ -234,6 +239,18 @@ struct Dude {
 
 static void uiEditDude(Dude& dude) {
    if (ImGui::Begin(format("Dude Editor##%p", &dude).c_str(), 0, ImGuiWindowFlags_AlwaysAutoResize)) {
+
+      ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
+      if (ImGui::CollapsingHeader("Lighting")) {
+         ImGui::Indent();
+
+         ImGui::InputFloat("Floor Height", &cFloorHeight, 0.01f, 0.1f, 4);
+         ImGui::InputFloat("Dude Height", &cDudeHeight, 0.01f, 1.0f, 4);
+         ImGui::InputFloat("Light Height", &cLightHeight, 0.01f, 1.0f, 4);
+         ImGui::InputFloat("Light Intensity", &cLightIntensity, 0.01f, 1.0f, 4);
+
+         ImGui::Unindent();
+      }
 
       ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
       if (ImGui::CollapsingHeader("Movement")) {
@@ -1067,12 +1084,14 @@ static void _renderDude(Dude& dude) {
 
 
    uber::resetToDefault();
+   uber::set(Uniform_Height, cDudeHeight);
+
    if (dudeAlive(dude)) {
       uber::set(Uniform_Color, dude.c);
    }
    else {
       uber::set(Uniform_Color, DkRed);
-      uber::set(Uniform_Alpha, 0.5f);
+      //uber::set(Uniform_Alpha, 0.5f);
    }
 
    uber::set(Uniform_ModelMatrix, model);
@@ -1125,6 +1144,7 @@ static void _renderFloor(Game* game) {
    Float2 tileSize = { 16, 16 };
    
    uber::resetToDefault();
+   uber::set(Uniform_Height, cFloorHeight);
    uber::set(Uniform_TextureMatrix, Matrix::scale2f({ fres.x / tileSize.x, fres.y / tileSize.y }));
    uber::set(Uniform_ModelMatrix, Matrix::scale2f(fres));
    uber::bindTexture(Uniform_DiffuseTexture, gameTextureHandle(GameTextures_Tile));
@@ -1198,8 +1218,10 @@ void renderUnlitScene(Game* game) {
    render::setBlendMode(BlendMode_DISABLED);   
    render::clear(Black);
 
+   
    _renderFloor(game);
 
+   
    for (auto&& d : game->baddudes) {
       _renderDude(d);
    }
@@ -1213,7 +1235,7 @@ void renderUnlitScene(Game* game) {
 static void _addLight(Float2 size, Float2 pos, ColorRGBAf c) {
    uber::set(Uniform_Color, c);
    uber::set(Uniform_Alpha, 1.0f);
-   uber::set(Uniform_LightIntensity, 1.0f);
+   //uber::set(Uniform_LightIntensity, 1.0f);
    uber::set(Uniform_ModelMatrix, Matrix::translate2f(pos) * Matrix::scale2f(size));
    render::meshRender(g_game->mesh);
 }
@@ -1234,8 +1256,11 @@ void renderLightLayer(Game* game) {
    uber::set(Uniform_PointLight, true);
    uber::set(Uniform_NormalLighting, true);
 
-   _addLight({ vp.w,vp.w }, { vp.w / 2.0f, vp.h / 2.0f }, Yellow);
-   _addLight({ 120, 120 }, game->maindude.phy.pos - Float2{ vp.x, vp.y }, Yellow);
+   uber::set(Uniform_Height, cLightHeight);
+   uber::set(Uniform_LightIntensity, cLightIntensity);
+
+   //_addLight({ vp.w,vp.w }, { vp.w / 2.0f, vp.h / 2.0f }, Yellow);
+   //_addLight({ 120, 120 }, game->maindude.phy.pos - Float2{ vp.x, vp.y }, Yellow);
 
    int i = 0;
    for (auto&& d : game->baddudes) {
