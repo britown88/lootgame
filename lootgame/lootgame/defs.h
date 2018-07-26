@@ -104,6 +104,7 @@ typedef struct {
 } ColorRGBAf;
 #pragma pack(pop)
 
+extern const ColorRGBAf Cleared;
 extern const ColorRGBAf White;
 extern const ColorRGBAf Gray;
 extern const ColorRGBAf DkGray;

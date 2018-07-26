@@ -108,13 +108,13 @@ void uber::set(Uniform u, Matrix const& m, bool setAsDefault) {
       g_uberShader.modified[u] = false;
    }
 }
-void uber::set(Uniform u, TextureSlot t, bool setAsDefault) {
-   g_uberShader.set(u, t);
-   if (setAsDefault) {
-      *(TextureSlot*)(((byte*)&g_uberShader.defaults) + g_uberShader.dataMap[u].offset) = t;
-      g_uberShader.modified[u] = false;
-   }
-}
+//void uber::set(Uniform u, TextureSlot t, bool setAsDefault) {
+//   g_uberShader.set(u, t);
+//   if (setAsDefault) {
+//      *(TextureSlot*)(((byte*)&g_uberShader.defaults) + g_uberShader.dataMap[u].offset) = t;
+//      g_uberShader.modified[u] = false;
+//   }
+//}
 void uber::set(Uniform u, ColorRGBAf const& c, bool setAsDefault) {
    g_uberShader.set(u, c);
    if (setAsDefault) {
@@ -142,6 +142,15 @@ void uber::set(Uniform u, bool b, bool setAsDefault) {
       *(bool*)(((byte*)&g_uberShader.defaults) + g_uberShader.dataMap[u].offset) = b;
       g_uberShader.modified[u] = false;
    }
+}
+
+void uber::bindTexture(Uniform u, TextureHandle handle) {
+   auto& data = g_uberShader.dataMap[u];
+   assert(data.type == UberShader::UData::Type::TextureSlot);
+
+   auto slot = *(TextureSlot*)(((byte*)&g_uberShader.defaults) + data.offset);
+   render::uSetTextureSlot(data.name, slot);
+   render::textureBind(handle, slot);
 }
 
 void render::clear(ColorRGBAf const& c) {
@@ -245,7 +254,7 @@ void render::shaderSetActive(ShaderHandle s) {
 }
 
 // textures
-Texture render::textureBuild(Int2 const& sz, ColorRGBA const* pixels, TextureFlag flags) {
+Texture render::textureBuild(Int2 const& sz, TextureFlag flags, ColorRGBA const* pixels) {
    Texture out;
    out.sz = sz;
    
@@ -309,7 +318,7 @@ void render::textureBind(TextureHandle t, TextureSlot slot) {
 
 // FBO
 FBO render::fboBuild(Int2 sz) {
-   return fboBuild(sz, { textureBuild(sz, nullptr, TextureFlag_FBODefaults) });
+   return fboBuild(sz, { textureBuild(sz, TextureFlag_FBODefaults) });
 }
 FBO render::fboBuild(Int2 sz, std::initializer_list<Texture> outputs) {
    FBO out;
@@ -342,12 +351,24 @@ void render::fboDestroy(FBO& fbo) {
 
 void render::fboBind(FBO const& fbo) {
    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo.fbo);
+   if (fbo.out.empty()) {
+      return;
+   }
+
    int i = 0;
    for (auto&&texture : fbo.out) {
       glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i++, GL_TEXTURE_2D, texture.handle, 0);
    }
 
-   
+   // this is extremely dumb opengl
+   static GLenum attachments[] = {
+      GL_COLOR_ATTACHMENT0, 
+      GL_COLOR_ATTACHMENT1,
+      GL_COLOR_ATTACHMENT2,
+      GL_COLOR_ATTACHMENT3,
+      GL_COLOR_ATTACHMENT4,
+   };
+   glDrawBuffers(fbo.out.size(), attachments);
 
    render::viewport({ 0,0, fbo.sz.x, fbo.sz.y });
 }

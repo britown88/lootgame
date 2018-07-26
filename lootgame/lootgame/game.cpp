@@ -808,7 +808,6 @@ struct GameStateYouDied {
 };
 
 
-
 struct Game {
    GameState state = GameState_ACTION;
    GameData data;
@@ -818,7 +817,12 @@ struct Game {
    ShaderHandle shader = 0;
 
    Mesh mesh, meshUncentered;
-   FBO unlitScene, litScene, output, normals;
+   FBO 
+      unlitScene, 
+      lightLayer, 
+      litScene,
+      UI,
+      output;
 
    Dude maindude;
    DynamicArray<Dude> baddudes;
@@ -895,7 +899,7 @@ static Texture _textureBuildFromFile(const char* path, TextureFlag flags = Textu
    x = y = comp = 0;
    auto mem = fileReadBinary(path, &sz);
    auto png = stbi_load_from_memory(mem, (i32)sz, &x, &y, &comp, 4);
-   auto out = render::textureBuild({ x, y }, (ColorRGBA*)png, flags);
+   auto out = render::textureBuild({ x, y }, flags, (ColorRGBA*)png);
 
    free(mem);
    free(png);
@@ -947,10 +951,14 @@ static void _createGraphicsObjects(Game* game){
    game->meshUncentered = render::meshBuild(vboUncentered, 6);
 
    auto& res = ConstantsGet().resolution;
-   game->unlitScene = render::fboBuild({ res.x, res.y });
-   game->litScene = render::fboBuild({ res.x, res.y });
-   game->output = render::fboBuild({ res.x, res.y });
-   game->normals = render::fboBuild({ res.x, res.y });
+   game->unlitScene = render::fboBuild(res, { 
+      render::textureBuild(res, TextureFlag_FBODefaults),   // diffuse
+      render::textureBuild(res, TextureFlag_FBODefaults)    // normals
+   });
+   game->lightLayer = render::fboBuild(res);
+   game->litScene   = render::fboBuild(res);
+   game->UI         = render::fboBuild(res);
+   game->output     = render::fboBuild(res);
 }
 
 static Dude _createDude(Game* game) {
@@ -1039,7 +1047,8 @@ static void _renderSwing(Dude&dude) {
 
    uber::resetToDefault();
    uber::set(Uniform_ModelMatrix, model);
-   render::textureBind(gameTextureHandle(GameTextures_ShittySword));
+   uber::bindTexture(Uniform_DiffuseTexture, gameTextureHandle(GameTextures_ShittySword));
+
    render::meshRender(g_game->meshUncentered);
 }
 
@@ -1067,7 +1076,8 @@ static void _renderDude(Dude& dude) {
    }
 
    uber::set(Uniform_ModelMatrix, model);
-   render::textureBind(dude.texture);
+   uber::bindTexture(Uniform_DiffuseTexture, dude.texture);
+   uber::bindTexture(Uniform_NormalsTexture, gameTextureHandle(GameTextures_DudeNormals));
    render::meshRender(g_game->mesh);
 
    //uber::set(Uniform_OutlineOnly, true);
@@ -1082,7 +1092,7 @@ static void _renderDude(Dude& dude) {
       uber::set(Uniform_Alpha, 0.25f);
       uber::set(Uniform_ModelMatrix, model);
 
-      render::textureBind(gameTextureHandle(GameTextures_Circle));
+      uber::bindTexture(Uniform_DiffuseTexture, gameTextureHandle(GameTextures_Circle));
       render::meshRender(g_game->mesh);
    }
    
@@ -1104,7 +1114,7 @@ static void _renderTarget(Float2 pos, ColorRGBAf color) {
    uber::resetToDefault();
    uber::set(Uniform_Color, color);
    uber::set(Uniform_ModelMatrix, model);
-   render::textureBind(gameTextureHandle(GameTextures_Target));
+   uber::bindTexture(Uniform_DiffuseTexture, gameTextureHandle(GameTextures_Target));
    render::meshRender(g_game->mesh);
 }
 
@@ -1117,59 +1127,87 @@ static void _renderFloor(Game* game) {
    uber::resetToDefault();
    uber::set(Uniform_TextureMatrix, Matrix::scale2f({ fres.x / tileSize.x, fres.y / tileSize.y }));
    uber::set(Uniform_ModelMatrix, Matrix::scale2f(fres));
-   render::textureBind(gameTextureHandle(GameTextures_Tile));
+   uber::bindTexture(Uniform_DiffuseTexture, gameTextureHandle(GameTextures_Tile));
+   uber::bindTexture(Uniform_NormalsTexture, gameTextureHandle(GameTextures_TileNormals));
    //uber::set(Uniform_ColorOnly, true);
 
    render::meshRender(g_game->meshUncentered);
 
-   if (gameDataGet()->imgui.showCollisionDebugging) {
-      Rectf testrect = { 300,300, 500, 200 };
+   //if (gameDataGet()->imgui.showCollisionDebugging) {
+   //   Rectf testrect = { 300,300, 500, 200 };
 
-      uber::set(Uniform_ColorOnly, true);
-      uber::set(Uniform_Color, circleVsAabb(game->maindude.phy.pos, game->maindude.phy.circle.size, testrect) ? Red : Cyan);
-      uber::set(Uniform_ModelMatrix, Matrix::translate2f({ testrect.x, testrect.y }) * Matrix::scale2f({ testrect.w, testrect.h }));
-      render::meshRender(g_game->meshUncentered);
-   }
-
-   uber::set(Uniform_ColorOnly, false);
-   render::fboBind(game->normals);
-   render::textureBind(gameTextureHandle(GameTextures_TileNormals));
-   render::meshRender(g_game->meshUncentered);
-
-   render::fboBind(game->unlitScene);
+   //   uber::set(Uniform_ColorOnly, true);
+   //   uber::set(Uniform_Color, circleVsAabb(game->maindude.phy.pos, game->maindude.phy.circle.size, testrect) ? Red : Cyan);
+   //   uber::set(Uniform_ModelMatrix, Matrix::translate2f({ testrect.x, testrect.y }) * Matrix::scale2f({ testrect.w, testrect.h }));
+   //   render::meshRender(g_game->meshUncentered);
+   //}
 }
 
 
+/*
+Render Pipe
+
+FBO: UnlitScene[2] = {Diffuse, Normals}
+   BlendMode(DISABLED)
+   DiscardAlpha
+   OutputNormals
+   Bind uDiffuse
+   Bind uNormals
+   Set uHeight
+   Render Floor, Dudes, etc
+
+FBO: Lights[1] = {Diffuse}
+   BlendMode(ADDITIVE)
+   Bind UnlitScene.Normals as uNormals
+   PointLight
+   NormalLighting
+   Set uHeight
+   Clear(AmbientLight)
+   Render Each Light
+
+FBO: LitScene[1] = {Diffuse}
+   BlendMode(DISABLED)
+   Bind UnlitScene.Diffuse as uDiffuse
+   Render UnlitScene
+
+   BlendMode(MULTIPLY)
+   Bind Lights.Diffuse as uDiffuse
+   Render Lights
+
+   (can now re-use Lights to draw a vignette mask and draw it over with multiply)
+
+FBO: Output[1] = {Diffuse}
+   BlendMode(ALPHA_BLENDING)
+   Clear(Black)
+   Render LitScene
+   Render UI
+
+*/
+
+
 void renderUnlitScene(Game* game) {
-   render::fboBind(game->unlitScene);
-
    auto vp = game->cam.viewport;
-   auto view = Matrix::ortho(vp.x, vp.x + vp.w, vp.y, vp.y + vp.h, 1, -1);
-   render::shaderSetActive(game->shader);
-
-   uber::resetToDefault(true);
+   auto view = Matrix::ortho(vp.x, vp.x + vp.w, vp.y, vp.y + vp.h, 1, -1);   
+   
+   render::fboBind(game->unlitScene);
    uber::set(Uniform_ViewMatrix, view, true);
+   uber::set(Uniform_DiscardAlpha, true, true);
+   uber::set(Uniform_OutputNormals, true, true);
+   uber::resetToDefault();
 
-   render::setBlendMode(BlendMode_NORMAL);
+   render::setBlendMode(BlendMode_DISABLED);   
    render::clear(Black);
 
    _renderFloor(game);
 
    for (auto&& d : game->baddudes) {
       _renderDude(d);
-      render::fboBind(game->normals);
-      render::textureBind(gameTextureHandle(GameTextures_DudeNormals));
-      render::meshRender(g_game->mesh);
-
-      render::fboBind(game->unlitScene);
    }
-
    _renderDude(game->maindude);
-   render::fboBind(game->normals);
-   render::textureBind(gameTextureHandle(GameTextures_DudeNormals));
-   render::meshRender(g_game->mesh);
 
-   render::fboBind(game->unlitScene);
+   // restore these flags
+   uber::set(Uniform_DiscardAlpha, false, true);
+   uber::set(Uniform_OutputNormals, false, true);
 }
 
 static void _addLight(Float2 size, Float2 pos, ColorRGBAf c) {
@@ -1182,24 +1220,24 @@ static void _addLight(Float2 size, Float2 pos, ColorRGBAf c) {
 
 void renderLightLayer(Game* game) {
    auto vp = game->cam.viewport;
-
-   render::fboBind(game->litScene);
-   render::setBlendMode(BlendMode_ADDITION);
    auto al = gameDataGet()->imgui.ambientLight;
-   render::clear({ al, al, al, al });
 
-   render::textureBind(game->normals.out[0].handle, 1);
-   uber::set(Uniform_ViewMatrix, Matrix::ortho(0, vp.w, 0, vp.h, 1, -1), true);
+   render::fboBind(game->lightLayer);
+   uber::set(Uniform_ViewMatrix, Matrix::ortho(0, vp.w, 0, vp.h, 1, -1), true);   
    uber::resetToDefault();
 
+   render::setBlendMode(BlendMode_ADDITION);   
+   render::clear({ al, al, al, al });
+
+   // bind deferred normals map
+   uber::bindTexture(Uniform_NormalsTexture, game->unlitScene.out[1].handle);
    uber::set(Uniform_PointLight, true);
+   uber::set(Uniform_NormalLighting, true);
 
    _addLight({ vp.w,vp.w }, { vp.w / 2.0f, vp.h / 2.0f }, Yellow);
-
    _addLight({ 120, 120 }, game->maindude.phy.pos - Float2{ vp.x, vp.y }, Yellow);
 
    int i = 0;
-
    for (auto&& d : game->baddudes) {
       static ColorRGBAf c[] = { Red, Green, Blue };
       _addLight({ 80,80 }, d.phy.pos - Float2{ vp.x, vp.y }, c[i++ % 3]);
@@ -1211,33 +1249,31 @@ void renderLightLayer(Game* game) {
 void renderLitScene(Game* game) {
    auto vp = game->cam.viewport;
 
-   render::fboBind(game->output);
-   render::setBlendMode(BlendMode_NORMAL);
+   render::fboBind(game->litScene);   
    uber::resetToDefault();
-
    render::clear(Black);
 
+   render::setBlendMode(BlendMode_DISABLED);
    uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (f32)vp.w, (f32)vp.h }));
-   render::textureBind(game->unlitScene.out[0].handle);
+   uber::bindTexture(Uniform_DiffuseTexture, game->unlitScene.out[0].handle);
    render::meshRender(game->meshUncentered);
 
    render::setBlendMode(BlendMode_MULITPLY);
-   render::textureBind(game->litScene.out[0].handle);
+   uber::bindTexture(Uniform_DiffuseTexture, game->lightLayer.out[0].handle);
    render::meshRender(game->meshUncentered);
 
-   if (game->state == GameState_YOUDIED) {
-      auto ratio = cosInterp(1.0f - ((f32)game->youdied.clock / 3000));
-      uber::set(Uniform_Color, ColorRGBAf{1.0f, ratio, ratio, 1.0f});
-      uber::set(Uniform_ColorOnly, true);
-      render::meshRender(game->meshUncentered);
-   }
+   
 }
 
 void renderUI(Game* game) {
-   render::setBlendMode(BlendMode_NORMAL);
+   auto& vp = game->cam.viewport;
+
+   render::fboBind(game->UI);   
 
    uber::resetToDefault();
-   auto& vp = game->cam.viewport;
+   render::clear(Cleared);
+
+   render::setBlendMode(BlendMode_NORMAL);   
 
    /*if (game->maindude.stamina < game->maindude.staminaMax)*/ {
       auto tsz = gameTexture(GameTextures_GemFilled).sz;
@@ -1248,7 +1284,6 @@ void renderUI(Game* game) {
       //Float2 staminaCorner = { game->maindude.phy.pos.x - w / 2.0f, game->maindude.phy.pos.y + game->maindude.phy.circle.size + 20 };
       Float2 staminaCorner = { 10,10 };
 
-
       if (game->maindude.status.stamina == 0) {
          uber::set(Uniform_Alpha, 1.0f);
          uber::set(Uniform_Color, Red);
@@ -1257,7 +1292,7 @@ void renderUI(Game* game) {
          
          auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
          uber::set(Uniform_ModelMatrix, model);
-         render::textureBind(gameTextureHandle(i < game->maindude.status.stamina ? GameTextures_GemFilled : GameTextures_GemEmpty));
+         uber::bindTexture(Uniform_DiffuseTexture, gameTextureHandle(i < game->maindude.status.stamina ? GameTextures_GemFilled : GameTextures_GemEmpty));
          render::meshRender(g_game->meshUncentered);
 
          staminaCorner.x += gemSize.x + gemSpace;
@@ -1273,7 +1308,7 @@ void renderUI(Game* game) {
 
          auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
          uber::set(Uniform_ModelMatrix, model);
-         render::textureBind(gameTextureHandle(i < game->maindude.status.health ? GameTextures_HeartFilled : GameTextures_HeartEmpty));
+         uber::bindTexture(Uniform_DiffuseTexture, gameTextureHandle(i < game->maindude.status.health ? GameTextures_HeartFilled : GameTextures_HeartEmpty));
          render::meshRender(g_game->meshUncentered);
 
          staminaCorner.x += gemSize.x + gemSpace;
@@ -1300,13 +1335,44 @@ void renderUI(Game* game) {
    }
 }
 
+static void renderOutput(Game* game) {
+   auto& vp = game->cam.viewport;
+
+   render::fboBind(game->output);
+
+   uber::resetToDefault();
+   render::clear(Black);
+
+   render::setBlendMode(BlendMode_NORMAL);
+   uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (f32)vp.w, (f32)vp.h }));
+
+   uber::bindTexture(Uniform_DiffuseTexture, game->litScene.out[0].handle);
+   render::meshRender(game->meshUncentered);
+
+   uber::bindTexture(Uniform_DiffuseTexture, game->UI.out[0].handle);
+   render::meshRender(game->meshUncentered);
+
+   if (game->state == GameState_YOUDIED) {
+      render::setBlendMode(BlendMode_MULITPLY);
+      auto ratio = cosInterp(1.0f - ((f32)game->youdied.clock / 3000));
+      uber::set(Uniform_Color, ColorRGBAf{ 1.0f, ratio, ratio, 1.0f });
+      uber::set(Uniform_ColorOnly, true);
+      render::meshRender(game->meshUncentered);
+   }
+}
+
 static void _renderScene(Game* game) {
    auto& c = ConstantsGet();
+
+   render::shaderSetActive(game->shader);
+   uber::resetToDefault(true);
    
    renderUnlitScene(game);
    renderLightLayer(game);
    renderLitScene(game);
    renderUI(game);
+
+   renderOutput(game);
 
    render::fboBind({});
 }

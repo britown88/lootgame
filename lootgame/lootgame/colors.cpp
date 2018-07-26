@@ -1,6 +1,7 @@
 #include "defs.h"
 #include "math.h"
 
+const ColorRGBAf Cleared = sRgbToLinear(ColorRGBAf{ 0.0f,  0.0f,  0.0f, 0.0f });
 const ColorRGBAf White =   sRgbToLinear(ColorRGBAf{ 1.0f,  1.0f,  1.0f, 1.0f });
 const ColorRGBAf Gray =    sRgbToLinear(ColorRGBAf{ 0.5f,  0.5f,  0.5f, 1.0f });
 const ColorRGBAf DkGray =  sRgbToLinear(ColorRGBAf{ 0.25f, 0.25f, 0.25f,1.0f });

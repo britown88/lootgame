@@ -85,11 +85,20 @@ namespace uber {
    void resetToDefault(bool pushAll = false);
 
    void set(Uniform u, Matrix const& m, bool setAsDefault = false);
-   void set(Uniform u, TextureSlot t, bool setAsDefault = false);
+
+   // deprecating, use the textureBinding helper instead
+   //void set(Uniform u, TextureSlot t, bool setAsDefault = false);
+
    void set(Uniform u, ColorRGBAf const& c, bool setAsDefault = false);
    void set(Uniform u, float f, bool setAsDefault = false);
    void set(Uniform u, Float2 v, bool setAsDefault = false);
    void set(Uniform u, bool b, bool setAsDefault = false);
+
+   // helper that obfuscates texture slots
+   // texture uniforms will default to unique slots
+   // and this function will do the hookup and bind for you
+   // as long as pushAll was done at least once
+   void bindTexture(Uniform u, TextureHandle handle);
 }
 
 
@@ -105,7 +114,7 @@ namespace render{
    void shaderSetActive(ShaderHandle s);
       
    // textures
-   Texture textureBuild(Int2 const& sz, ColorRGBA const* pixels = nullptr, TextureFlag flags = TextureFlag_Defaults);
+   Texture textureBuild(Int2 const& sz, TextureFlag flags = TextureFlag_Defaults, ColorRGBA const* pixels = nullptr);
 
    void textureDestroy(TextureHandle t);
    void textureBind(TextureHandle t, TextureSlot slot = 0);
