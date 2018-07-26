@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <vector>
 #include <string>
+#include <assert.h>
 
 using namespace render;
 
@@ -244,7 +245,7 @@ void render::shaderSetActive(ShaderHandle s) {
 }
 
 // textures
-Texture render::textureBuild(ColorRGBA const* pixels, Int2 const& sz, TextureConfig const& cfg) {
+Texture render::textureBuild(Int2 const& sz, ColorRGBA const* pixels, TextureFlag flags) {
    Texture out;
    out.sz = sz;
    
@@ -253,41 +254,51 @@ Texture render::textureBuild(ColorRGBA const* pixels, Int2 const& sz, TextureCon
    glBindTexture(GL_TEXTURE_2D, out.handle);
    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-   switch (cfg.filterType)
-   {
-   case FilterType_LINEAR:
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      break;
-   case FilterType_NEAREST:
+   if (flags & TextureFlag_FilterNearest) {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      break;
-   };
-
-   switch (cfg.repeatType)
-   {
-   case RepeatType_REPEAT:
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-      break;
-   case RepeatType_CLAMP:
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      break;
-   };
-
-   for (int i = 0; i < sz.x*sz.y; ++i) {
-      ((ColorRGBA*)pixels)[i] = srgbPremultipleAlpha(pixels[i]);
+   }
+   else if(flags & TextureFlag_FilterLinear){
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
    }
 
+   if (flags & TextureFlag_WrapRepeat) {
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+   }
+   else if (flags & TextureFlag_WrapClamp) {
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+   }
+
+   if (pixels && !(flags&TextureFlag_DisablePremultiply)) {
+      for (int i = 0; i < sz.x*sz.y; ++i) {
+         ((ColorRGBA*)pixels)[i] = srgbPremultipleAlpha(pixels[i]);
+      }
+   }
+
+   GLuint colorFormat = 0;
+   if (flags&TextureFlag_Color_SRGBA) {
+      colorFormat = GL_SRGB8_ALPHA8;
+   }
+   else if (flags&TextureFlag_Color_RGBA8) {
+      colorFormat = GL_RGBA8;
+   }
+   else if (flags&TextureFlag_Color_RGBA16F) {
+      colorFormat = GL_RGBA16F;
+   }
+
+   assert(colorFormat); 
+
    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-   glTexImage2D(GL_TEXTURE_2D, 0, cfg.linear ? GL_RGBA8 : GL_SRGB8_ALPHA8, sz.x, sz.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+   glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, sz.x, sz.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
    glBindTexture(GL_TEXTURE_2D, 0);
 
    return out;
 }
+
 void render::textureDestroy(TextureHandle t) {
    glDeleteTextures(1, &t);
 }
@@ -297,66 +308,46 @@ void render::textureBind(TextureHandle t, TextureSlot slot) {
 }
 
 // FBO
-FBO render::fboBuild(Int2 sz, TextureConfig const& cfg) {
+FBO render::fboBuild(Int2 sz) {
+   return fboBuild(sz, { textureBuild(sz, nullptr, TextureFlag_FBODefaults) });
+}
+FBO render::fboBuild(Int2 sz, std::initializer_list<Texture> outputs) {
    FBO out;
-
    out.sz = sz;
-
-   glGenTextures(1, &out.tex);
-   glBindTexture(GL_TEXTURE_2D, out.tex);
-
-   switch (cfg.filterType)
-   {
-   case FilterType_LINEAR:
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      break;
-   case FilterType_NEAREST:
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      break;
-   };
-
-   switch (cfg.repeatType)
-   {
-   case RepeatType_REPEAT:
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-      break;
-   case RepeatType_CLAMP:
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      break;
-   };
-
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, sz.x, sz.y, 0, GL_RGBA, GL_FLOAT, NULL);
-
    glGenFramebuffers(1, &out.fbo);
    glBindFramebuffer(GL_FRAMEBUFFER, out.fbo);
-   //Attach 2D texture to this FBO
 
-   int textureType = GL_TEXTURE_2D;
-   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textureType, out.tex, 0);
+   int i = 0;
+   for (auto&& output : outputs) {      
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i++, GL_TEXTURE_2D, output.handle, 0);
+      out.out.push_back(output);
+   }
 
    GLenum status;
    status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-   if (GL_FRAMEBUFFER_COMPLETE != status)
-   {
-      //handle this error on the outside
-      return {};
-   }
-   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+   assert(status == GL_FRAMEBUFFER_COMPLETE);
+
+   glBindFramebuffer(GL_FRAMEBUFFER, 0);
    return out;
 }
+
 void render::fboDestroy(FBO& fbo) {
-   glDeleteTextures(1, &fbo.tex);
+   for (auto&&texture : fbo.out) {
+      textureDestroy(texture.handle);
+   }
+
    glDeleteFramebuffers(1, &fbo.fbo);
 }
 
 void render::fboBind(FBO const& fbo) {
    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo.fbo);
-   glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo.tex, 0);
+   int i = 0;
+   for (auto&&texture : fbo.out) {
+      glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i++, GL_TEXTURE_2D, texture.handle, 0);
+   }
+
+   
 
    render::viewport({ 0,0, fbo.sz.x, fbo.sz.y });
 }

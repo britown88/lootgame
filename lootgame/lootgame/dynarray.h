@@ -1,3 +1,5 @@
+#pragma once
+
 #include "string.h" //memmove
 #include "stdlib.h" //malloc
 #include <type_traits> //enable_if, is_trivial

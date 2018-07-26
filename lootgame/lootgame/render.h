@@ -2,6 +2,7 @@
 
 #include "defs.h"
 #include "math.h"
+#include "dynarray.h"
 
 typedef u32 ShaderHandle;
 typedef u32 TextureHandle;
@@ -9,23 +10,27 @@ typedef u32 TextureSlot;
 typedef u32 VBOHandle;
 typedef u32 FBOHandle;
 
-typedef enum {
-   RepeatType_REPEAT,
-   RepeatType_CLAMP
-}RepeatType_;
-typedef byte RepeatType;
+enum TextureFlag_ {
+   TextureFlag_WrapRepeat = (1 << 0),
+   TextureFlag_WrapClamp = (1 << 1),
+   TextureFlag_FilterLinear = (1 << 2),
+   TextureFlag_FilterNearest = (1 << 3),
 
-typedef enum {
-   FilterType_LINEAR,
-   FilterType_NEAREST
-}FilterType_;
-typedef byte FilterType;
+   TextureFlag_Color_SRGBA = (1 << 4),
+   TextureFlag_Color_RGBA8 = (1 << 5),
+   TextureFlag_Color_RGBA16F = (1 << 6),
 
-struct TextureConfig {
-   RepeatType repeatType = RepeatType_CLAMP;
-   FilterType filterType = FilterType_NEAREST;
-   bool linear = false;
+   TextureFlag_DisablePremultiply = (1 << 7), // rgb data is premultiplied with alpha, this disables that step
+
+   TextureFlag_ClampedLinear = TextureFlag_WrapClamp | TextureFlag_FilterLinear,
+   TextureFlag_ClampedNearest = TextureFlag_WrapClamp | TextureFlag_FilterNearest,
+   TextureFlag_RepeatedLinear = TextureFlag_WrapRepeat | TextureFlag_FilterLinear,
+   TextureFlag_RepeatedNearest = TextureFlag_WrapRepeat | TextureFlag_FilterNearest,
+
+   TextureFlag_Defaults = TextureFlag_ClampedNearest | TextureFlag_Color_SRGBA,
+   TextureFlag_FBODefaults = TextureFlag_ClampedNearest | TextureFlag_Color_RGBA16F
 };
+typedef u16 TextureFlag;
 
 struct Texture {
    Int2 sz;
@@ -34,8 +39,8 @@ struct Texture {
 
 struct FBO {
    Int2 sz;
-   TextureHandle tex;
    FBOHandle fbo;
+   DynamicArray<Texture> out;
 };
 
 typedef enum {
@@ -100,7 +105,8 @@ namespace render{
    void shaderSetActive(ShaderHandle s);
       
    // textures
-   Texture textureBuild(ColorRGBA const* pixels, Int2 const& sz, TextureConfig const& cfg);
+   Texture textureBuild(Int2 const& sz, ColorRGBA const* pixels = nullptr, TextureFlag flags = TextureFlag_Defaults);
+
    void textureDestroy(TextureHandle t);
    void textureBind(TextureHandle t, TextureSlot slot = 0);
 
@@ -114,7 +120,8 @@ namespace render{
    void uSetTextureSlot(const char* u, TextureSlot const& value);
 
    // FBO
-   FBO fboBuild(Int2 sz, TextureConfig const& cfg = { RepeatType_CLAMP, FilterType_NEAREST });
+   FBO fboBuild(Int2 sz);  // creates one output with default texture flags
+   FBO fboBuild(Int2 sz, std::initializer_list<Texture> outputs);
    void fboDestroy(FBO& fbo);
 
    void fboBind(FBO const& fbo);

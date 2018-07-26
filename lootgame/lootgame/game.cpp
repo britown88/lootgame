@@ -889,13 +889,13 @@ static int _reloadShader(Game* game) {
 }
 
 
-static Texture _textureBuildFromFile(const char* path, TextureConfig const& cfg = {}) {
+static Texture _textureBuildFromFile(const char* path, TextureFlag flags = TextureFlag_Defaults) {
    u64 sz = 0;
    i32 x, y, comp;
    x = y = comp = 0;
    auto mem = fileReadBinary(path, &sz);
    auto png = stbi_load_from_memory(mem, (i32)sz, &x, &y, &comp, 4);
-   auto out = render::textureBuild((ColorRGBA*)png, { x, y }, cfg);
+   auto out = render::textureBuild({ x, y }, (ColorRGBA*)png, flags);
 
    free(mem);
    free(png);
@@ -903,18 +903,21 @@ static Texture _textureBuildFromFile(const char* path, TextureConfig const& cfg 
 }
 
 static void _buildGameTextures() {
+
+
+
    g_textures[GameTextures_Dude] = _textureBuildFromFile("assets/dude2.png");
-   g_textures[GameTextures_DudeNormals] = _textureBuildFromFile("assets/dudenormal.png", { RepeatType_CLAMP, FilterType_NEAREST, true });
+   g_textures[GameTextures_DudeNormals] = _textureBuildFromFile("assets/dudenormal.png", TextureFlag_ClampedNearest | TextureFlag_Color_RGBA8 | TextureFlag_DisablePremultiply);
    g_textures[GameTextures_Target] = _textureBuildFromFile("assets/target.png");
    g_textures[GameTextures_Light] = _textureBuildFromFile("assets/light3.png");
-   g_textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png", { RepeatType_CLAMP , FilterType_LINEAR });
+   g_textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png", TextureFlag_ClampedLinear | TextureFlag_Color_SRGBA);
    g_textures[GameTextures_ShittySword] = _textureBuildFromFile("assets/sword.png");
    g_textures[GameTextures_GemEmpty] = _textureBuildFromFile("assets/gemempty.png");
    g_textures[GameTextures_GemFilled] = _textureBuildFromFile("assets/gemfilled.png");
    g_textures[GameTextures_HeartEmpty] = _textureBuildFromFile("assets/heartempty.png");
    g_textures[GameTextures_HeartFilled] = _textureBuildFromFile("assets/heartfilled.png");
-   g_textures[GameTextures_Tile] = _textureBuildFromFile("assets/tile.png", { RepeatType_REPEAT , FilterType_NEAREST });
-   g_textures[GameTextures_TileNormals] = _textureBuildFromFile("assets/tilenormal.png", { RepeatType_REPEAT , FilterType_NEAREST, true });
+   g_textures[GameTextures_Tile] = _textureBuildFromFile("assets/tile.png", TextureFlag_RepeatedNearest | TextureFlag_Color_SRGBA);
+   g_textures[GameTextures_TileNormals] = _textureBuildFromFile("assets/tilenormal.png", TextureFlag_RepeatedNearest | TextureFlag_Color_RGBA8 | TextureFlag_DisablePremultiply);
 }
 
 static void _createGraphicsObjects(Game* game){
@@ -976,7 +979,7 @@ static Dude _createEnemy(Float2 pos) {
    auto tex = gameTexture(GameTextures_Dude);
 
    out.moveset = _createMoveSet();
-   out.c = {1.0f, 0.3f, 0.3f, 1.0f};
+   out.c = White;// {1.0f, 0.3f, 0.3f, 1.0f};
    out.phy.pos = pos;
    out.phy.circle.size = 10.0f;
    out.phy.velocity = { 0,0 };
@@ -1185,26 +1188,24 @@ void renderLightLayer(Game* game) {
    auto al = gameDataGet()->imgui.ambientLight;
    render::clear({ al, al, al, al });
 
-   render::textureBind(game->normals.tex, 1);
+   render::textureBind(game->normals.out[0].handle, 1);
    uber::set(Uniform_ViewMatrix, Matrix::ortho(0, vp.w, 0, vp.h, 1, -1), true);
    uber::resetToDefault();
 
    uber::set(Uniform_PointLight, true);
 
-   //_addLight({ vp.w,vp.w }, { vp.w / 2.0f, vp.h / 2.0f }, Yellow);
+   _addLight({ vp.w,vp.w }, { vp.w / 2.0f, vp.h / 2.0f }, Yellow);
 
-   //_addLight({ 120, 120 }, game->maindude.phy.pos - Float2{ vp.x, vp.y }, Yellow);
+   _addLight({ 120, 120 }, game->maindude.phy.pos - Float2{ vp.x, vp.y }, Yellow);
 
    int i = 0;
 
    for (auto&& d : game->baddudes) {
       static ColorRGBAf c[] = { Red, Green, Blue };
-     // _addLight({ 80,80 }, d.phy.pos - Float2{ vp.x, vp.y }, c[i++ % 3]);
+      _addLight({ 80,80 }, d.phy.pos - Float2{ vp.x, vp.y }, c[i++ % 3]);
    }
 
    _addLight({ 150,150 }, game->data.io.mousePos - Float2{vp.x, vp.y}, White);
-
-   ImGui::Text("%f, %f", game->data.io.mousePos.x, game->data.io.mousePos.y);
 }
 
 void renderLitScene(Game* game) {
@@ -1217,11 +1218,11 @@ void renderLitScene(Game* game) {
    render::clear(Black);
 
    uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (f32)vp.w, (f32)vp.h }));
-   render::textureBind(game->unlitScene.tex);
+   render::textureBind(game->unlitScene.out[0].handle);
    render::meshRender(game->meshUncentered);
 
    render::setBlendMode(BlendMode_MULITPLY);
-   render::textureBind(game->litScene.tex);
+   render::textureBind(game->litScene.out[0].handle);
    render::meshRender(game->meshUncentered);
 
    if (game->state == GameState_YOUDIED) {
