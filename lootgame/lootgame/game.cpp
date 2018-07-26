@@ -126,8 +126,8 @@ static MoveSet _createMoveSet() {
 }
 
 f32 cFloorHeight = 0.0f;
-f32 cDudeHeight = 1.0f;
-f32 cLightHeight = 0.5f;
+f32 cDudeHeight = 0.1f;
+f32 cLightHeight = 0.2f;
 f32 cLightIntensity = 1.0f;
 
 
@@ -928,7 +928,7 @@ static void _buildGameTextures() {
 
 
    g_textures[GameTextures_Dude] = _textureBuildFromFile("assets/dude2.png");
-   g_textures[GameTextures_DudeNormals] = _textureBuildFromFile("assets/dudenormal.png", TextureFlag_ClampedNearest | TextureFlag_Color_RGBA8 | TextureFlag_DisablePremultiply);
+   g_textures[GameTextures_DudeNormals] = _textureBuildFromFile("assets/dudenormal2.png", TextureFlag_ClampedNearest | TextureFlag_Color_RGBA8);
    g_textures[GameTextures_Target] = _textureBuildFromFile("assets/target.png");
    g_textures[GameTextures_Light] = _textureBuildFromFile("assets/light3.png");
    g_textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png", TextureFlag_ClampedLinear | TextureFlag_Color_SRGBA);
