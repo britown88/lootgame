@@ -15,13 +15,18 @@ uniform bool uPointLight;     // render light at center of mesh, uses uColor * u
 uniform bool uNormalLighting; // lighting checks uNormals for normals map
 uniform bool uDiscardAlpha;   // discard alpha<1 fragments
 
-uniform float uLightIntensity;
+uniform vec3 uLightFalloff;  // quadratic attenuation (x:const, y:lin, z:quad)
+uniform float uPointLightSize;
 
 in vec2 vTexCoords;
 
 layout(location = 0) out vec4 outputColor;
 layout(location = 1) out vec4 outputNormal;
 
+float Falloff( in float _fDistance, in float _fRadius ) {
+	float fFalloff = max( 1.0 / sqrt( _fDistance ) - 1.0 / sqrt( _fRadius ), 0.0 );
+	return fFalloff;
+}
 
 void main() {
    if(uColorOnly){
@@ -43,33 +48,34 @@ void main() {
    else if(uPointLight){
 
       vec2 center = vec2(0.5f, 0.5f);
-      float dist = distance(vTexCoords, center);
-      float r = max(1.0f - (dist/0.5f), 0);
+
+      float sz = uPointLightSize;
+
+      float dist = distance(vTexCoords, center) / 0.5f;
+      float attenuation = 1.0 / (uLightFalloff.x + (uLightFalloff.y * dist) + (uLightFalloff.z * dist * dist));
+
+      float r = Falloff(dist * sz, sz);
 
       if(uNormalLighting){
          // light against the normal map
-         
 
          vec2 normalCoord = gl_FragCoord.xy / textureSize(uNormals, 0);
          vec4 normalData = texture(uNormals, normalCoord);
-         //normalData.g = 1.0 - normalData.g;
          vec3 normal = (normalData.rgb * 2.0) - 1.0;
-         //normal.y = -normal.y;
-         
 
          vec3 lightDir = vec3(center - vTexCoords, uHeight - normalData.a);
 
          lightDir = normalize(lightDir);
          normal = normalize(normal);
 
-         float d = max(dot(lightDir, normal), 0);
+         float light = max(dot(lightDir, normal), 0);
 
-         vec4 diffuse = uColor * uAlpha;
-         outputColor =  diffuse * d * r * uLightIntensity;
+         vec4 diffuse = uColor * uAlpha * light;
+         outputColor =  diffuse * attenuation * r;
       }
       else {
          // just a colored point light
-         outputColor =  uColor * uAlpha * r * uLightIntensity;
+         outputColor =  uColor * uAlpha * attenuation * r;
       }      
    }    
    else{

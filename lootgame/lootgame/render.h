@@ -92,6 +92,7 @@ namespace uber {
    void set(Uniform u, ColorRGBAf const& c, bool setAsDefault = false);
    void set(Uniform u, float f, bool setAsDefault = false);
    void set(Uniform u, Float2 v, bool setAsDefault = false);
+   void set(Uniform u, Float3 v, bool setAsDefault = false);
    void set(Uniform u, bool b, bool setAsDefault = false);
 
    // helper that obfuscates texture slots
@@ -124,6 +125,7 @@ namespace render{
    void uSetUint(const char* u, u32 value);
    void uSetFloat(const char* u, f32 value);
    void uSetFloat2(const char* u, Float2 const& value);
+   void uSetFloat3(const char* u, Float3 const& value);
    void uSetMatrix(const char* u, Matrix const& value);
    void uSetColor(const char* u, ColorRGBAf const& value);
    void uSetTextureSlot(const char* u, TextureSlot const& value);

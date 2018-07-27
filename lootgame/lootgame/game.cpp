@@ -128,7 +128,9 @@ static MoveSet _createMoveSet() {
 f32 cFloorHeight = 0.0f;
 f32 cDudeHeight = 0.1f;
 f32 cLightHeight = 0.2f;
-f32 cLightIntensity = 1.0f;
+f32 cLightConstant =    0.001f;
+f32 cLightLinear =      0.1f;
+f32 cLightQuadratic =   0.1f;
 
 
 f32 cDudeAcceleration =     0.005f;
@@ -244,10 +246,19 @@ static void uiEditDude(Dude& dude) {
       if (ImGui::CollapsingHeader("Lighting")) {
          ImGui::Indent();
 
-         ImGui::InputFloat("Floor Height", &cFloorHeight, 0.01f, 0.1f, 4);
-         ImGui::InputFloat("Dude Height", &cDudeHeight, 0.01f, 1.0f, 4);
-         ImGui::InputFloat("Light Height", &cLightHeight, 0.01f, 1.0f, 4);
-         ImGui::InputFloat("Light Intensity", &cLightIntensity, 0.01f, 1.0f, 4);
+         //ImGui::InputFloat("Floor Height", &cFloorHeight, 0.01f, 0.1f, 4);
+         //ImGui::InputFloat("Dude Height", &cDudeHeight, 0.01f, 1.0f, 4);
+         //ImGui::InputFloat("Light Height", &cLightHeight, 0.01f, 1.0f, 4);
+
+         ImGui::DragFloat("Floor Height", &cFloorHeight, 0.01f, 0.0f, 2.0f);
+         ImGui::DragFloat("Dude Height", &cDudeHeight, 0.01f, 0.0f, 2.0f);
+         ImGui::DragFloat("Light Height", &cLightHeight, 0.01f, 0.0f, 2.0f);
+
+         ImGui::DragFloat("Constant Attenuation", &cLightConstant, 0.01f, 0.0f, 10.0f);
+         ImGui::DragFloat("Linear Attenuation", &cLightLinear, 0.01f, 0.0f, 10.0f);
+         ImGui::DragFloat("Quadratic Attenuation", &cLightQuadratic, 0.01f, 0.0f, 10.0f);
+
+
 
          ImGui::Unindent();
       }
@@ -937,7 +948,7 @@ static void _buildGameTextures() {
    g_textures[GameTextures_GemFilled] = _textureBuildFromFile("assets/gemfilled.png");
    g_textures[GameTextures_HeartEmpty] = _textureBuildFromFile("assets/heartempty.png");
    g_textures[GameTextures_HeartFilled] = _textureBuildFromFile("assets/heartfilled.png");
-   g_textures[GameTextures_Tile] = _textureBuildFromFile("assets/tile.png", TextureFlag_RepeatedNearest | TextureFlag_Color_SRGBA);
+   g_textures[GameTextures_Tile] = _textureBuildFromFile("assets/toldold.png", TextureFlag_RepeatedNearest | TextureFlag_Color_SRGBA);
    g_textures[GameTextures_TileNormals] = _textureBuildFromFile("assets/tilenormal.png", TextureFlag_RepeatedNearest | TextureFlag_Color_RGBA8 | TextureFlag_DisablePremultiply);
 }
 
@@ -1237,11 +1248,17 @@ void renderUnlitScene(Game* game) {
    uber::set(Uniform_OutputNormals, false, true);
 }
 
-static void _addLight(Float2 size, Float2 pos, ColorRGBAf c) {
+static void _addLight(f32 size, Float2 pos, ColorRGBAf c) {
    uber::set(Uniform_Color, c);
    uber::set(Uniform_Alpha, 1.0f);
+   uber::set(Uniform_PointLightSize, size);
+   uber::set(Uniform_LightFalloff, Float3{ 
+      cLightConstant, 
+      cLightLinear,
+      cLightQuadratic  });
+
    //uber::set(Uniform_LightIntensity, 1.0f);
-   uber::set(Uniform_ModelMatrix, Matrix::translate2f(pos) * Matrix::scale2f(size));
+   uber::set(Uniform_ModelMatrix, Matrix::translate2f(pos) * Matrix::scale2f({size, size}));
    render::meshRender(g_game->mesh);
 }
 
@@ -1262,18 +1279,22 @@ void renderLightLayer(Game* game) {
    uber::set(Uniform_NormalLighting, true);
 
    uber::set(Uniform_Height, cLightHeight);
-   uber::set(Uniform_LightIntensity, cLightIntensity);
+
+   
+   //uber::set(Uniform_LightIntensity, cLightIntensity);
 
    //_addLight({ vp.w,vp.w }, { vp.w / 2.0f, vp.h / 2.0f }, Yellow);
    //_addLight({ 120, 120 }, game->maindude.phy.pos - Float2{ vp.x, vp.y }, Yellow);
 
+   _addLight(150, Float2{200, 200} - Float2{ vp.x, vp.y }, White);
+
    int i = 0;
    for (auto&& d : game->baddudes) {
       static ColorRGBAf c[] = { Red, Green, Blue };
-      _addLight({ 80,80 }, d.phy.pos - Float2{ vp.x, vp.y }, c[i++ % 3]);
+      _addLight(80, d.phy.pos - Float2{ vp.x, vp.y }, c[i++ % 3]);
    }
 
-   _addLight({ 150,150 }, game->data.io.mousePos - Float2{vp.x, vp.y}, White);
+   _addLight(300, game->data.io.mousePos - Float2{vp.x, vp.y}, White);
 }
 
 void renderLitScene(Game* game) {

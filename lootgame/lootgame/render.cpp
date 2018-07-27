@@ -25,6 +25,7 @@ struct UberShader {
          ColorRGBAf,
          f32,
          Float2,
+         Float3,
          Bool
       };
       StringView name;
@@ -60,6 +61,9 @@ struct UberShader {
             case UData::Float2:
                render::uSetFloat2(dataMap[i].name, *(Float2*)(((byte*)&defaults) + dataMap[i].offset));
                break;
+            case UData::Float3:
+               render::uSetFloat3(dataMap[i].name, *(Float3*)(((byte*)&defaults) + dataMap[i].offset));
+               break;
             case UData::Bool:
                render::uSetBool(dataMap[i].name, *(bool*)(((byte*)&defaults) + dataMap[i].offset));
                break;
@@ -90,6 +94,10 @@ struct UberShader {
    }
    void set(Uniform u, Float2 v) {
       render::uSetFloat2(dataMap[u].name, v);
+      modified[u] = true;
+   }
+   void set(Uniform u, Float3 v) {
+      render::uSetFloat3(dataMap[u].name, v);
       modified[u] = true;
    }
 };
@@ -133,6 +141,13 @@ void uber::set(Uniform u, Float2 v, bool setAsDefault) {
    g_uberShader.set(u, v);
    if (setAsDefault) {
       *(Float2*)(((byte*)&g_uberShader.defaults) + g_uberShader.dataMap[u].offset) = v;
+      g_uberShader.modified[u] = false;
+   }
+}
+void uber::set(Uniform u, Float3 v, bool setAsDefault) {
+   g_uberShader.set(u, v);
+   if (setAsDefault) {
+      *(Float3*)(((byte*)&g_uberShader.defaults) + g_uberShader.dataMap[u].offset) = v;
       g_uberShader.modified[u] = false;
    }
 }
@@ -393,6 +408,10 @@ void render::uSetFloat(const char* u, f32 value) {
 void render::uSetFloat2(const char* u, Float2 const& value) {
    auto uHandle = glGetUniformLocation(g_activeShader, u);
    glUniform2f(uHandle, value.x, value.y);
+}
+void render::uSetFloat3(const char* u, Float3 const& value) {
+   auto uHandle = glGetUniformLocation(g_activeShader, u);
+   glUniform3f(uHandle, value.x, value.y, value.z);
 }
 void render::uSetMatrix(const char* u, Matrix const& value) {
    auto uHandle = glGetUniformLocation(g_activeShader, u);

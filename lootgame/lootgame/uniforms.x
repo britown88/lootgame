@@ -20,4 +20,5 @@ UNIFORM(uPointLight,	   PointLight,		Bool,		   false)
 UNIFORM(uNormalLighting,NormalLighting,Bool,		   false)
 UNIFORM(uDiscardAlpha,  DiscardAlpha,  Bool,		   false)
 
-UNIFORM(uLightIntensity,LightIntensity,f32,        1.0f)
+UNIFORM(uLightFalloff,  LightFalloff,  Float3,     {0.0f, 0.0f, 1.0f})
+UNIFORM(uPointLightSize,PointLightSize,f32,		   0)
