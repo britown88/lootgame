@@ -128,9 +128,9 @@ static MoveSet _createMoveSet() {
 f32 cFloorHeight = 0.0f;
 f32 cDudeHeight = 0.1f;
 f32 cLightHeight = 0.2f;
-f32 cLightConstant =    0.001f;
-f32 cLightLinear =      0.1f;
-f32 cLightQuadratic =   0.1f;
+f32 cLightConstant =    0.00f;
+f32 cLightLinear =      0.01f;
+f32 cLightQuadratic =   0.001f;
 
 
 f32 cDudeAcceleration =     0.005f;
@@ -1294,7 +1294,7 @@ void renderLightLayer(Game* game) {
       _addLight(80, d.phy.pos - Float2{ vp.x, vp.y }, c[i++ % 3]);
    }
 
-   _addLight(300, game->data.io.mousePos - Float2{vp.x, vp.y}, White);
+   _addLight(300, game->data.io.mousePos - Float2{vp.x, vp.y}, DkGreen);
 }
 
 void renderLitScene(Game* game) {

@@ -24,7 +24,9 @@ layout(location = 0) out vec4 outputColor;
 layout(location = 1) out vec4 outputNormal;
 
 float Falloff( in float _fDistance, in float _fRadius ) {
-	float fFalloff = max( 1.0 / sqrt( _fDistance ) - 1.0 / sqrt( _fRadius ), 0.0 );
+	//float fFalloff = max( 1.0 / sqrt( _fDistance ) - 1.0 / sqrt( _fRadius ), 0.0 );
+   float fFalloff = clamp(1.0 - _fDistance*_fDistance/(_fRadius*_fRadius), 0.0, 1.0); 
+   fFalloff *= fFalloff;
 	return fFalloff;
 }
 
@@ -50,11 +52,13 @@ void main() {
       vec2 center = vec2(0.5f, 0.5f);
 
       float sz = uPointLightSize;
+      float radius = sz / 2.0f;
+      float dist = (distance(vTexCoords, center) / 0.5f) * radius;
 
-      float dist = distance(vTexCoords, center) / 0.5f;
       float attenuation = 1.0 / (uLightFalloff.x + (uLightFalloff.y * dist) + (uLightFalloff.z * dist * dist));
+      float r = Falloff(dist, radius);
 
-      float r = Falloff(dist * sz, sz);
+
 
       if(uNormalLighting){
          // light against the normal map
