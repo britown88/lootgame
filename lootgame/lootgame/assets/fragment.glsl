@@ -1,14 +1,13 @@
 #version 330
 
-// uniform float uAlpha;
-// uniform vec4 uColor;
-
+uniform mat4 uNormalTransform;
 uniform vec4 uColor;
 uniform float uAlpha;
 uniform float uHeight;
 uniform sampler2D uDiffuse;
 uniform sampler2D uNormals;
 
+uniform bool uTransformNormals;
 uniform bool uColorOnly;      // disregards diffuse texture and returns uColor * uAlpha
 uniform bool uOutlineOnly;    // draw uColor * uAlpha on alpha-edge pixels only
 uniform bool uOutputNormals;  // output from uNormals to outputNormal with vTexCoords, using uHeight as alpha
@@ -53,7 +52,11 @@ void main() {
 
          vec2 normalCoord = gl_FragCoord.xy / textureSize(uNormals, 0);
          vec4 normalData = texture(uNormals, normalCoord);
+         //normalData.g = 1.0 - normalData.g;
          vec3 normal = (normalData.rgb * 2.0) - 1.0;
+         //normal.y = -normal.y;
+         
+
          vec3 lightDir = vec3(center - vTexCoords, uHeight - normalData.a);
 
          lightDir = normalize(lightDir);
@@ -75,6 +78,14 @@ void main() {
 
       if(uOutputNormals){
          vec4 norm = texture(uNormals, vTexCoords);
+
+         if(uTransformNormals){
+            mat3 normalMatrix = mat3(uNormalTransform);
+            vec3 v = norm.rgb * 2 - 1;
+            v = normalize(v * normalMatrix);
+            norm.rgb = (v + 1) / 2;            
+         }
+
          norm.a = uHeight;
          outputNormal = norm;        
       }

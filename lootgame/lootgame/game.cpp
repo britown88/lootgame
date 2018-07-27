@@ -1078,6 +1078,8 @@ static void _renderDude(Dude& dude) {
       rotate /= 2.0f;
    }
 
+   rotate = v2Normalized(rotate);
+
    model *= Matrix::translate2f(dude.phy.pos);
    model *= Matrix::rotate2D(v2Angle(rotate));
    model *= Matrix::scale2f(dude.renderSize);
@@ -1091,8 +1093,11 @@ static void _renderDude(Dude& dude) {
    }
    else {
       uber::set(Uniform_Color, DkRed);
-      //uber::set(Uniform_Alpha, 0.5f);
    }
+
+   // rotate the normals map with our texture
+   uber::set(Uniform_TransformNormals, true);
+   uber::set(Uniform_NormalTransform, Matrix::rotate2D(v2Angle({ rotate.x, -rotate.y })) );
 
    uber::set(Uniform_ModelMatrix, model);
    uber::bindTexture(Uniform_DiffuseTexture, dude.texture);
