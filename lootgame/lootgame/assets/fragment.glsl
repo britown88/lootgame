@@ -91,6 +91,7 @@ void main() {
 
          if(uTransformNormals){
             mat3 normalMatrix = mat3(uNormalTransform);
+            //normalMatrix = inverse(transpose(normalMatrix));
             vec3 v = norm.rgb * 2 - 1;
             v = normalize(v * normalMatrix);
             norm.rgb = (v + 1) / 2;            

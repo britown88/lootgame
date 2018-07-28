@@ -41,6 +41,7 @@ enum {
    GameTextures_Light,
    GameTextures_Circle,
    GameTextures_ShittySword,
+   GameTextures_SwordNormals,
    GameTextures_Tile,
    GameTextures_TileNormals,
    GameTextures_GemEmpty,
@@ -944,6 +945,7 @@ static void _buildGameTextures() {
    g_textures[GameTextures_Light] = _textureBuildFromFile("assets/light3.png");
    g_textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png", TextureFlag_ClampedLinear | TextureFlag_Color_SRGBA);
    g_textures[GameTextures_ShittySword] = _textureBuildFromFile("assets/sword.png");
+   g_textures[GameTextures_SwordNormals] = _textureBuildFromFile("assets/swordnormal.png", TextureFlag_ClampedNearest | TextureFlag_Color_RGBA8);
    g_textures[GameTextures_GemEmpty] = _textureBuildFromFile("assets/gemempty.png");
    g_textures[GameTextures_GemFilled] = _textureBuildFromFile("assets/gemfilled.png");
    g_textures[GameTextures_HeartEmpty] = _textureBuildFromFile("assets/heartempty.png");
@@ -1074,8 +1076,14 @@ static void _renderSwing(Dude&dude) {
    model *= Matrix::scale2f({ dude.atk.swing.hitbox.w, dude.atk.swing.hitbox.h });
 
    uber::resetToDefault();
+   uber::set(Uniform_TransformNormals, true);
+   uber::set(Uniform_NormalTransform, 
+      Matrix::rotate2D(v2Angle({ dude.atk.weaponVector.x, -dude.atk.weaponVector.y }))
+   );
    uber::set(Uniform_ModelMatrix, model);
+   uber::set(Uniform_Height, cDudeHeight);
    uber::bindTexture(Uniform_DiffuseTexture, gameTextureHandle(GameTextures_ShittySword));
+   uber::bindTexture(Uniform_NormalsTexture, gameTextureHandle(GameTextures_SwordNormals));
 
    render::meshRender(g_game->meshUncentered);
 }
@@ -1131,9 +1139,9 @@ static void _renderDude(Dude& dude) {
       render::meshRender(g_game->mesh);
    }
    
-   if (dude.state == DudeState_ATTACKING) {
+   //if (dude.state == DudeState_ATTACKING) {
       _renderSwing(dude);
-   }
+   //}
 }
 
 
@@ -1294,7 +1302,7 @@ void renderLightLayer(Game* game) {
       _addLight(80, d.phy.pos - Float2{ vp.x, vp.y }, c[i++ % 3]);
    }
 
-   _addLight(300, game->data.io.mousePos - Float2{vp.x, vp.y}, DkGreen);
+   _addLight(300, game->data.io.mousePos - Float2{ vp.x, vp.y }, sRgbToLinear(ColorRGB{255,147,41}));
 }
 
 void renderLitScene(Game* game) {
