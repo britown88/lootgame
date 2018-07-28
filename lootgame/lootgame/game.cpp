@@ -129,9 +129,9 @@ static MoveSet _createMoveSet() {
 f32 cFloorHeight = 0.0f;
 f32 cDudeHeight = 0.1f;
 f32 cLightHeight = 0.2f;
-f32 cLightConstant =    0.00f;
-f32 cLightLinear =      0.01f;
-f32 cLightQuadratic =   0.001f;
+f32 cLightLinearPortion =     0.7f;
+f32 cLightSmoothingFactor =   1.6f;
+f32 cLightIntensity =         1.0f;
 
 
 f32 cDudeAcceleration =     0.005f;
@@ -255,9 +255,9 @@ static void uiEditDude(Dude& dude) {
          ImGui::DragFloat("Dude Height", &cDudeHeight, 0.01f, 0.0f, 2.0f);
          ImGui::DragFloat("Light Height", &cLightHeight, 0.01f, 0.0f, 2.0f);
 
-         ImGui::DragFloat("Constant Attenuation", &cLightConstant, 0.01f, 0.0f, 10.0f);
-         ImGui::DragFloat("Linear Attenuation", &cLightLinear, 0.01f, 0.0f, 10.0f);
-         ImGui::DragFloat("Quadratic Attenuation", &cLightQuadratic, 0.01f, 0.0f, 10.0f);
+         ImGui::DragFloat("Linear Portion", &cLightLinearPortion, 0.1f, 0.0f, 1.0f);
+         ImGui::DragFloat("Smoothness Factor", &cLightSmoothingFactor, 0.1f, 0.0f, 50.0f);
+         ImGui::DragFloat("Intensity Scalar", &cLightIntensity, 0.1f, 1.0f, 100.0f);
 
 
 
@@ -1139,9 +1139,9 @@ static void _renderDude(Dude& dude) {
       render::meshRender(g_game->mesh);
    }
    
-   //if (dude.state == DudeState_ATTACKING) {
+   if (dude.state == DudeState_ATTACKING) {
       _renderSwing(dude);
-   //}
+   }
 }
 
 
@@ -1259,11 +1259,11 @@ void renderUnlitScene(Game* game) {
 static void _addLight(f32 size, Float2 pos, ColorRGBAf c) {
    uber::set(Uniform_Color, c);
    uber::set(Uniform_Alpha, 1.0f);
-   uber::set(Uniform_PointLightSize, size);
-   uber::set(Uniform_LightFalloff, Float3{ 
-      cLightConstant, 
-      cLightLinear,
-      cLightQuadratic  });
+   uber::set(Uniform_PointLightRadius, size/2.0f);
+   uber::set(Uniform_LightAttrs, Float3{ 
+      cLightLinearPortion, 
+      cLightSmoothingFactor,
+      cLightIntensity  });
 
    //uber::set(Uniform_LightIntensity, 1.0f);
    uber::set(Uniform_ModelMatrix, Matrix::translate2f(pos) * Matrix::scale2f({size, size}));

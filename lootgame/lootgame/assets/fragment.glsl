@@ -15,8 +15,8 @@ uniform bool uPointLight;     // render light at center of mesh, uses uColor * u
 uniform bool uNormalLighting; // lighting checks uNormals for normals map
 uniform bool uDiscardAlpha;   // discard alpha<1 fragments
 
-uniform vec3 uLightFalloff;  // quadratic attenuation (x:const, y:lin, z:quad)
-uniform float uPointLightSize;
+uniform vec3 uLightAttrs;  // x: linearPortion, y: smoothing, z: intensity
+uniform float uPointLightRadius;
 
 in vec2 vTexCoords;
 
@@ -28,6 +28,20 @@ float Falloff( in float _fDistance, in float _fRadius ) {
    float fFalloff = clamp(1.0 - _fDistance*_fDistance/(_fRadius*_fRadius), 0.0, 1.0); 
    fFalloff *= fFalloff;
 	return fFalloff;
+}
+
+float gaussianLight(float radius, float dist, float linearPortion, float smoothingFactor){
+   float r = radius;
+   float t = max(0, 1 - dist/r);   
+
+   float a = linearPortion;
+   float b = 1 - a;
+
+   float n = smoothingFactor;
+   float k = 10;
+   float S = exp(-k * (pow(1-t, n)));
+
+   return a*t + b*S;
 }
 
 void main() {
@@ -51,14 +65,14 @@ void main() {
 
       vec2 center = vec2(0.5f, 0.5f);
 
-      float sz = uPointLightSize;
-      float radius = sz / 2.0f;
+      float radius = uPointLightRadius;
+      float linPortion = uLightAttrs.x;
+      float smoothing = uLightAttrs.y;
+      float intensity = uLightAttrs.z;
+
       float dist = (distance(vTexCoords, center) / 0.5f) * radius;
 
-      float attenuation = 1.0 / (uLightFalloff.x + (uLightFalloff.y * dist) + (uLightFalloff.z * dist * dist));
-      float r = Falloff(dist, radius);
-
-
+      float attenuation = gaussianLight(radius, dist, linPortion, smoothing) * intensity;
 
       if(uNormalLighting){
          // light against the normal map
@@ -75,11 +89,11 @@ void main() {
          float light = max(dot(lightDir, normal), 0);
 
          vec4 diffuse = uColor * uAlpha * light;
-         outputColor =  diffuse * attenuation * r;
+         outputColor =  diffuse * attenuation;
       }
       else {
          // just a colored point light
-         outputColor =  uColor * uAlpha * attenuation * r;
+         outputColor =  uColor * attenuation;
       }      
    }    
    else{
