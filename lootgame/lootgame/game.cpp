@@ -129,9 +129,9 @@ static MoveSet _createMoveSet() {
 f32 cFloorHeight = 0.0f;
 f32 cDudeHeight = 0.1f;
 f32 cLightHeight = 0.2f;
-f32 cLightLinearPortion =     0.7f;
-f32 cLightSmoothingFactor =   1.6f;
-f32 cLightIntensity =         1.0f;
+f32 cLightLinearPortion =     0.0f;
+f32 cLightSmoothingFactor =   0.4f;
+f32 cLightIntensity =         100.0f;
 
 
 f32 cDudeAcceleration =     0.005f;
@@ -867,6 +867,47 @@ struct Game {
    int waveSize = 1;
 };
 
+ScreenCoords Coords::toScreen() {
+   auto& vpScreen = g_game->data.imgui.vpScreenArea;
+   auto& vpCamera = g_game->cam.viewport;
+
+   return {
+      vpScreen.x + ((world.x - vpCamera.x) / vpCamera.w) * vpScreen.w,
+      vpScreen.y + ((world.y - vpCamera.y) / vpCamera.h) * vpScreen.h
+   };
+}
+VPCoords Coords::toViewport() {
+   auto& vpCamera = g_game->cam.viewport;
+   return {
+      world.x - vpCamera.x,
+      world.y - vpCamera.y
+   };
+}
+WorldCoords Coords::toWorld() {
+   return world;
+}
+
+Coords Coords::fromScreen(ScreenCoords const& c) {
+   auto& vpScreen = g_game->data.imgui.vpScreenArea;
+   auto& vpCamera = g_game->cam.viewport;
+
+   return {
+      vpCamera.x + (c.x - vpScreen.x) / vpScreen.w * vpCamera.w,
+      vpCamera.y + (c.y - vpScreen.y) / vpScreen.h * vpCamera.h
+   };
+}
+Coords Coords::fromViewport(VPCoords const& c) {
+   auto& vpCamera = g_game->cam.viewport;
+   return {
+      vpCamera.x + c.x,
+      vpCamera.y + c.y
+   };
+}
+Coords Coords::fromWorld(WorldCoords const& c) {
+   return { c };
+}
+
+
 void gameStateBeginYouDied(Game* game) {
    game->state = GameState_YOUDIED;
    game->youdied.clock = 0;
@@ -1256,10 +1297,10 @@ void renderUnlitScene(Game* game) {
    uber::set(Uniform_OutputNormals, false, true);
 }
 
-static void _addLight(f32 size, Float2 pos, ColorRGBAf c) {
+static void _addLight(f32 size, VPCoords pos, ColorRGBAf c) {
    uber::set(Uniform_Color, c);
    uber::set(Uniform_Alpha, 1.0f);
-   uber::set(Uniform_PointLightRadius, size/2.0f);
+   //uber::set(Uniform_PointLightRadius, size/2.0f);
    uber::set(Uniform_LightAttrs, Float3{ 
       cLightLinearPortion, 
       cLightSmoothingFactor,
@@ -1299,10 +1340,10 @@ void renderLightLayer(Game* game) {
    int i = 0;
    for (auto&& d : game->baddudes) {
       static ColorRGBAf c[] = { Red, Green, Blue };
-      _addLight(80, d.phy.pos - Float2{ vp.x, vp.y }, c[i++ % 3]);
+      //_addLight(80, d.phy.pos - Float2{ vp.x, vp.y }, c[i++ % 3]);
    }
-
-   _addLight(300, game->data.io.mousePos - Float2{ vp.x, vp.y }, sRgbToLinear(ColorRGB{255,147,41}));
+   auto candleColor = sRgbToLinear(ColorRGB{ 255,147,41 });
+   _addLight(150, game->data.io.mousePos.toViewport(), White);
 }
 
 void renderLitScene(Game* game) {
@@ -1609,19 +1650,9 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
 }
 
 void gameHandleInput(Game*game) {
-   //auto& res = ConstantsGet().resolution;
-   auto& vpScreen = game->data.imgui.vpScreenArea;
-   auto& vpCamera = game->cam.viewport;
-
-   auto &imio = ImGui::GetIO();
    auto& mPos = ImGui::GetIO().MousePos;
-
    auto& io = game->data.io;
-
-   io.mousePos = {
-      vpCamera.x + (mPos.x - vpScreen.x) / vpScreen.w * vpCamera.w,
-      vpCamera.y + (mPos.y - vpScreen.y) / vpScreen.h * vpCamera.h
-   };
+   io.mousePos = Coords::fromScreen({ mPos.x, mPos.y });
 
    // update buttons
    for (GameButton b = 0; b < GameButton_COUNT; ++b) {

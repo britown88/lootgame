@@ -23,6 +23,31 @@ typedef enum {
 } GameButton_;
 typedef byte GameButton;
 
+
+
+typedef Float2 WorldCoords;
+typedef Float2 VPCoords;
+typedef Float2 ScreenCoords;
+
+// Coords is syntax sugar for keeping track of the 3 major coordinate systems of the game
+// Uses the camera in global Game struct for world coord conversions
+struct Coords {
+   union {
+      WorldCoords world;
+      struct {
+         float x, y;
+      };
+   };
+
+   ScreenCoords toScreen();
+   VPCoords toViewport();
+   WorldCoords toWorld();
+
+   static Coords fromScreen(ScreenCoords const& c);
+   static Coords fromViewport(VPCoords const& c);
+   static Coords fromWorld(WorldCoords const& c);
+};
+
 struct Constants {
    Int2 resolution = { 1920, 1080 };
 
@@ -31,6 +56,7 @@ struct Constants {
 Constants &ConstantsGet();
 
 struct GameData {
+
    GameData() {}
    struct {
       ColorRGBAf bgClearColor = { 0.45f, 0.55f, 0.60f, 1.0f };  // clear color behond all imgui windows
@@ -44,7 +70,7 @@ struct GameData {
    } imgui;
 
    struct {
-      Float2 mousePos;
+      Coords mousePos = { 0,0 };
 
       Float2 leftStick;   // unit vector of left stick
       Float2 rightStick;  // unit vector of right stick

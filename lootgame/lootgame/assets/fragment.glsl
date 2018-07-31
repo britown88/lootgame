@@ -65,12 +65,12 @@ void main() {
 
       vec2 center = vec2(0.5f, 0.5f);
 
-      float radius = uPointLightRadius;
+      float radius = 0.5;//uPointLightRadius;
       float linPortion = uLightAttrs.x;
       float smoothing = uLightAttrs.y;
       float intensity = uLightAttrs.z;
 
-      float dist = (distance(vTexCoords, center) / 0.5f) * radius;
+      float dist = distance(vTexCoords, center);// / 0.5f) * radius;
 
       float attenuation = gaussianLight(radius, dist, linPortion, smoothing) * intensity;
 
