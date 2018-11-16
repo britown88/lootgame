@@ -241,7 +241,7 @@ struct Dude {
 };
 
 static void uiEditDude(Dude& dude) {
-   if (ImGui::Begin(format("Dude Editor##%p", &dude).c_str(), 0, ImGuiWindowFlags_AlwaysAutoResize)) {
+   if (ImGui::Begin("Dude Editor", 0)) {
 
       ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
       if (ImGui::CollapsingHeader("Lighting")) {
@@ -1102,6 +1102,11 @@ void gameBegin(Game*game) {
    _buildGameTextures();
    game->lastUpdate = appGetTime();
    _gameInitNew();
+
+   appAddGUI("dudeeditor", [=]() {
+      uiEditDude(game->maindude);
+      return true;
+   });
 }
 
 
@@ -1756,7 +1761,7 @@ void gameUpdate(Game* game) {
    game->lastUpdate += timeMillis(ms);
 
    // imgui output
-   uiEditDude(game->maindude);
+   
    gameDoUI(game);
 }
 

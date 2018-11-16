@@ -32,8 +32,6 @@ struct App {
    SDL_GLContext sdlCtx = nullptr;
    ImGuiContext* imguiContext = nullptr;
 
-   Int2 size = { 0 }, clientSize = { 0 };
-   float scale = 1.0f;
    bool shouldClose = false;
 
    struct Dialog {
@@ -106,7 +104,7 @@ static void _windowCreate(App* app, WindowConfig const& info) {
    // Setup window
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-   //SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
+   SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
@@ -123,6 +121,10 @@ static void _windowCreate(App* app, WindowConfig const& info) {
    IMGUI_CHECKVERSION();
    auto imCtx = ImGui::CreateContext();
    ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+   io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 
    ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
@@ -169,7 +171,7 @@ void appPollEvents(App* app) {
          case SDL_MOUSEBUTTONDOWN:
          case SDL_MOUSEMOTION:
          case SDL_MOUSEWHEEL:
-            gameHandled = gameHandled || gameProcessEvent(app->game, &event);
+            gameHandled = gameProcessEvent(app->game, &event) || gameHandled;
             break;
          }
       }
@@ -181,7 +183,7 @@ void appPollEvents(App* app) {
          case SDL_KEYUP:
          case SDL_TEXTEDITING:
          case SDL_TEXTINPUT:
-            gameHandled = gameHandled || gameProcessEvent(app->game, &event);
+            gameHandled = gameProcessEvent(app->game, &event) || gameHandled;
             break;
          }
       }
@@ -193,12 +195,12 @@ void appPollEvents(App* app) {
          break; }
       case SDL_WINDOWEVENT:
          switch (event.window.event) {
-         case SDL_WINDOWEVENT_EXPOSED:
-         case SDL_WINDOWEVENT_RESIZED:
-            SDL_GetWindowSize(app->sdlWnd, &app->size.x, &app->size.y);
-            SDL_GL_GetDrawableSize(app->sdlWnd, &app->clientSize.x, &app->clientSize.y);
-            app->scale = app->clientSize.x / (float)app->size.x;
+         case SDL_WINDOWEVENT_CLOSE:
+            if (event.window.windowID == SDL_GetWindowID(app->sdlWnd)) {
+               app->running = false;
+            }
             break;
+
          }
          break;
       }
@@ -220,20 +222,29 @@ static void _beginFrame(App* app) {
 }
 
 static void _renderFrame(App* app) {
+
    SDL_GL_MakeCurrent(app->sdlWnd, app->sdlCtx);
 
    gameRender(app->game);
 
    auto data = gameDataGet();
    auto ccolor = data->imgui.bgClearColor;
-
    auto& io = ImGui::GetIO();
-   ImGui::Render();
 
+   ImGui::Render();
+   
    render::viewport({ 0, 0, (int)io.DisplaySize.x , (int)io.DisplaySize.y });
    render::clear(ccolor);
-
    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+   // Update and Render additional Platform Windows
+   if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+   {
+      ImGui::UpdatePlatformWindows();
+      ImGui::RenderPlatformWindowsDefault();
+   }
+
+   SDL_GL_MakeCurrent(app->sdlWnd, app->sdlCtx);
    SDL_GL_SwapWindow(app->sdlWnd);
 }
 
@@ -257,7 +268,10 @@ static void _updateDialogs(App* app) {
 
 static void _updateFrame(App* app) {
    gameUpdate(app->game);
-   _updateDialogs(app);
+   if (gameDataGet()->imgui.showUI) {
+      _updateDialogs(app);
+   }
+   
 }
 
 #include <thread>
@@ -279,6 +293,8 @@ void appStep(App* app) {
    }
    using namespace std::chrono_literals;
    //std::this_thread::sleep_for(50ms);
+
+
 }
 
 

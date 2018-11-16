@@ -9,23 +9,24 @@
 
 static ImGuiWindowFlags BorderlessFlags =
       ImGuiWindowFlags_NoMove |
-      ImGuiWindowFlags_NoCollapse |
       ImGuiWindowFlags_NoResize |
-      ImGuiWindowFlags_NoScrollbar |
-      ImGuiWindowFlags_NoScrollWithMouse |
       ImGuiWindowFlags_NoTitleBar |
-      ImGuiWindowFlags_NoSavedSettings;
+      ImGuiWindowFlags_NoSavedSettings |
+      ImGuiWindowFlags_NoDocking;
+
+static ImVec2 statsSize = ImVec2(0, 0);
 
 static void _doStatsWindow(Game* g) {
    auto sz = ImGui::GetIO().DisplaySize;
 
+   ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
    ImGui::SetNextWindowPos(ImVec2((float)sz.x, ImGui::GetFrameHeightWithSpacing()), ImGuiCond_Always, ImVec2(1, 0));
-   if (ImGui::Begin("Stats", nullptr, BorderlessFlags | ImGuiWindowFlags_AlwaysAutoResize)) {
-      auto txt = format("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-      //auto txtSize = ImGui::CalcTextSize(txt.c_str());
-
-      //ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - txtSize.x);
-      ImGui::Text(txt.c_str());
+   ImGui::SetNextWindowSize(statsSize, ImGuiCond_Always);
+   if (ImGui::Begin("Stats", nullptr, BorderlessFlags)) {
+      ImGui::BeginGroup();
+      ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+      ImGui::EndGroup();
+      statsSize = ImGui::GetItemRectSize();
    }
    ImGui::End();
 }
@@ -200,7 +201,7 @@ static void _mainMenu( Game* g) {
             appAddGUI("DialogStats", [=]() {
 
                bool p_open = true;
-               if (ImGui::Begin("Dialog Stats", &p_open, ImGuiWindowFlags_AlwaysAutoResize)) {
+               if (ImGui::Begin("Dialog Stats", &p_open)) {
                   //ImGui::Text("Active Dialogs: %d", DEBUG_windowGetDialogCount(wnd));
 
                   if (ImGui::Button("Open a test dialog")) {
@@ -209,7 +210,7 @@ static void _mainMenu( Game* g) {
 
                      appAddGUI(label.c_str(), [=]() {
                         bool p_open = true;
-                        if (ImGui::Begin(label.c_str(), &p_open, ImGuiWindowFlags_AlwaysAutoResize)) {
+                        if (ImGui::Begin(label.c_str(), &p_open)) {
                            ImGui::Text("Hi!");
                         }
                         ImGui::End();
@@ -280,12 +281,14 @@ static void _showFullScreenViewer(Game* g) {
 
    auto &style = ImGui::GetStyle();
 
+   auto vp = ImGui::GetMainViewport();
+
    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2());
    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 
-   ImGui::SetNextWindowPos(ImVec2(), ImGuiCond_Always);
-   ImGui::SetNextWindowSize(ImVec2((float)sz.x, (float)sz.y), ImGuiCond_Always);
+   ImGui::SetNextWindowPos(vp->Pos, ImGuiCond_Always);
+   ImGui::SetNextWindowSize(vp->Size, ImGuiCond_Always);
 
    if (ImGui::Begin("GameWindow", nullptr, BorderlessFlags)) {
       _renderViewerFBO(g);
@@ -378,45 +381,24 @@ void gameDoUI(Game* g) {
       auto sz = ImGui::GetIO().DisplaySize;
       auto &style = ImGui::GetStyle();
 
-      auto bgColor = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
-      ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32_BLACK_TRANS);
 
-      auto winPadding = style.WindowPadding;
-      auto borderSize = style.WindowBorderSize;
-      auto rounding = style.WindowRounding;
+      auto vp = ImGui::GetMainViewport();
 
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2());
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+      ImGui::SetNextWindowViewport(vp->ID);
+      ImGui::SetNextWindowPos(vp->Pos, ImGuiCond_Always);      
+      ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize, ImGuiCond_Always);
 
-      ImGui::SetNextWindowPos(ImVec2(), ImGuiCond_Always);      
-      ImGui::SetNextWindowSize(ImVec2((float)sz.x, (float)sz.y), ImGuiCond_Always);
-
-      if (ImGui::Begin("Root", nullptr, BorderlessFlags | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBringToFrontOnFocus)) {    
-         ImGui::Dummy(ImVec2(sz.x, sz.y));
-
-         ImGui::PushStyleColor(ImGuiCol_WindowBg, bgColor);
-
-         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, winPadding);
-         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, borderSize);
-         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, rounding);
-
+      if (ImGui::Begin("Root", nullptr, BorderlessFlags | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBringToFrontOnFocus)) { 
          _mainMenu(g);
-         
-         _doStatsWindow(g);
-
-         _doUIDebugger(g);
-         _showWindowedViewer(g);
-
-         ImGui::PopStyleVar(3);
-         ImGui::PopStyleColor();
+         ImGui::BeginChild("content");
+         ImGui::DockSpace(ImGui::GetID("dockspace"));
+         ImGui::EndChild();
       }
       ImGui::End();
 
-      ImGui::PopStyleColor();
-      ImGui::PopStyleVar(3);
-
-      
+      _doStatsWindow(g);
+      _doUIDebugger(g);
+      _showWindowedViewer(g);
    }
    else {
       _showFullScreenViewer(g);
