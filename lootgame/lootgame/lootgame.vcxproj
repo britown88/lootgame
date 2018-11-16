@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -88,7 +88,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(imgui)examples/;$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SDL_MAIN_HANDLED;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
@@ -131,7 +131,7 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;D:/LivePP/API/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(imgui)examples/;$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;D:/LivePP/API/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SDL_MAIN_HANDLED;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -157,14 +157,14 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\imgui\examples\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\imgui\examples\imgui_impl_sdl.cpp" />
     <ClCompile Include="app.cpp" />
     <ClCompile Include="lpp.cpp" />
     <ClCompile Include="phy.cpp" />
     <ClCompile Include="win.cpp" />
     <ClCompile Include="colors.cpp" />
     <ClCompile Include="game.cpp" />
-    <ClCompile Include="imgui_impl_opengl3.cpp" />
-    <ClCompile Include="imgui_impl_sdl.cpp" />
     <ClCompile Include="implementations.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="math.cpp" />
@@ -175,16 +175,17 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     <ClCompile Include="ui.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\imgui\examples\imgui_impl_opengl3.h" />
+    <ClInclude Include="..\imgui\examples\imgui_impl_sdl.h" />
     <ClInclude Include="app.h" />
     <ClInclude Include="dynarray.h" />
     <ClInclude Include="lpp.h" />
+    <ClInclude Include="map.h" />
     <ClInclude Include="phy.h" />
     <ClInclude Include="win.h" />
     <ClInclude Include="defs.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="IconsFontAwesome.h" />
-    <ClInclude Include="imgui_impl_opengl3.h" />
-    <ClInclude Include="imgui_impl_sdl.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="render.h" />
     <ClInclude Include="scf.h" />

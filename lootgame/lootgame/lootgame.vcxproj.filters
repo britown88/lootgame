@@ -39,12 +39,6 @@
     <ClCompile Include="app.cpp">
       <Filter>Source Files\app</Filter>
     </ClCompile>
-    <ClCompile Include="imgui_impl_opengl3.cpp">
-      <Filter>Source Files\app</Filter>
-    </ClCompile>
-    <ClCompile Include="imgui_impl_sdl.cpp">
-      <Filter>Source Files\app</Filter>
-    </ClCompile>
     <ClCompile Include="render.cpp">
       <Filter>Source Files\app</Filter>
     </ClCompile>
@@ -81,18 +75,18 @@
     <ClCompile Include="phy.cpp">
       <Filter>Source Files\game</Filter>
     </ClCompile>
+    <ClCompile Include="..\imgui\examples\imgui_impl_opengl3.cpp">
+      <Filter>Source Files\app</Filter>
+    </ClCompile>
+    <ClCompile Include="..\imgui\examples\imgui_impl_sdl.cpp">
+      <Filter>Source Files\app</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h">
       <Filter>Header Files\app</Filter>
     </ClInclude>
     <ClInclude Include="IconsFontAwesome.h">
-      <Filter>Header Files\app</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui_impl_opengl3.h">
-      <Filter>Header Files\app</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui_impl_sdl.h">
       <Filter>Header Files\app</Filter>
     </ClInclude>
     <ClInclude Include="render.h">
@@ -121,6 +115,15 @@
     </ClInclude>
     <ClInclude Include="phy.h">
       <Filter>Header Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="map.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\imgui\examples\imgui_impl_opengl3.h">
+      <Filter>Header Files\app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\imgui\examples\imgui_impl_sdl.h">
+      <Filter>Header Files\app</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -21,4 +21,3 @@ UNIFORM(uNormalLighting,NormalLighting,Bool,		   false)
 UNIFORM(uDiscardAlpha,  DiscardAlpha,  Bool,		   false)
 
 UNIFORM(uLightAttrs,    LightAttrs,    Float3,     {0.7f, 1.6f, 1.0f})
-UNIFORM(uPointLightRadius,PointLightRadius,f32,		1.0f)

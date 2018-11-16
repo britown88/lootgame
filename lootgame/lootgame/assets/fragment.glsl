@@ -16,7 +16,6 @@ uniform bool uNormalLighting; // lighting checks uNormals for normals map
 uniform bool uDiscardAlpha;   // discard alpha<1 fragments
 
 uniform vec3 uLightAttrs;  // x: linearPortion, y: smoothing, z: intensity
-uniform float uPointLightRadius;
 
 in vec2 vTexCoords;
 
@@ -65,7 +64,7 @@ void main() {
 
       vec2 center = vec2(0.5f, 0.5f);
 
-      float radius = 0.5;//uPointLightRadius;
+      float radius = 0.5;
       float linPortion = uLightAttrs.x;
       float smoothing = uLightAttrs.y;
       float intensity = uLightAttrs.z;
