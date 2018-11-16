@@ -12,24 +12,9 @@ static ImGuiWindowFlags BorderlessFlags =
       ImGuiWindowFlags_NoResize |
       ImGuiWindowFlags_NoTitleBar |
       ImGuiWindowFlags_NoSavedSettings |
+      ImGuiWindowFlags_NoScrollWithMouse |
+      ImGuiWindowFlags_NoScrollbar |
       ImGuiWindowFlags_NoDocking;
-
-static ImVec2 statsSize = ImVec2(0, 0);
-
-static void _doStatsWindow(Game* g) {
-   auto sz = ImGui::GetIO().DisplaySize;
-
-   ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
-   ImGui::SetNextWindowPos(ImVec2((float)sz.x, ImGui::GetFrameHeightWithSpacing()), ImGuiCond_Always, ImVec2(1, 0));
-   ImGui::SetNextWindowSize(statsSize, ImGuiCond_Always);
-   if (ImGui::Begin("Stats", nullptr, BorderlessFlags)) {
-      ImGui::BeginGroup();
-      ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-      ImGui::EndGroup();
-      statsSize = ImGui::GetItemRectSize();
-   }
-   ImGui::End();
-}
 
 struct SCFTestState {
    SCFWriter *writer = nullptr;
@@ -246,6 +231,10 @@ static void _mainMenu( Game* g) {
          ImGui::EndMenu();
       }
 
+      auto stats = format("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+      ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvailWidth() - ImGui::CalcTextSize(stats.c_str()).x);
+      ImGui::Text(stats.c_str());
+
       ImGui::EndMenuBar();
    }
 }
@@ -396,7 +385,6 @@ void gameDoUI(Game* g) {
       }
       ImGui::End();
 
-      _doStatsWindow(g);
       _doUIDebugger(g);
       _showWindowedViewer(g);
    }

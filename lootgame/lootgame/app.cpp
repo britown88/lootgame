@@ -70,16 +70,10 @@ void appDestroy(App* app) {
 
 static void _initFontAtlas(App* app) {
    app->fontAtlas = new ImFontAtlas();
-
    app->fontAtlas->AddFontDefault();
-   //io.Fonts->AddFontDefault();
-
-   // use this for the windows UI font, but we want package this font so
-   //app->fontAtlas->AddFontFromFileTTF("C:/windows/fonts/segoeui.ttf", 16);
 
    ImFontConfig config;
    config.MergeMode = true;
-   //config.PixelSnapH = true;
    static const ImWchar range_merged[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
    app->fontAtlas->AddFontFromMemoryCompressedTTF(
       fa_merged_compressed_data,
@@ -280,10 +274,10 @@ static void _updateFrame(App* app) {
 void appStep(App* app) {
    lppSync();
 
-   
-   _beginFrame(app);
    gameHandleInput(app->game);
    appPollEvents(app);
+
+   _beginFrame(app);
 
    _updateFrame(app);
    _renderFrame(app);
