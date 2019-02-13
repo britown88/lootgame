@@ -15,76 +15,58 @@
 #define AXIS_AIM_DEADZONE 0.5f
 #define DUDE_COUNT 1
 
+ScreenCoords Coords::toScreen(GameState& g) {
+   auto& vpScreen = g.vpScreenArea;
+   auto& vpCamera = g.camera.viewport;
 
-struct Game;
-static Game* g_game = nullptr;
-void gameStateBeginYouDied(Game* game);
-void DEBUG_gameSpawnDude(Game* game);
+   return {
+      vpScreen.x + ((world.x - vpCamera.x) / vpCamera.w) * vpScreen.w,
+      vpScreen.y + ((world.y - vpCamera.y) / vpCamera.h) * vpScreen.h
+   };
+}
+VPCoords Coords::toViewport(GameState& g) {
+   auto& vpCamera = g.camera.viewport;
+   return {
+      world.x - vpCamera.x,
+      world.y - vpCamera.y
+   };
+}
+WorldCoords Coords::toWorld() {
+   return world;
+}
 
-static Constants g_const;
-Constants &ConstantsGet() { return g_const; }
+Coords Coords::fromScreen(ScreenCoords const& c, GameState& g) {
+   auto& vpScreen = g.vpScreenArea;
+   auto& vpCamera = g.camera.viewport;
 
-struct Map {
-   Float2 size;
-};
+   return {
+      vpCamera.x + (c.x - vpScreen.x) / vpScreen.w * vpCamera.w,
+      vpCamera.y + (c.y - vpScreen.y) / vpScreen.h * vpCamera.h
+   };
+}
+Coords Coords::fromViewport(VPCoords const& c, GameState& g) {
+   auto& vpCamera = g.camera.viewport;
+   return {
+      vpCamera.x + c.x,
+      vpCamera.y + c.y
+   };
+}
+Coords Coords::fromWorld(WorldCoords const& c) {
+   return { c };
+}
 
-struct Camera {
-   Rectf viewport;
-};
 
 
 
-enum {
-   GameTextures_Dude = 0,
-   GameTextures_DudeNormals,
-   GameTextures_Target,
-   GameTextures_Light,
-   GameTextures_Circle,
-   GameTextures_ShittySword,
-   GameTextures_SwordNormals,
-   GameTextures_Tile,
-   GameTextures_TileNormals,
-   GameTextures_GemEmpty,
-   GameTextures_GemFilled,
-   GameTextures_HeartEmpty,
-   GameTextures_HeartFilled,
+static EngineConstants g_const;
+EngineConstants &Constants() { return g_const; }
 
-   GameTexture_COUNT
-}GameTextures_;
-typedef u32 GameTexture;
+static EngineState g_eng;
+EngineState &Engine() { return g_eng; }
+
    
-Texture g_textures[GameTexture_COUNT];
 
-Texture gameTexture(GameTexture t) {
-   return g_textures[t];
-}
 
-TextureHandle gameTextureHandle(GameTexture t) {
-   return g_textures[t].handle;
-}
-
-enum SwingPhase {
-   SwingPhase_Windup = 0,
-   SwingPhase_Lunge,
-   SwingPhase_Swing,
-   SwingPhase_Cooldown
-};
-
-struct AttackSwing {
-   f32 lungeDist; // character will luinge forward between windup and swing
-   f32 lungeSpeed; // perms
-
-   f32 swipeAngle; // full range of the weapon swipe, in degrees
-   Milliseconds swingDur; // total time for the attack
-   Milliseconds windupDur; // vulnerability period before swing
-   Milliseconds cooldownDur; // period before user is free again
-   Rectf hitbox; // axis-aligned, The origin here is the bottom center of the attack while facing up
-                 // attack will rotate around that origin
-};
-
-struct MoveSet {
-   DynamicArray<AttackSwing> swings;
-};
 
 static MoveSet _createMoveSet() {
    MoveSet out;
@@ -133,7 +115,6 @@ f32 cLightLinearPortion =     0.0f;
 f32 cLightSmoothingFactor =   0.4f;
 f32 cLightIntensity =         100.0f;
 
-
 f32 cDudeAcceleration =     0.005f;
 f32 cDudeRotationSpeed =    0.010f;
 f32 cDudeMoveSpeed =        0.100f;
@@ -150,95 +131,6 @@ Milliseconds cCooldownOnDamagedStaminaEmpty = 1000;
 Milliseconds cCooldownOnDamagedStamina = 250;
 Milliseconds cCooldownOnDamagedHealth = 500;
 
-struct Movement {
-   f32 moveSpeedCap = 0.0f;       // updated per frame, interpolates toward moveSpeedCapTarget
-   f32 moveSpeedCapTarget = 0.0f; // updated per frame, max speed based on length of move vector and velocity direction vs facing
-   Float2 moveVector = { 0.0f, 0.0f };   // vector length 0-1 for movement amount/direction
-   Float2 faceVector = { 0.0f, 0.0f };  // unit vector for target facing, facing will interpolate toward this angle
-   Float2 facing = { 1, 0 };  // unit vector for character facing  
-};
-
-struct Dude;
-
-struct Behavior {
-   Milliseconds started;
-   Dude* target = nullptr;
-   int dir = 1;
-   bool attack = false;
-};
-
-struct AttackState {
-   Float2 weaponVector;
-   
-   AttackSwing swing;
-   SwingPhase swingPhase;
-   int swingDir;
-   int combo;
-
-   DynamicArray<Dude*> hits;
-};
-
-struct CooldownState {
-   Milliseconds duration;
-};
-
-struct DashState {
-};
-
-struct FreeState {
-   Milliseconds staminaClockStart;
-   Milliseconds nextTickAt;
-};
-
-enum DudeState {
-   DudeState_FREE = 0,
-   DudeState_COOLDOWN,
-   DudeState_DASH,
-   DudeState_ATTACKING,
-   DudeState_DEAD
-};
-
-struct Status {
-   int stamina, staminaMax;
-   int health, healthMax;
-};
-
-// shove keeps track of a push of constant speed for a distance
-// shoves can happen independant of state
-struct Shove {
-   Float2 startPos;
-   Milliseconds start;
-   Milliseconds dur;
-   f32 speed; // only stored so we can restore speed correctly
-};
-
-struct Dude {
-   DudeState state = DudeState_FREE;
-   AttackState atk;
-   CooldownState cd;
-   DashState dash;
-   FreeState free;
-
-
-   TextureHandle texture = 0;
-   Float2 renderSize;
-   ColorRGBAf c;
-
-
-   PhyObject phy;
-   Movement mv;
-   Behavior ai;
-   Status status;
-
-   bool shoved = false;
-   Shove shove;
-
-   
-   Milliseconds stateClock; // incremented by one every ms
-
-   
-   MoveSet moveset;   
-};
 
 static void uiEditDude(Dude& dude) {
    if (ImGui::Begin("Dude Editor", 0)) {
@@ -606,7 +498,7 @@ void mainDudeCheckAttackCollisions(Dude& dude, DynamicArray<Dude> &targets) {
    }
 }
 
-void badDudeCheckAttackCollision(Dude& dude, Dude& t) {
+void badDudeCheckAttackCollision(GameState& g, Dude& dude, Dude& t) {
    if (dude.state != DudeState_ATTACKING) {
       return;
    }
@@ -637,7 +529,8 @@ void badDudeCheckAttackCollision(Dude& dude, Dude& t) {
       dude.atk.hits.push_back(&t);
 
       if (!dudeAlive(t)) {
-         gameStateBeginYouDied(g_game);
+         g.mode.type = ModeType_YOUDIED;
+         g.mode.clock = 0;
          t.mv.moveVector = { 0,0 };
       }
    }
@@ -646,27 +539,27 @@ void badDudeCheckAttackCollision(Dude& dude, Dude& t) {
 
 
 
-static bool rightStickActive() {
-   auto &io = gameDataGet()->io;
+static bool rightStickActive(GameState& g) {
+   auto &io = g.io;
    return fabs(io.rightStick.x) > AXIS_AIM_DEADZONE || fabs(io.rightStick.y) > AXIS_AIM_DEADZONE;
 }
-static bool leftStickActive() {
-   auto &io = gameDataGet()->io;
+static bool leftStickActive(GameState& g) {
+   auto &io = g.io;
    return fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE;
 }
 
-void dudeApplyInputMovement(Dude& d) {
-   auto& io = gameDataGet()->io;
+void dudeApplyInputMovement(GameState& g, Dude& d) {
+   auto& io = g.io;
 
    d.mv.moveVector = io.leftStick;
 }
 
-void dudeApplyInputAiming(Dude& d) {
-   auto& io = gameDataGet()->io;
+void dudeApplyInputAiming(GameState& g, Dude& d) {
+   auto& io = g.io;
 
 
-   bool rstick = rightStickActive();
-   bool lstick = leftStickActive();
+   bool rstick = rightStickActive(g);
+   bool lstick = leftStickActive(g);
 
    Float2 aimStick;
    if (rstick) {
@@ -686,8 +579,8 @@ void dudeApplyInputAiming(Dude& d) {
    }
 }
 
-void dudeApplyInputFreeActions(Dude& d) {
-   auto& io = gameDataGet()->io;
+void dudeApplyInputFreeActions(GameState& g, Dude& d) {
+   auto& io = g.io;
    if (io.buttonPressed[GameButton_LT]){
       dudeBeginDash(d, cDudeDashSpeed);
    }
@@ -696,16 +589,16 @@ void dudeApplyInputFreeActions(Dude& d) {
    }
 }
 
-void dudeApplyInputAttack(Dude& d) {
+void dudeApplyInputAttack(GameState& g, Dude& d) {
 
    switch (d.atk.swingPhase) {
    case SwingPhase_Windup:
       // apply aiming during windup 
-      dudeApplyInputAiming(d);
+      dudeApplyInputAiming(g, d);
       break;
    }
 
-   auto& io = gameDataGet()->io;
+   auto& io = g.io;
    if (io.buttonPressed[GameButton_RT]) {
       switch (d.atk.swingPhase) {
       case SwingPhase_Cooldown:
@@ -715,17 +608,17 @@ void dudeApplyInputAttack(Dude& d) {
    }
 }
 
-void dudeApplyInput(Dude& d) {
+void dudeApplyInput(GameState& g, Dude& d) {
    switch (d.state) {
    case DudeState_FREE:
-      dudeApplyInputMovement(d);
-      dudeApplyInputAiming(d);
-      dudeApplyInputFreeActions(d);
+      dudeApplyInputMovement(g, d);
+      dudeApplyInputAiming(g, d);
+      dudeApplyInputFreeActions(g, d);
       break;
    case DudeState_DASH:
       break;
    case DudeState_ATTACKING:
-      dudeApplyInputAttack(d);
+      dudeApplyInputAttack(g, d);
       break;
    }
 }
@@ -826,216 +719,10 @@ void dudeUpdateBehavior(Dude& dude) {
 
 
 
-enum GameState_ {
-   GameState_ACTION = 0,
-   GameState_YOUDIED
-};
-typedef u16 GameState;
-
-struct GameStateYouDied {
-   Milliseconds clock;
-};
-
-
-struct Game {
-   GameState state = GameState_ACTION;
-   GameData data;
-
-   GameStateYouDied youdied;
-
-   ShaderHandle shader = 0;
-
-   Mesh mesh, meshUncentered;
-   FBO 
-      unlitScene, 
-      lightLayer, 
-      litScene,
-      UI,
-      output;
-
-   Dude maindude;
-   DynamicArray<Dude> baddudes;
-
-   Time lastMouseMove;
-   Time lastUpdate;
-   bool mouseActive;
-
-   Map map = { {10000, 10000} };
-   Camera cam = { { 0, 0, 426, 240} };// 640, 360 } };
-   bool reloadShader = false;
-
-   int waveSize = 1;
-};
-
-ScreenCoords Coords::toScreen() {
-   auto& vpScreen = g_game->data.imgui.vpScreenArea;
-   auto& vpCamera = g_game->cam.viewport;
-
-   return {
-      vpScreen.x + ((world.x - vpCamera.x) / vpCamera.w) * vpScreen.w,
-      vpScreen.y + ((world.y - vpCamera.y) / vpCamera.h) * vpScreen.h
-   };
-}
-VPCoords Coords::toViewport() {
-   auto& vpCamera = g_game->cam.viewport;
-   return {
-      world.x - vpCamera.x,
-      world.y - vpCamera.y
-   };
-}
-WorldCoords Coords::toWorld() {
-   return world;
-}
-
-Coords Coords::fromScreen(ScreenCoords const& c) {
-   auto& vpScreen = g_game->data.imgui.vpScreenArea;
-   auto& vpCamera = g_game->cam.viewport;
-
-   return {
-      vpCamera.x + (c.x - vpScreen.x) / vpScreen.w * vpCamera.w,
-      vpCamera.y + (c.y - vpScreen.y) / vpScreen.h * vpCamera.h
-   };
-}
-Coords Coords::fromViewport(VPCoords const& c) {
-   auto& vpCamera = g_game->cam.viewport;
-   return {
-      vpCamera.x + c.x,
-      vpCamera.y + c.y
-   };
-}
-Coords Coords::fromWorld(WorldCoords const& c) {
-   return { c };
-}
-
-
-void gameStateBeginYouDied(Game* game) {
-   game->state = GameState_YOUDIED;
-   game->youdied.clock = 0;
-}
-
-
-
-GameData* gameDataGet() {
-   return &g_game->data;
-}
-
-static void _gameDataInit(GameData* game, StringView assetsFolder) {
-#ifndef  _DEBUG
-   game->imgui.showUI = false;
-#endif //  NDEBUG
-}
-
-Game* gameCreate(StringView assetsFolder) {
-   g_game = new Game();
-   _gameDataInit(&g_game->data, assetsFolder);
-   return g_game;
-}
-
-void gameDestroy(Game* game) {
-   delete game;
-}
-
-FBO const& gameGetOutputFBO(Game* game) { return game->output; }
-
-
-
-void gameReloadShaders(Game* game) { game->reloadShader = true; }
-static int _reloadShader(Game* game) {
-   game->reloadShader = false;
-   auto vertex = fileReadString("assets/vertex.glsl");
-   auto fragment = fileReadString("assets/fragment.glsl");
-
-   auto s = render::shaderBuild(vertex, fragment);
-
-   free(vertex);
-   free(fragment);
-
-   if (s == 0) {
-      return 0;
-   }
-
-   if (game->shader != 0) {
-      render::shaderDestroy(game->shader);
-   }
-
-   game->shader = s;
-   return 1;
-}
-
-
-static Texture _textureBuildFromFile(const char* path, TextureFlag flags = TextureFlag_Defaults) {
-   u64 sz = 0;
-   i32 x, y, comp;
-   x = y = comp = 0;
-   auto mem = fileReadBinary(path, &sz);
-   auto png = stbi_load_from_memory(mem, (i32)sz, &x, &y, &comp, 4);
-   auto out = render::textureBuild({ x, y }, flags, (ColorRGBA*)png);
-
-   free(mem);
-   free(png);
-   return out;
-}
-
-static void _buildGameTextures() {
-
-
-
-   g_textures[GameTextures_Dude] = _textureBuildFromFile("assets/dude2.png");
-   g_textures[GameTextures_DudeNormals] = _textureBuildFromFile("assets/dudenormal2.png", TextureFlag_ClampedNearest | TextureFlag_Color_RGBA8);
-   g_textures[GameTextures_Target] = _textureBuildFromFile("assets/target.png");
-   g_textures[GameTextures_Light] = _textureBuildFromFile("assets/light3.png");
-   g_textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png", TextureFlag_ClampedLinear | TextureFlag_Color_SRGBA);
-   g_textures[GameTextures_ShittySword] = _textureBuildFromFile("assets/sword.png");
-   g_textures[GameTextures_SwordNormals] = _textureBuildFromFile("assets/swordnormal.png", TextureFlag_ClampedNearest | TextureFlag_Color_RGBA8);
-   g_textures[GameTextures_GemEmpty] = _textureBuildFromFile("assets/gemempty.png");
-   g_textures[GameTextures_GemFilled] = _textureBuildFromFile("assets/gemfilled.png");
-   g_textures[GameTextures_HeartEmpty] = _textureBuildFromFile("assets/heartempty.png");
-   g_textures[GameTextures_HeartFilled] = _textureBuildFromFile("assets/heartfilled.png");
-   g_textures[GameTextures_Tile] = _textureBuildFromFile("assets/toldold.png", TextureFlag_RepeatedNearest | TextureFlag_Color_SRGBA);
-   g_textures[GameTextures_TileNormals] = _textureBuildFromFile("assets/tilenormal.png", TextureFlag_RepeatedNearest | TextureFlag_Color_RGBA8 | TextureFlag_DisablePremultiply);
-}
-
-static void _createGraphicsObjects(Game* game){
-   assert(_reloadShader(game));
-
-   Vertex vbo[] = { 
-      { { -0.5f, -0.5f },{ 0.0f, 0.0f } },
-      { {  0.5f, -0.5f },{ 1.0f, 0.0f } },
-      { { -0.5f,  0.5f },{ 0.0f, 1.0f } },
-
-      { {  0.5f, -0.5f },{ 1.0f, 0.0f } },
-      { {  0.5f,  0.5f },{ 1.0f, 1.0f } },
-      { { -0.5f,  0.5f },{ 0.0f, 1.0f } },
-   };
-
-   Vertex vboUncentered[] = { 
-      { { 0.0f, 0.0f },{ 0.0f, 0.0f } },
-      { { 1.0f, 0.0f },{ 1.0f, 0.0f } },
-      { { 0.0f, 1.0f },{ 0.0f, 1.0f } },
-
-      { { 1.0f, 0.0f },{ 1.0f, 0.0f } },
-      { { 1.0f, 1.0f },{ 1.0f, 1.0f } },
-      { { 0.0f, 1.0f },{ 0.0f, 1.0f } },
-   };
-
-   game->mesh = render::meshBuild(vbo, 6);
-   game->meshUncentered = render::meshBuild(vboUncentered, 6);
-
-   auto& res = ConstantsGet().resolution;
-   game->unlitScene = render::fboBuild(res, { 
-      render::textureBuild(res, TextureFlag_FBODefaults),   // diffuse
-      render::textureBuild(res, TextureFlag_FBODefaults)    // normals
-   });
-   game->lightLayer = render::fboBuild(res);
-   game->litScene   = render::fboBuild(res);
-   game->UI         = render::fboBuild(res);
-   game->output     = render::fboBuild(res);
-}
-
-static Dude _createDude(Game* game) {
+static Dude _createDude(GameState& game) {
    Dude out;
 
-   auto tex = gameTexture(GameTextures_Dude);
+   auto &tex = Engine().graphics.textures[GameTextures_Dude];
 
    out.c = White;
    out.moveset = _createMoveSet();
@@ -1055,7 +742,7 @@ static Dude _createDude(Game* game) {
 static Dude _createEnemy(Float2 pos) {
    Dude out;
 
-   auto tex = gameTexture(GameTextures_Dude);
+   auto &tex = Engine().graphics.textures[GameTextures_Dude];
 
    out.moveset = _createMoveSet();
    out.c = White;// {1.0f, 0.3f, 0.3f, 1.0f};
@@ -1072,41 +759,41 @@ static Dude _createEnemy(Float2 pos) {
    return out;
 }
 
-void DEBUG_gameSpawnDude(Game* game) {
+void DEBUG_gameSpawnDude(GameState& game) {
    auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 });
-   e.ai.target = &game->maindude;
-   game->baddudes.push_back(e);
+   e.ai.target = &game.maindude;
+   game.baddudes.push_back(e);
 }
 
 
 static void _gameInitNew() {
-   auto lastUpdate = g_game->lastUpdate;
-   *g_game = Game();
-   _gameDataInit(&g_game->data, nullptr);
-   _createGraphicsObjects(g_game);
-   g_game->lastUpdate = lastUpdate;
-   g_game->maindude = _createDude(g_game);
+   //auto lastUpdate = g_game->lastUpdate;
+   //*g_game = Game();
+   //_gameDataInit(&g_game->data, nullptr);
+   //_createGraphicsObjects(g_game);
+   //g_game->lastUpdate = lastUpdate;
+   //g_game->maindude = _createDude(g_game);
 
-   auto e = _createEnemy({ 1000, 1000 });
-   e.ai.target = &g_game->maindude;
-   g_game->baddudes.push_back(e);
+   //auto e = _createEnemy({ 1000, 1000 });
+   //e.ai.target = &g_game->maindude;
+   //g_game->baddudes.push_back(e);
 
-   //for (int i = 0; i < DUDE_COUNT; ++i) {
-   //   auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 }, 10.0f);
-   //   e.ai.target = &game->maindude;
-   //   game->baddudes.push_back(e);
-   //}
+   ////for (int i = 0; i < DUDE_COUNT; ++i) {
+   ////   auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 }, 10.0f);
+   ////   e.ai.target = &game->maindude;
+   ////   game->baddudes.push_back(e);
+   ////}
 }
 
-void gameBegin(Game*game) {
-   _buildGameTextures();
-   game->lastUpdate = appGetTime();
-   _gameInitNew();
+void gameBegin(GameState& game) {
+   ////_buildGameTextures();
+   //game->lastUpdate = appGetTime();
+   //_gameInitNew();
 
-   appAddGUI("dudeeditor", [=]() {
-      uiEditDude(game->maindude);
-      return true;
-   });
+   //appAddGUI("dudeeditor", [=]() {
+   //   uiEditDude(game->maindude);
+   //   return true;
+   //});
 }
 
 
@@ -1128,13 +815,13 @@ static void _renderSwing(Dude&dude) {
    );
    uber::set(Uniform_ModelMatrix, model);
    uber::set(Uniform_Height, cDudeHeight);
-   uber::bindTexture(Uniform_DiffuseTexture, gameTextureHandle(GameTextures_ShittySword));
-   uber::bindTexture(Uniform_NormalsTexture, gameTextureHandle(GameTextures_SwordNormals));
+   uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.textures[GameTextures_ShittySword].handle);
+   uber::bindTexture(Uniform_NormalsTexture, Engine().graphics.textures[GameTextures_SwordNormals].handle);
 
-   render::meshRender(g_game->meshUncentered);
+   render::meshRender(Engine().graphics.meshUncentered);
 }
 
-static void _renderDude(Dude& dude) {
+static void _renderDude(GameState& g, Dude& dude) {
    auto model = Matrix::identity();
 
    Float2 rotate = dude.mv.facing;
@@ -1166,13 +853,13 @@ static void _renderDude(Dude& dude) {
 
    uber::set(Uniform_ModelMatrix, model);
    uber::bindTexture(Uniform_DiffuseTexture, dude.texture);
-   uber::bindTexture(Uniform_NormalsTexture, gameTextureHandle(GameTextures_DudeNormals));
-   render::meshRender(g_game->mesh);
+   uber::bindTexture(Uniform_NormalsTexture, Engine().graphics.textures[GameTextures_DudeNormals].handle);
+   render::meshRender(Engine().graphics.mesh);
 
    //uber::set(Uniform_OutlineOnly, true);
    //render::meshRender(g_game->mesh);
 
-   if (gameDataGet()->imgui.showCollisionDebugging) {
+   if (g.DEBUG.showCollisionDebugging) {
 
       uber::resetToDefault();
       model = Matrix::translate2f(dude.phy.pos);
@@ -1181,8 +868,8 @@ static void _renderDude(Dude& dude) {
       uber::set(Uniform_Alpha, 0.25f);
       uber::set(Uniform_ModelMatrix, model);
 
-      uber::bindTexture(Uniform_DiffuseTexture, gameTextureHandle(GameTextures_Circle));
-      render::meshRender(g_game->mesh);
+      uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.textures[GameTextures_Circle].handle);
+      render::meshRender(Engine().graphics.mesh);
    }
    
    if (dude.state == DudeState_ATTACKING) {
@@ -1195,7 +882,7 @@ static void _renderDude(Dude& dude) {
 static void _renderTarget(Float2 pos, ColorRGBAf color) {
    auto model = Matrix::identity();
 
-   auto sz = gameTexture(GameTextures_Target).sz;
+   auto sz = Engine().graphics.textures[GameTextures_Target].sz;
 
    model *= Matrix::translate2f(pos);
    model *= Matrix::scale2f({ (f32)sz.x, (f32)sz.y });
@@ -1203,25 +890,25 @@ static void _renderTarget(Float2 pos, ColorRGBAf color) {
    uber::resetToDefault();
    uber::set(Uniform_Color, color);
    uber::set(Uniform_ModelMatrix, model);
-   uber::bindTexture(Uniform_DiffuseTexture, gameTextureHandle(GameTextures_Target));
-   render::meshRender(g_game->mesh);
+   uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.textures[GameTextures_Target].handle);
+   render::meshRender(Engine().graphics.mesh);
 }
 
-static void _renderFloor(Game* game) {
-   auto& c = ConstantsGet();
+static void _renderFloor(GameState& game) {
+   auto& c = Constants();
 
-   Float2 fres = { game->map.size.x, game->map.size.y };
+   Float2 fres = { game.map.size.x, game.map.size.y };
    Float2 tileSize = { 16, 16 };
    
    uber::resetToDefault();
    uber::set(Uniform_Height, cFloorHeight);
    uber::set(Uniform_TextureMatrix, Matrix::scale2f({ fres.x / tileSize.x, fres.y / tileSize.y }));
    uber::set(Uniform_ModelMatrix, Matrix::scale2f(fres));
-   uber::bindTexture(Uniform_DiffuseTexture, gameTextureHandle(GameTextures_Tile));
-   uber::bindTexture(Uniform_NormalsTexture, gameTextureHandle(GameTextures_TileNormals));
+   uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.textures[GameTextures_Tile].handle);
+   uber::bindTexture(Uniform_NormalsTexture, Engine().graphics.textures[GameTextures_TileNormals].handle);
    //uber::set(Uniform_ColorOnly, true);
 
-   render::meshRender(g_game->meshUncentered);
+   render::meshRender(Engine().graphics.meshUncentered);
 
    //if (gameDataGet()->imgui.showCollisionDebugging) {
    //   Rectf testrect = { 300,300, 500, 200 };
@@ -1275,11 +962,11 @@ FBO: Output[1] = {Diffuse}
 */
 
 
-void renderUnlitScene(Game* game) {
-   auto vp = game->cam.viewport;
+void renderUnlitScene(GameState& game) {
+   auto vp = game.camera.viewport;
    auto view = Matrix::ortho(vp.x, vp.x + vp.w, vp.y, vp.y + vp.h, 1, -1);   
    
-   render::fboBind(game->unlitScene);
+   render::fboBind(Engine().graphics.unlitScene);
    uber::set(Uniform_ViewMatrix, view, true);
    uber::set(Uniform_DiscardAlpha, true, true);
    uber::set(Uniform_OutputNormals, true, true);
@@ -1292,10 +979,10 @@ void renderUnlitScene(Game* game) {
    _renderFloor(game);
 
    
-   for (auto&& d : game->baddudes) {
-      _renderDude(d);
+   for (auto&& d : game.baddudes) {
+      _renderDude(game, d);
    }
-   _renderDude(game->maindude);
+   _renderDude(game, game.maindude);
 
    // restore these flags
    uber::set(Uniform_DiscardAlpha, false, true);
@@ -1313,14 +1000,14 @@ static void _addLight(f32 size, VPCoords pos, ColorRGBAf c) {
 
    //uber::set(Uniform_LightIntensity, 1.0f);
    uber::set(Uniform_ModelMatrix, Matrix::translate2f(pos) * Matrix::scale2f({size, size}));
-   render::meshRender(g_game->mesh);
+   render::meshRender(Engine().graphics.mesh);
 }
 
-void renderLightLayer(Game* game) {
-   auto vp = game->cam.viewport;
-   auto al = gameDataGet()->imgui.ambientLight;
+void renderLightLayer(GameState& game) {
+   auto vp = game.camera.viewport;
+   auto al = game.DEBUG.ambientLight;
 
-   render::fboBind(game->lightLayer);
+   render::fboBind(Engine().graphics.lightLayer);
    uber::set(Uniform_ViewMatrix, Matrix::ortho(0, vp.w, 0, vp.h, 1, -1), true);   
    uber::resetToDefault();
 
@@ -1328,7 +1015,7 @@ void renderLightLayer(Game* game) {
    render::clear({ al, al, al, al });
 
    // bind deferred normals map
-   uber::bindTexture(Uniform_NormalsTexture, game->unlitScene.out[1].handle);
+   uber::bindTexture(Uniform_NormalsTexture, Engine().graphics.unlitScene.out[1].handle);
    uber::set(Uniform_PointLight, true);
    uber::set(Uniform_NormalLighting, true);
 
@@ -1343,37 +1030,37 @@ void renderLightLayer(Game* game) {
    _addLight(150, Float2{200, 200} - Float2{ vp.x, vp.y }, White);
 
    int i = 0;
-   for (auto&& d : game->baddudes) {
+   for (auto&& d : game.baddudes) {
       static ColorRGBAf c[] = { Red, Green, Blue };
       //_addLight(80, d.phy.pos - Float2{ vp.x, vp.y }, c[i++ % 3]);
    }
    auto candleColor = sRgbToLinear(ColorRGB{ 255,147,41 });
-   _addLight(150, game->data.io.mousePos.toViewport(), White);
+   _addLight(150, game.io.mousePos.toViewport(game), White);
 }
 
-void renderLitScene(Game* game) {
-   auto vp = game->cam.viewport;
+void renderLitScene(GameState& game) {
+   auto vp = game.camera.viewport;
 
-   render::fboBind(game->litScene);   
+   render::fboBind(Engine().graphics.litScene);
    uber::resetToDefault();
    render::clear(Black);
 
    render::setBlendMode(BlendMode_DISABLED);
    uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (f32)vp.w, (f32)vp.h }));
-   uber::bindTexture(Uniform_DiffuseTexture, game->unlitScene.out[0].handle);
-   render::meshRender(game->meshUncentered);
+   uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.unlitScene.out[0].handle);
+   render::meshRender(Engine().graphics.meshUncentered);
 
    render::setBlendMode(BlendMode_MULITPLY);
-   uber::bindTexture(Uniform_DiffuseTexture, game->lightLayer.out[0].handle);
-   render::meshRender(game->meshUncentered);
+   uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.lightLayer.out[0].handle);
+   render::meshRender(Engine().graphics.meshUncentered);
 
    
 }
 
-void renderUI(Game* game) {
-   auto& vp = game->cam.viewport;
+void renderUI(GameState& game) {
+   auto& vp = game.camera.viewport;
 
-   render::fboBind(game->UI);   
+   render::fboBind(Engine().graphics.UI);
 
    uber::resetToDefault();
    render::clear(Cleared);
@@ -1381,51 +1068,51 @@ void renderUI(Game* game) {
    render::setBlendMode(BlendMode_NORMAL);   
 
    /*if (game->maindude.stamina < game->maindude.staminaMax)*/ {
-      auto tsz = gameTexture(GameTextures_GemFilled).sz;
+      auto tsz = Engine().graphics.textures[GameTextures_GemFilled].sz;
       Float2 gemSize = { (f32)tsz.x, (f32)tsz.y };
       f32 gemSpace = 0.0f;
-      auto w = (gemSize.x + gemSpace) * game->maindude.status.staminaMax;
+      auto w = (gemSize.x + gemSpace) * game.maindude.status.staminaMax;
 
       //Float2 staminaCorner = { game->maindude.phy.pos.x - w / 2.0f, game->maindude.phy.pos.y + game->maindude.phy.circle.size + 20 };
       Float2 staminaCorner = { 10,10 };
 
-      if (game->maindude.status.stamina == 0) {
+      if (game.maindude.status.stamina == 0) {
          uber::set(Uniform_Alpha, 1.0f);
          uber::set(Uniform_Color, Red);
       }
-      for (int i = 0; i < game->maindude.status.staminaMax; ++i) {
+      for (int i = 0; i < game.maindude.status.staminaMax; ++i) {
          
          auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
          uber::set(Uniform_ModelMatrix, model);
-         uber::bindTexture(Uniform_DiffuseTexture, gameTextureHandle(i < game->maindude.status.stamina ? GameTextures_GemFilled : GameTextures_GemEmpty));
-         render::meshRender(g_game->meshUncentered);
+         uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.textures[i < game.maindude.status.stamina ? GameTextures_GemFilled : GameTextures_GemEmpty].handle);
+         render::meshRender(Engine().graphics.meshUncentered);
 
          staminaCorner.x += gemSize.x + gemSpace;
       }
 
       uber::resetToDefault();   
-      if (game->maindude.status.stamina != 0) {
+      if (game.maindude.status.stamina != 0) {
          uber::set(Uniform_Alpha, 0.5f);
          //uber::set(Uniform_Color, Red);
       }
 
-      for (int i = 0; i < game->maindude.status.healthMax; ++i) {
+      for (int i = 0; i < game.maindude.status.healthMax; ++i) {
 
          auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
          uber::set(Uniform_ModelMatrix, model);
-         uber::bindTexture(Uniform_DiffuseTexture, gameTextureHandle(i < game->maindude.status.health ? GameTextures_HeartFilled : GameTextures_HeartEmpty));
-         render::meshRender(g_game->meshUncentered);
+         uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.textures[i < game.maindude.status.health ? GameTextures_HeartFilled : GameTextures_HeartEmpty].handle);
+         render::meshRender(Engine().graphics.meshUncentered);
 
          staminaCorner.x += gemSize.x + gemSpace;
       }
    }
 
 
-   if (game->data.imgui.showMovementDebugging) {
+   if (game.DEBUG.showMovementDebugging) {
       const static f32 moveTargetDist = 50.0f;
       const static f32 aimTargetDist = 100.0f;
-      auto &io = game->data.io;
-      auto &dude = game->maindude;
+      auto &io = game.io;
+      auto &dude = game.maindude;
 
       auto pos = dude.phy.pos - Float2{(f32)vp.x, (f32)vp.y};
 
@@ -1440,10 +1127,10 @@ void renderUI(Game* game) {
    }
 }
 
-static void renderOutput(Game* game) {
-   auto& vp = game->cam.viewport;
+static void renderOutput(GameState& game, FBO& output) {
+   auto& vp = game.camera.viewport;
 
-   render::fboBind(game->output);
+   render::fboBind(output);
 
    uber::resetToDefault();
    render::clear(Black);
@@ -1451,59 +1138,116 @@ static void renderOutput(Game* game) {
    render::setBlendMode(BlendMode_NORMAL);
    uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (f32)vp.w, (f32)vp.h }));
 
-   uber::bindTexture(Uniform_DiffuseTexture, game->litScene.out[0].handle);
-   render::meshRender(game->meshUncentered);
+   uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.litScene.out[0].handle);
+   render::meshRender(Engine().graphics.meshUncentered);
 
-   uber::bindTexture(Uniform_DiffuseTexture, game->UI.out[0].handle);
-   render::meshRender(game->meshUncentered);
+   uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.UI.out[0].handle);
+   render::meshRender(Engine().graphics.meshUncentered);
 
-   if (game->state == GameState_YOUDIED) {
+   if (game.mode.type == ModeType_YOUDIED) {
       render::setBlendMode(BlendMode_MULITPLY);
-      auto ratio = cosInterp(1.0f - ((f32)game->youdied.clock / 3000));
+      auto ratio = cosInterp(1.0f - ((f32)game.mode.clock / 3000));
       uber::set(Uniform_Color, ColorRGBAf{ 1.0f, ratio, ratio, 1.0f });
       uber::set(Uniform_ColorOnly, true);
-      render::meshRender(game->meshUncentered);
+      render::meshRender(Engine().graphics.meshUncentered);
    }
 }
 
-static void _renderScene(Game* game) {
-   auto& c = ConstantsGet();
+void gameDraw(GameState& g, FBO& output) {
+   auto& c = Constants();
 
-   render::shaderSetActive(game->shader);
+   render::shaderSetActive(Engine().graphics.shader);
    uber::resetToDefault(true);
-   
-   renderUnlitScene(game);
-   renderLightLayer(game);
-   renderLitScene(game);
-   renderUI(game);
 
-   renderOutput(game);
+   renderUnlitScene(g);
+   renderLightLayer(g);
+   renderLitScene(g);
+   renderUI(g);
+
+   renderOutput(g, output);
 
    render::fboBind({});
 }
 
+struct FrameData {
+   DynamicArray<PhyObject*> phyObjs;
+};
 
+void buildFrameData(GameState&game, FrameData& fd) {
+   fd.phyObjs.clear();
 
-void gameRender(Game*game) {
-   
-   _renderScene(game);
-   if (game->reloadShader) {
-      if (!_reloadShader(game)) {
-         ImGui::OpenPopup("shadererr");
+   fd.phyObjs.push_back(&game.maindude.phy);
+   for (auto && d : game.baddudes) {
+      if (dudeAlive(d)) {
+         fd.phyObjs.push_back(&d.phy);
       }
    }
 
-   if (ImGui::BeginPopupModal("shadererr")) {
-      ImGui::Text("Shader reload failed");
-      ImGui::EndPopup();
+
+   if (fd.phyObjs.size() == 1) {
+      ++game.waveSize;
+      for (int i = 0; i < game.waveSize; ++i) {
+         DEBUG_gameSpawnDude(game);
+      }
    }
 }
 
 
+void gameUpdateMilliStep(GameState& game, FrameData& fd) {
+   //static Milliseconds ms = 0;
+   //if (ms++ % 2 != 0) {
+   //   return;
+   //}
+
+   dudeUpdateState(game.maindude);
+
+   if (dudeAlive(game.maindude)) {
+      dudeApplyInput(game, game.maindude);
+   }
+
+   dudeUpdateRotation(game.maindude);
+   dudeUpdateVelocity(game.maindude);
+
+   mainDudeCheckAttackCollisions(game.maindude, game.baddudes);
+
+   for (auto && d : game.baddudes) {
+      dudeUpdateState(d);
+
+      if (dudeAlive(d)) {
+         dudeUpdateBehavior(d);
+      }
+
+      dudeUpdateRotation(d);
+      dudeUpdateVelocity(d);
+
+      if (dudeAlive(d)) {
+         badDudeCheckAttackCollision(game, d, game.maindude);
+      }
+   }
+
+   updatePhyPositions(fd.phyObjs);
+
+   if (game.mode.type == ModeType_YOUDIED) {
+      if (++game.mode.clock > 3000) {
+         _gameInitNew();
+      }
+   }
+}
 
 
-bool gameProcessEvent(Game*game, SDL_Event* event) {
-   auto &io = game->data.io;
+void gameBeginFrame(GameState& g) {
+   auto& mPos = ImGui::GetIO().MousePos;
+   auto& io = g.io;
+   io.mousePos = Coords::fromScreen({ mPos.x, mPos.y }, g);
+
+   // update buttons
+   for (GameButton b = 0; b < GameButton_COUNT; ++b) {
+      io.buttonPressed[b] = io.buttonReleased[b] = false;
+   }
+}
+
+bool gameProcessEvent(GameState& g, SDL_Event* event) {
+   auto &io = g.io;
 
    switch (event->type) {
    case SDL_KEYUP:
@@ -1572,13 +1316,13 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
    }  break;
 
    case SDL_MOUSEMOTION:
-      game->lastMouseMove = appGetTime();
-      game->mouseActive = true;
+      g.lastMouseMove = appGetTime();
+      g.mouseActive = true;
       break;
 
    case SDL_MOUSEBUTTONDOWN:
    case SDL_MOUSEBUTTONUP: {
-      if (game->data.imgui.mouseHovering) {
+      if (g.mouseActive) {
          bool pressed = event->type == SDL_MOUSEBUTTONDOWN;
          if (!io.buttonDown[GameButton_RT] && pressed) {
             io.buttonPressed[GameButton_RT] = true;
@@ -1654,114 +1398,38 @@ bool gameProcessEvent(Game*game, SDL_Event* event) {
    return false;
 }
 
-void gameHandleInput(Game*game) {
-   auto& mPos = ImGui::GetIO().MousePos;
-   auto& io = game->data.io;
-   io.mousePos = Coords::fromScreen({ mPos.x, mPos.y });
-
-   // update buttons
-   for (GameButton b = 0; b < GameButton_COUNT; ++b) {
-      io.buttonPressed[b] = io.buttonReleased[b] = false;
-   }
-}
-
-struct FrameData {
-   DynamicArray<PhyObject*> phyObjs;
-};
-
-void buildFrameData(Game*game, FrameData& fd) {
-   fd.phyObjs.clear();
-
-   fd.phyObjs.push_back(&game->maindude.phy);
-   for (auto && d : game->baddudes) {
-      if (dudeAlive(d)) {
-         fd.phyObjs.push_back(&d.phy);
-      }
-   }
-
-
-   if (fd.phyObjs.size() == 1) {
-      ++game->waveSize;
-      for (int i = 0; i < game->waveSize; ++i) {
-         DEBUG_gameSpawnDude(game);
-      }
-   }
-}
-
-
-void gameUpdateMilliStep(Game* game, FrameData& fd) {
-   //static Milliseconds ms = 0;
-   //if (ms++ % 2 != 0) {
-   //   return;
-   //}
-
-   dudeUpdateState(game->maindude);
-
-   if (dudeAlive(game->maindude)) {
-      dudeApplyInput(game->maindude);
-   }
-
-   dudeUpdateRotation(game->maindude);
-   dudeUpdateVelocity(game->maindude);
-
-   mainDudeCheckAttackCollisions(game->maindude, game->baddudes);
-
-   for (auto && d : game->baddudes) {
-      dudeUpdateState(d);
-
-      if (dudeAlive(d)) {
-         dudeUpdateBehavior(d);
-      }
-
-      dudeUpdateRotation(d);
-      dudeUpdateVelocity(d);
-
-      if (dudeAlive(d)) {
-         badDudeCheckAttackCollision(d, game->maindude);
-      }
-   }
-
-   updatePhyPositions(fd.phyObjs);
-
-   if (game->state == GameState_YOUDIED) {
-      if (++game->youdied.clock > 3000) {
-         _gameInitNew();
-      }
-   }
-}
-
-
-void gameUpdate(Game* game) {   
+void gameUpdate(GameState& g) {
    auto time = appGetTime();
-   auto dt = time - game->lastUpdate;
+   auto dt = time - g.lastUpdate;
    auto ms = dt.toMilliseconds();
 
-   auto&vp = game->cam.viewport;
-   auto&dudePos = game->maindude.phy.pos;
-   auto&dudeFace = game->maindude.mv.facing;   
+   auto&vp = g.camera.viewport;
+   auto&dudePos = g.maindude.phy.pos;
+   auto&dudeFace = g.maindude.mv.facing;
 
    if (ms > 32) {
       // something bad happened and we spiked hard
       ms = 32;
-      game->lastUpdate = time - timeMillis(ms);
+      g.lastUpdate = time - timeMillis(ms);
    }
 
    // build physics system
-   
+
    static FrameData fd;
-   buildFrameData(game, fd);
+   buildFrameData(g, fd);
 
    for (Milliseconds i = 0; i < ms; ++i) {
-      gameUpdateMilliStep(game, fd);
+      gameUpdateMilliStep(g, fd);
    }
 
-   vp.x = clamp(dudePos.x - (vp.w / 2), 0, game->map.size.x - vp.w);
-   vp.y = clamp(dudePos.y - (vp.h / 2), 0, game->map.size.y - vp.h);
+   vp.x = clamp(dudePos.x - (vp.w / 2), 0, g.map.size.x - vp.w);
+   vp.y = clamp(dudePos.y - (vp.h / 2), 0, g.map.size.y - vp.h);
 
-   game->lastUpdate += timeMillis(ms);
+   g.lastUpdate += timeMillis(ms);
 
    // imgui output
-   
-   gameDoUI(game);
+
+   //gameDoUI(g);
 }
+
 

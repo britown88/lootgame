@@ -21,10 +21,16 @@
 #include "game.h"
 #include "lpp.h"
 
+struct GameInstance {
+   GameState state;
+   FBO outputFbo;
+};
+
 
 struct App {
+   DynamicArray<GameInstance> instances;
+
    bool running = false;
-   Game* game = nullptr;
 
    ImFontAtlas* fontAtlas;
 
@@ -48,13 +54,11 @@ static App* g_app = nullptr;
 
 App* appCreate(AppConfig const& config) {
    auto out = new App();
-   out->game = gameCreate(config.assetFolder);
-   g_app = out;
+   g_app = out;   
    return out;
 }
 
 void appDestroy(App* app) {
-   gameDestroy(app->game);
 
    ImGui_ImplOpenGL3_Shutdown();
    ImGui_ImplSDL2_Shutdown();
@@ -143,7 +147,13 @@ static void _windowCreate(App* app, WindowConfig const& info) {
 
 void appCreateWindow(App* app, WindowConfig const& info) {
    _windowCreate(app, info);
-   gameBegin(app->game);
+
+   Engine().graphics.build();
+
+   GameInstance mainInstance;
+   mainInstance.outputFbo = render::fboBuild(Constants().resolution);
+
+   app->instances.push_back(mainInstance);
 
    app->running = true;
 }
@@ -165,7 +175,7 @@ void appPollEvents(App* app) {
          case SDL_MOUSEBUTTONDOWN:
          case SDL_MOUSEMOTION:
          case SDL_MOUSEWHEEL:
-            gameHandled = gameProcessEvent(app->game, &event) || gameHandled;
+            gameHandled = gameProcessEvent(app->instances[0].state, &event) || gameHandled;
             break;
          }
       }
@@ -177,7 +187,7 @@ void appPollEvents(App* app) {
          case SDL_KEYUP:
          case SDL_TEXTEDITING:
          case SDL_TEXTINPUT:
-            gameHandled = gameProcessEvent(app->game, &event) || gameHandled;
+            gameHandled = gameProcessEvent(app->instances[0].state, &event) || gameHandled;
             break;
          }
       }
@@ -201,7 +211,7 @@ void appPollEvents(App* app) {
 
       // finally pass everything else through to the game to handle as it will
       if (!gameHandled) {
-         gameProcessEvent(app->game, &event);
+         gameProcessEvent(app->instances[0].state, &event);
       }
    }
 }
@@ -209,7 +219,7 @@ void appPollEvents(App* app) {
 
 
 
-static void _beginFrame(App* app) {
+static void _beginUIFrame(App* app) {
    ImGui_ImplOpenGL3_NewFrame();
    ImGui_ImplSDL2_NewFrame(app->sdlWnd);
    ImGui::NewFrame();
@@ -219,10 +229,7 @@ static void _renderFrame(App* app) {
 
    SDL_GL_MakeCurrent(app->sdlWnd, app->sdlCtx);
 
-   gameRender(app->game);
-
-   auto data = gameDataGet();
-   auto ccolor = data->imgui.bgClearColor;
+   auto ccolor = Engine().bgClearColor;
    auto& io = ImGui::GetIO();
 
    ImGui::Render();
@@ -261,10 +268,14 @@ static void _updateDialogs(App* app) {
 }
 
 static void _updateFrame(App* app) {
-   gameUpdate(app->game);
-   if (gameDataGet()->imgui.showUI) {
+   auto& i = app->instances[0];
+   gameUpdate(i.state);
+   gameDraw(i.state, i.outputFbo);
+   gameDoUIWindow(i.state, i.outputFbo);
+
+   //if (gameDataGet()->imgui.showUI) {
       _updateDialogs(app);
-   }
+   //}
    
 }
 
@@ -274,10 +285,11 @@ static void _updateFrame(App* app) {
 void appStep(App* app) {
    lppSync();
 
-   gameHandleInput(app->game);
+   auto& g = app->instances[0];
+   gameBeginFrame(g.state);
    appPollEvents(app);
 
-   _beginFrame(app);
+   _beginUIFrame(app);
 
    _updateFrame(app);
    _renderFrame(app);

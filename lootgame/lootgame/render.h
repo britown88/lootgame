@@ -34,12 +34,12 @@ typedef u16 TextureFlag;
 
 struct Texture {
    Int2 sz;
-   TextureHandle handle;
+   TextureHandle handle = 0;
 };
 
 struct FBO {
    Int2 sz;
-   FBOHandle fbo;
+   FBOHandle fbo = 0;
    DynamicArray<Texture> out;
 };
 
@@ -56,9 +56,9 @@ struct Vertex {
 };
 
 struct Mesh {
-   VBOHandle handle;
-   u32 vCount;
-   i32 vSize;
+   VBOHandle handle = 0;
+   u32 vCount = 0;
+   i32 vSize = 0;
 };
 
 enum BlendMode {
@@ -104,6 +104,10 @@ namespace uber {
 
 
 namespace render{
+
+   // wrap srgb toggles for imgui drawlist
+   void enableSRGB();
+   void disableSRGB();
 
    void clear(ColorRGBAf const& c);
    void viewport(Recti const& r);

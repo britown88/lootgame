@@ -3,8 +3,10 @@
 
 #include <imgui.h>
 #include <SDL2/SDL.h>
-#include "IconsFontAwesome.h"
 
+#include <functional>
+
+#include "IconsFontAwesome.h"
 #include "scf.h"
 
 static ImGuiWindowFlags BorderlessFlags =
@@ -175,12 +177,11 @@ static bool _doSCFTest(SCFTestState& state) {
    return p_open;
 }
 
-static void _mainMenu( Game* g) {
-   auto game = gameDataGet();
+static void _mainMenu() {
    if (ImGui::BeginMenuBar()) {
       if (ImGui::BeginMenu("Debug")) {
 
-         ImGui::ColorEdit4("Clear Color", (float*)&game->imgui.bgClearColor);
+         ImGui::ColorEdit4("Clear Color", (float*)&Engine().bgClearColor);
 
          if (ImGui::MenuItem("Dialog Stats")) {
             appAddGUI("DialogStats", [=]() {
@@ -239,33 +240,25 @@ static void _mainMenu( Game* g) {
    }
 }
 
-#include <functional>
-#include <GL/glew.h>
-
-static void _renderViewerFBO(Game* game) {
-
-   auto fbo = gameGetOutputFBO(game);
-
-
+static void _renderViewerFBO(GameState& g, FBO& output) {
    auto sz = ImGui::GetContentRegionAvail();
 
-   auto rect = getProportionallyFitRect(fbo.sz, { (i32)sz.x, (i32)sz.y });
+   auto rect = getProportionallyFitRect(output.sz, { (i32)sz.x, (i32)sz.y });
 
    ImDrawList* draw_list = ImGui::GetWindowDrawList();
    const ImVec2 p = ImGui::GetCursorScreenPos();
    auto a = ImVec2(p.x + rect.x, p.y + rect.y);
    auto b = ImVec2(p.x + rect.x + rect.w, p.y + rect.y + rect.h);
 
-   gameDataGet()->imgui.vpScreenArea = { a.x, a.y, b.x - a.x, b.y - a.y };
+   g.vpScreenArea = { a.x, a.y, b.x - a.x, b.y - a.y };
 
    draw_list->AddRectFilled(a, b, IM_COL32_BLACK);
-   draw_list->AddCallback([](auto, auto) { glEnable(GL_FRAMEBUFFER_SRGB); }, nullptr);
-   draw_list->AddImage( (ImTextureID)(iPtr)fbo.out[0].handle, a, b );
-   draw_list->AddCallback([](auto, auto) { glDisable(GL_FRAMEBUFFER_SRGB); }, nullptr);
+   draw_list->AddCallback([](auto, auto) { render::enableSRGB();  }, nullptr);
+   draw_list->AddImage( (ImTextureID)(iPtr)output.out[0].handle, a, b );
+   draw_list->AddCallback([](auto, auto) { render::disableSRGB(); }, nullptr);
 }
 
-static void _showFullScreenViewer(Game* g) {
-   auto game = gameDataGet();
+static void _showFullScreenViewer(GameState& g, FBO& output) {
    auto sz = ImGui::GetIO().DisplaySize;
 
    auto &style = ImGui::GetStyle();
@@ -280,16 +273,15 @@ static void _showFullScreenViewer(Game* g) {
    ImGui::SetNextWindowSize(vp->Size, ImGuiCond_Always);
 
    if (ImGui::Begin("GameWindow", nullptr, BorderlessFlags)) {
-      _renderViewerFBO(g);
-      game->imgui.mouseHovering = true;
+      _renderViewerFBO(g, output);
+      //g.mouseActive = true;
    }
    ImGui::End();
 
    ImGui::PopStyleVar(3);
 }
 
-static void _showWindowedViewer(Game* g) {
-   auto game = gameDataGet();
+static void _showWindowedViewer(GameState& g, FBO& output) {
 
    //auto sz = ImGui::GetIO().DisplaySize;
    //ImGui::SetNextWindowSize(ImVec2(sz.x / 2.0f, sz.y / 2.0f), ImGuiCond_Appearing);
@@ -302,9 +294,9 @@ static void _showWindowedViewer(Game* g) {
          }
       }
 
-      _renderViewerFBO(g);
+      _renderViewerFBO(g, output);
 
-      game->imgui.mouseHovering = ImGui::IsWindowHovered();
+      //g.mouseActive = ImGui::IsWindowHovered();
 
 
    }
@@ -312,20 +304,20 @@ static void _showWindowedViewer(Game* g) {
 
 }
 
-static void _doUIDebugger(Game* g) {
+static void _doUIDebugger(GameState& g) {
    ImGui::SetNextWindowSize(ImVec2(400, 1000), ImGuiCond_FirstUseEver);
    if (ImGui::Begin("Game Debugger", nullptr)) {
 
       
       if (ImGui::Button("Reload Shaders", ImVec2(ImGui::GetContentRegionAvailWidth(), 0))) {
-         gameReloadShaders(g);
+         //gameReloadShaders(g);
       }
       if (ImGui::Button("Spawn Dude", ImVec2(ImGui::GetContentRegionAvailWidth(), 0))) {
-         DEBUG_gameSpawnDude(g);
+         //DEBUG_gameSpawnDude(g);
       }
 
       
-      auto&io = gameDataGet()->io;
+      auto&io = g.io;
 
       ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
       if (ImGui::CollapsingHeader("Input")) {
@@ -341,14 +333,13 @@ static void _doUIDebugger(Game* g) {
 
       ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
       if (ImGui::CollapsingHeader("Fiddling")) {
-         auto& c = ConstantsGet();
-         auto& g = *gameDataGet();
+         auto& c = Constants();
 
-         ImGui::Checkbox("Show Movement UI", &g.imgui.showMovementDebugging);
-         ImGui::Checkbox("Show Collision Checks", &g.imgui.showCollisionDebugging);
+         ImGui::Checkbox("Show Movement UI", &g.DEBUG.showMovementDebugging);
+         ImGui::Checkbox("Show Collision Checks", &g.DEBUG.showCollisionDebugging);
 
 
-         ImGui::SliderFloat("Ambient Light", &g.imgui.ambientLight, 0.0f, 1.0f);
+         ImGui::SliderFloat("Ambient Light", &g.DEBUG.ambientLight, 0.0f, 1.0f);
       }
 
       
@@ -358,18 +349,10 @@ static void _doUIDebugger(Game* g) {
    ImGui::End();
 }
 
-void gameDoUI(Game* g) {
-   auto game = gameDataGet();
-   if (ImGui::IsKeyPressed(SDL_SCANCODE_F1)) {
-      game->imgui.showUI = !game->imgui.showUI;
-   }
-   
-
-   if (game->imgui.showUI) {
-      auto game = gameDataGet();
+void gameDoUIWindow(GameState& g, FBO& output) {
+   if (g.fullscreen) {
       auto sz = ImGui::GetIO().DisplaySize;
       auto &style = ImGui::GetStyle();
-
 
       auto vp = ImGui::GetMainViewport();
 
@@ -378,7 +361,7 @@ void gameDoUI(Game* g) {
       ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize, ImGuiCond_Always);
 
       if (ImGui::Begin("Root", nullptr, BorderlessFlags | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBringToFrontOnFocus)) { 
-         _mainMenu(g);
+         _mainMenu();
          ImGui::BeginChild("content");
          ImGui::DockSpace(ImGui::GetID("dockspace"));
          ImGui::EndChild();
@@ -386,10 +369,10 @@ void gameDoUI(Game* g) {
       ImGui::End();
 
       _doUIDebugger(g);
-      _showWindowedViewer(g);
+      _showWindowedViewer(g, output);
    }
    else {
-      _showFullScreenViewer(g);
+      _showFullScreenViewer(g, output);
 
       if (ImGui::IsKeyPressed(SDL_SCANCODE_ESCAPE)) {
          appClose();
