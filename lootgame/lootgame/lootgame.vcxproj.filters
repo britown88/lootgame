@@ -84,6 +84,15 @@
     <ClCompile Include="assets.cpp">
       <Filter>Source Files\game</Filter>
     </ClCompile>
+    <ClCompile Include="coords.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="game_draw.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="mode_action.cpp">
+      <Filter>Source Files\app</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h">
@@ -130,6 +139,12 @@
     </ClInclude>
     <ClInclude Include="assets.h">
       <Filter>Header Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="ui.h">
+      <Filter>Header Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="coords.h">
+      <Filter>Header Files\utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

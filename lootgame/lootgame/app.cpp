@@ -18,6 +18,7 @@
 #include "fa_merged.cpp"
 
 #include "render.h"
+#include "ui.h"
 #include "game.h"
 #include "lpp.h"
 
@@ -148,12 +149,13 @@ static void _windowCreate(App* app, WindowConfig const& info) {
 void appCreateWindow(App* app, WindowConfig const& info) {
    _windowCreate(app, info);
 
-   Engine().graphics.build();
+   Graphics.build();
 
    GameInstance mainInstance;
-   mainInstance.outputFbo = render::fboBuild(Constants().resolution);
+   mainInstance.outputFbo = render::fboBuild(Const.resolution);
 
    app->instances.push_back(mainInstance);
+   gameStartActionMode(app->instances[0].state);
 
    app->running = true;
 }
@@ -229,7 +231,7 @@ static void _renderFrame(App* app) {
 
    SDL_GL_MakeCurrent(app->sdlWnd, app->sdlCtx);
 
-   auto ccolor = Engine().bgClearColor;
+   auto ccolor = Engine.bgClearColor;
    auto& io = ImGui::GetIO();
 
    ImGui::Render();

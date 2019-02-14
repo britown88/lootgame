@@ -4,33 +4,67 @@
 #include "render.h"
 #include "assets.h"
 #include "phy.h"
+#include "coords.h"
 #include <vector>
 #include <string>
 
 typedef struct GameState GameState;
 
-typedef Float2 WorldCoords;
-typedef Float2 VPCoords;
-typedef Float2 ScreenCoords;
+struct GraphicObjects {
+   ShaderHandle shader = 0;
 
-// Coords is syntax sugar for keeping track of the 3 major coordinate systems of the game
-// Uses the camera in global Game struct for world coord conversions
-struct Coords {
-   union {
-      WorldCoords world;
-      struct {
-         float x, y;
-      };
-   };
+   Texture textures[GameTexture_COUNT];
 
-   ScreenCoords toScreen(GameState& g);
-   VPCoords toViewport(GameState& g);
-   WorldCoords toWorld();
+   Mesh mesh, meshUncentered;
+   FBO
+      unlitScene,
+      lightLayer,
+      litScene,
+      UI;
 
-   static Coords fromScreen(ScreenCoords const& c, GameState& g);
-   static Coords fromViewport(VPCoords const& c, GameState& g);
-   static Coords fromWorld(WorldCoords const& c);
+   void build();
+   bool reloadShaders();
 };
+
+
+struct EngineConstants {
+   Int2 resolution = { 1920, 1080 };
+
+   f32 floorHeight = 0.0f;
+   f32 dudeHeight = 0.1f;
+   f32 lightHeight = 0.2f;
+   f32 lightLinearPortion = 0.0f;
+   f32 lightSmoothingFactor = 0.4f;
+   f32 lightIntensity = 100.0f;
+
+   f32 dudeAcceleration = 0.005f;
+   f32 dudeRotationSpeed = 0.010f;
+   f32 dudeMoveSpeed = 0.100f;
+   f32 dudeDashSpeed = 0.300f;
+   f32 dudeSpeedCapEasing = 0.0003f;
+   f32 dudeBackwardsPenalty = 0.250f;
+   f32 dudeDashDistance = 50.0f;
+   f32 dudeKnockbackDistance = 0.0f;
+
+   Milliseconds dudePostDashCooldown = 100;
+   Milliseconds dudeBaseStaminaTickRecoveryTime = 500;
+
+   Milliseconds cooldownOnDamagedStaminaEmpty = 1000;
+   Milliseconds cooldownOnDamagedStamina = 250;
+   Milliseconds cooldownOnDamagedHealth = 500;
+};
+
+
+struct EngineState {   
+   ColorRGBAf bgClearColor = { 0.45f, 0.55f, 0.60f, 1.0f };  // clear color behind all imgui windows
+   bool fullScreen = false;
+   bool reloadShaders = false;
+};
+
+extern EngineConstants Const;
+extern EngineState Engine;
+extern GraphicObjects Graphics;
+extern Texture* Textures;
 
 typedef enum {
    GameButton_LEFT = 0,
@@ -69,20 +103,6 @@ struct GameCamera {
    Rectf viewport;
 };
 
-
-struct EngineConstants {
-   Int2 resolution = { 1920, 1080 };
-};
-EngineConstants &Constants();
-
-struct EngineState {
-   GraphicObjects graphics;
-   ColorRGBAf bgClearColor = { 0.45f, 0.55f, 0.60f, 1.0f };  // clear color behind all imgui windows
-   bool fullScreen = false;
-   bool reloadShaders = false;
-};
-
-EngineState &Engine();
 
 
 struct Map {
@@ -233,7 +253,6 @@ struct GameState {
 
    Time lastMouseMove;
    Time lastUpdate;
-   bool mouseActive;
 
    int waveSize = 1;
 };
@@ -246,4 +265,7 @@ bool gameProcessEvent(GameState& g, SDL_Event* event);
 void gameUpdate(GameState& g);
 void gameDraw(GameState& g, FBO& output);
 
-void gameDoUIWindow(GameState& g, FBO& output);
+bool dudeAlive(Dude&d);
+
+
+void gameStartActionMode(GameState &g);

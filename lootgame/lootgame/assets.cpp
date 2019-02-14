@@ -6,6 +6,7 @@
 #include <assert.h>
 
 
+
 static int _reloadShader(GraphicObjects &gfx) {
 
    auto vertex = fileReadString("assets/vertex.glsl");
@@ -82,7 +83,7 @@ void GraphicObjects::build() {
    mesh = render::meshBuild(vbo, 6);
    meshUncentered = render::meshBuild(vboUncentered, 6);
 
-   auto& res = Constants().resolution;
+   auto& res = Const.resolution;
    unlitScene = render::fboBuild(res, {
       render::textureBuild(res, TextureFlag_FBODefaults),   // diffuse
       render::textureBuild(res, TextureFlag_FBODefaults)    // normals
@@ -90,7 +91,6 @@ void GraphicObjects::build() {
    lightLayer = render::fboBuild(res);
    litScene = render::fboBuild(res);
    UI = render::fboBuild(res);
-   //game->output = render::fboBuild(res);
 }
 
 bool GraphicObjects::reloadShaders() {

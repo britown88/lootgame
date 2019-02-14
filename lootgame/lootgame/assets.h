@@ -22,19 +22,4 @@ enum GameTextures_ {
 };
 typedef u32 GameTexture;
 
-struct GraphicObjects {
-   ShaderHandle shader = 0;
-
-   Texture textures[GameTexture_COUNT];
-
-   Mesh mesh, meshUncentered;
-   FBO
-      unlitScene,
-      lightLayer,
-      litScene,
-      UI;
-
-   void build();
-   bool reloadShaders();
-};
 

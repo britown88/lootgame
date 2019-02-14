@@ -13,221 +13,13 @@
 
 #define AXIS_DEADZONE 0.25f
 #define AXIS_AIM_DEADZONE 0.5f
-#define DUDE_COUNT 1
-
-ScreenCoords Coords::toScreen(GameState& g) {
-   auto& vpScreen = g.vpScreenArea;
-   auto& vpCamera = g.camera.viewport;
-
-   return {
-      vpScreen.x + ((world.x - vpCamera.x) / vpCamera.w) * vpScreen.w,
-      vpScreen.y + ((world.y - vpCamera.y) / vpCamera.h) * vpScreen.h
-   };
-}
-VPCoords Coords::toViewport(GameState& g) {
-   auto& vpCamera = g.camera.viewport;
-   return {
-      world.x - vpCamera.x,
-      world.y - vpCamera.y
-   };
-}
-WorldCoords Coords::toWorld() {
-   return world;
-}
-
-Coords Coords::fromScreen(ScreenCoords const& c, GameState& g) {
-   auto& vpScreen = g.vpScreenArea;
-   auto& vpCamera = g.camera.viewport;
-
-   return {
-      vpCamera.x + (c.x - vpScreen.x) / vpScreen.w * vpCamera.w,
-      vpCamera.y + (c.y - vpScreen.y) / vpScreen.h * vpCamera.h
-   };
-}
-Coords Coords::fromViewport(VPCoords const& c, GameState& g) {
-   auto& vpCamera = g.camera.viewport;
-   return {
-      vpCamera.x + c.x,
-      vpCamera.y + c.y
-   };
-}
-Coords Coords::fromWorld(WorldCoords const& c) {
-   return { c };
-}
 
 
+EngineConstants Const;
+EngineState Engine;
+GraphicObjects Graphics;
+Texture* Textures = Graphics.textures;
 
-
-static EngineConstants g_const;
-EngineConstants &Constants() { return g_const; }
-
-static EngineState g_eng;
-EngineState &Engine() { return g_eng; }
-
-   
-
-
-
-static MoveSet _createMoveSet() {
-   MoveSet out;
-   out.swings.resize(3);
-   Rectf hitbox = { -2.0f, -4.5f, 28, 9 };
-
-   out.swings[0].swipeAngle =    120.0f;
-   out.swings[0].lungeSpeed =    0.3f;
-   out.swings[0].lungeDist =     0.0f;
-   out.swings[0].windupDur =     150;
-   out.swings[0].swingDur =      250;
-   out.swings[0].cooldownDur =   300;
-   out.swings[0].hitbox = hitbox;
-
-   out.swings[1] = out.swings[0];
-   out.swings[1].windupDur = 50;
-   out.swings[1].swingDur = 150;
-   out.swings[1].cooldownDur = 500;
-
-   out.swings[2] = out.swings[0];
-   out.swings[2].windupDur = 50;
-   out.swings[2].swingDur = 100;
-   out.swings[2].cooldownDur = 200;
-
-   //out.swings[1].swipeAngle = 180.0f;
-   //out.swings[1].lungeSpeed = 0.25f;
-   //out.swings[1].windupDur = 100;
-   //out.swings[1].swingDur = 250;
-   //out.swings[1].cooldownDur = 250;
-   //out.swings[1].hitbox = hitbox;
-
-   //out.swings[2].swipeAngle = 0.0f;
-   //out.swings[2].lungeSpeed = 0.5f;
-   //out.swings[2].windupDur = 100;
-   //out.swings[2].swingDur = 250;
-   //out.swings[2].cooldownDur = 100;
-   //out.swings[2].hitbox = hitbox;
-
-   return out;
-}
-
-f32 cFloorHeight = 0.0f;
-f32 cDudeHeight = 0.1f;
-f32 cLightHeight = 0.2f;
-f32 cLightLinearPortion =     0.0f;
-f32 cLightSmoothingFactor =   0.4f;
-f32 cLightIntensity =         100.0f;
-
-f32 cDudeAcceleration =     0.005f;
-f32 cDudeRotationSpeed =    0.010f;
-f32 cDudeMoveSpeed =        0.100f;
-f32 cDudeDashSpeed =        0.300f;
-f32 cDudeSpeedCapEasing =   0.0003f;
-f32 cDudeBackwardsPenalty = 0.250f;
-f32 cDudeDashDistance =     50.0f;
-f32 cDudeKnockbackDistance = 0.0f;
-
-Milliseconds cDudePostDashCooldown = 100;
-Milliseconds cDudeBaseStaminaTickRecoveryTime = 500;
-
-Milliseconds cCooldownOnDamagedStaminaEmpty = 1000;
-Milliseconds cCooldownOnDamagedStamina = 250;
-Milliseconds cCooldownOnDamagedHealth = 500;
-
-
-static void uiEditDude(Dude& dude) {
-   if (ImGui::Begin("Dude Editor", 0)) {
-
-      ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
-      if (ImGui::CollapsingHeader("Lighting")) {
-         ImGui::Indent();
-
-         //ImGui::InputFloat("Floor Height", &cFloorHeight, 0.01f, 0.1f, 4);
-         //ImGui::InputFloat("Dude Height", &cDudeHeight, 0.01f, 1.0f, 4);
-         //ImGui::InputFloat("Light Height", &cLightHeight, 0.01f, 1.0f, 4);
-
-         ImGui::DragFloat("Floor Height", &cFloorHeight, 0.01f, 0.0f, 2.0f);
-         ImGui::DragFloat("Dude Height", &cDudeHeight, 0.01f, 0.0f, 2.0f);
-         ImGui::DragFloat("Light Height", &cLightHeight, 0.01f, 0.0f, 2.0f);
-
-         ImGui::DragFloat("Linear Portion", &cLightLinearPortion, 0.1f, 0.0f, 1.0f);
-         ImGui::DragFloat("Smoothness Factor", &cLightSmoothingFactor, 0.1f, 0.0f, 50.0f);
-         ImGui::DragFloat("Intensity Scalar", &cLightIntensity, 0.1f, 1.0f, 100.0f);
-
-
-
-         ImGui::Unindent();
-      }
-
-      ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
-      if (ImGui::CollapsingHeader("Movement")) {
-         ImGui::Indent();
-
-         //ImGui::InputFloat("Acceleration", &cDudeAcceleration, 0.001f, 0.01f, 4);
-         ImGui::InputFloat("Rotation Speed", &cDudeRotationSpeed, 0.01f, 0.1f, 4);
-         if (ImGui::InputFloat("Move Speed", &dude.phy.maxSpeed, 0.01f, 0.1f, 4)) {
-            cDudeMoveSpeed = dude.phy.maxSpeed;
-         }
-         ImGui::InputFloat("Dash Speed", &cDudeDashSpeed, 0.01f, 0.1f, 4);
-         ImGui::InputFloat("Dash Distance", &cDudeDashDistance, 10.0f, 10.0f, 0);
-         ImGui::InputFloat("Knockback Distance", &cDudeKnockbackDistance, 10.0f, 10.0f, 0);
-         ImGui::InputFloat("Speed Cap Accel", &cDudeSpeedCapEasing, 0.001f, 0.01f, 4);
-         ImGui::InputFloat("Backward Penalty", &cDudeBackwardsPenalty, 0.1f, 0.01f, 4);
-
-         f32 ratio = dude.mv.moveSpeedCap / 0.5f;
-         ImGui::ProgressBar(ratio, ImVec2(-1, 0), "Speed Cap");
-
-         ImGui::Unindent();
-      }
-
-      ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
-      if (ImGui::CollapsingHeader("Timing")) {
-         ImGui::Indent();
-
-         Milliseconds shrt = 50, lng = 100;
-         ImGui::InputScalar("Post-Dash CD", ImGuiDataType_U64, &cDudePostDashCooldown, &shrt, &lng);
-         ImGui::InputScalar("Stamina Base Tick Speed", ImGuiDataType_U64, &cDudeBaseStaminaTickRecoveryTime, &shrt, &lng);
-
-         ImGui::InputScalar("Damaged Stamina Empty CD", ImGuiDataType_U64, &cCooldownOnDamagedStaminaEmpty, &shrt, &lng);
-         ImGui::InputScalar("Damaged Stamina CD", ImGuiDataType_U64, &cCooldownOnDamagedStamina, &shrt, &lng);
-         ImGui::InputScalar("Damaged Health CD", ImGuiDataType_U64, &cCooldownOnDamagedHealth, &shrt, &lng);
-         ImGui::Unindent();
-
-      }
-
-      ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
-      if (ImGui::CollapsingHeader("Attack")) {
-         ImGui::Indent();
-         int i = 0;
-         for (auto &&swing : dude.moveset.swings) {
-            ImGui::PushID(&swing);
-
-            if (ImGui::CollapsingHeader(format("Swing %d", i++).c_str())) {
-               ImGui::Indent();
-
-               ImGui::InputFloat("Angle", &swing.swipeAngle, 10.0f, 10.0f, 1);
-               Milliseconds shrt = 50, lng = 100;
-               ImGui::InputFloat("Lunge Speed", &swing.lungeSpeed, 0.01f, 0.1f, 4);
-               ImGui::InputFloat("Lunge Distance", &swing.lungeDist, 10.0f, 10.0f, 0);
-               ImGui::InputScalar("Swing Duration", ImGuiDataType_U64, &swing.swingDur, &shrt, &lng);
-               ImGui::InputScalar("Windup Duration", ImGuiDataType_U64, &swing.windupDur, &shrt, &lng);
-               ImGui::InputScalar("Cooldown Duration", ImGuiDataType_U64, &swing.cooldownDur, &shrt, &lng);
-
-               ImGui::Unindent();
-            }
-            
-            ImGui::PopID();
-         }
-
-         ImGui::Unindent();
-         
-      }
-      
-
-      
-
-
-
-   }
-   ImGui::End();
-}
 
 void dudeBeginCooldown(Dude&d, Milliseconds duration);
 void dudeSetState(Dude& d, DudeState state, Milliseconds startTimeOffset = 0);
@@ -246,16 +38,17 @@ bool dudeSpendStamina(Dude &d, int stam) {
 }
 
 void dudeDoDamage(Dude&d) {
+   auto& c = Const;
    if (d.status.stamina > 0) {
       --d.status.stamina;
 
       if (d.status.stamina == 0) {
-         dudeBeginCooldown(d, cCooldownOnDamagedStaminaEmpty);
+         dudeBeginCooldown(d, c.cooldownOnDamagedStaminaEmpty);
       }
       else {
          // attacks only cancel your attack if youre not swinging
          if (d.state != DudeState_ATTACKING || d.atk.swingPhase != SwingPhase_Swing) {
-            dudeBeginCooldown(d, cCooldownOnDamagedStamina);
+            dudeBeginCooldown(d, c.cooldownOnDamagedStamina);
          }
       }
    }
@@ -265,7 +58,7 @@ void dudeDoDamage(Dude&d) {
          dudeSetState(d, DudeState_DEAD);
       }
       else {
-         dudeBeginCooldown(d, cCooldownOnDamagedHealth);
+         dudeBeginCooldown(d, c.cooldownOnDamagedHealth);
       }
    }
 
@@ -278,7 +71,7 @@ void dudeSetState(Dude& d, DudeState state, Milliseconds startTimeOffset) {
 
 Milliseconds calcNextStaminaTickTime(int stam, int max) {
    auto ratio = (f32)stam / max;
-   return cDudeBaseStaminaTickRecoveryTime + (Milliseconds)(cDudeBaseStaminaTickRecoveryTime * cosInterp(1 - ratio));
+   return Const.dudeBaseStaminaTickRecoveryTime + (Milliseconds)(Const.dudeBaseStaminaTickRecoveryTime * cosInterp(1 - ratio));
 }
 
 void dudeShove(Dude&d, Float2 dir, f32 speed, f32 distance) {
@@ -302,8 +95,8 @@ void dudeUpdateShove(Dude& d) {
    if (d.shoved) {
       if (d.shove.start++ >= d.shove.dur) {
          d.mv.moveVector = { 0,0 };
-         if (d.shove.speed > cDudeMoveSpeed) {
-            d.phy.maxSpeed = cDudeMoveSpeed;
+         if (d.shove.speed > Const.dudeMoveSpeed) {
+            d.phy.maxSpeed = Const.dudeMoveSpeed;
          }
          d.mv.moveSpeedCapTarget = d.mv.moveSpeedCap = d.phy.maxSpeed;
          d.shoved = false;
@@ -355,14 +148,14 @@ void dudeBeginDash(Dude& d, f32 speed) {
          dashDir = d.mv.faceVector;
       }
 
-      dudeShove(d, dashDir, cDudeDashSpeed, cDudeDashDistance );
+      dudeShove(d, dashDir, Const.dudeDashSpeed, Const.dudeDashDistance );
    }
 }
 
 
 void dudeUpdateStateDash(Dude& d) {
    if (!d.shoved) {
-      Milliseconds cd = cDudePostDashCooldown;
+      Milliseconds cd = Const.dudePostDashCooldown;
       //if (d.status.stamina == 0) {
       //   cd = cDudeStaminaEmptyCooldown;
       //}
@@ -492,7 +285,7 @@ void mainDudeCheckAttackCollisions(Dude& dude, DynamicArray<Dude> &targets) {
       if (dudeCheckAttackCollision(dude, t)) {
          dudeDoDamage(t);
          auto pushdir = v2Normalized(t.phy.pos - dude.phy.pos);
-         dudeShove(t, pushdir, cDudeDashSpeed, cDudeKnockbackDistance);
+         dudeShove(t, pushdir, Const.dudeDashSpeed, Const.dudeKnockbackDistance);
          dude.atk.hits.push_back(&t);
       }
    }
@@ -525,7 +318,7 @@ void badDudeCheckAttackCollision(GameState& g, Dude& dude, Dude& t) {
    if (dudeCheckAttackCollision(dude, t)) {
       dudeDoDamage(t);
       auto pushdir = v2Normalized(t.phy.pos - dude.phy.pos);
-      dudeShove(t, pushdir, cDudeDashSpeed, cDudeKnockbackDistance);
+      dudeShove(t, pushdir, Const.dudeDashSpeed, Const.dudeKnockbackDistance);
       dude.atk.hits.push_back(&t);
 
       if (!dudeAlive(t)) {
@@ -582,7 +375,7 @@ void dudeApplyInputAiming(GameState& g, Dude& d) {
 void dudeApplyInputFreeActions(GameState& g, Dude& d) {
    auto& io = g.io;
    if (io.buttonPressed[GameButton_LT]){
-      dudeBeginDash(d, cDudeDashSpeed);
+      dudeBeginDash(d, Const.dudeDashSpeed);
    }
    else if (io.buttonPressed[GameButton_RT]) {
       dudeBeginAttack(d, 1, 0);
@@ -629,17 +422,17 @@ void dudeUpdateVelocity(Dude& d) {
    if (!d.shoved) {
       // scale mvspeed based on facing;
       f32 facedot = v2Dot(v2Normalized(d.phy.velocity), d.mv.facing);
-      auto scaledSpeed = (d.phy.maxSpeed * (1 - cDudeBackwardsPenalty)) + (d.phy.maxSpeed * cDudeBackwardsPenalty * facedot);
+      auto scaledSpeed = (d.phy.maxSpeed * (1 - Const.dudeBackwardsPenalty)) + (d.phy.maxSpeed * Const.dudeBackwardsPenalty * facedot);
 
       // set the target speed
       d.mv.moveSpeedCapTarget = scaledSpeed * v2Len(d.mv.moveVector);
 
       // ease speed cap toward target
       if (d.mv.moveSpeedCap < d.mv.moveSpeedCapTarget) {
-         d.mv.moveSpeedCap += cDudeSpeedCapEasing;
+         d.mv.moveSpeedCap += Const.dudeSpeedCapEasing;
       }
       else {
-         d.mv.moveSpeedCap -= cDudeSpeedCapEasing;
+         d.mv.moveSpeedCap -= Const.dudeSpeedCapEasing;
       }
       clamp(d.mv.moveSpeedCap, 0, d.mv.moveSpeedCapTarget);
    }
@@ -653,7 +446,7 @@ void dudeUpdateVelocity(Dude& d) {
 // rotate facing vector toward the facevector
 void dudeUpdateRotation(Dude& d) {
    if (v2LenSquared(d.mv.faceVector) > 0.0f) {
-      d.mv.facing = v2Normalized(v2RotateTowards(d.mv.facing, d.mv.faceVector, v2FromAngle(cDudeRotationSpeed)));
+      d.mv.facing = v2Normalized(v2RotateTowards(d.mv.facing, d.mv.faceVector, v2FromAngle(Const.dudeRotationSpeed)));
    }
 }
 
@@ -719,455 +512,9 @@ void dudeUpdateBehavior(Dude& dude) {
 
 
 
-static Dude _createDude(GameState& game) {
-   Dude out;
 
-   auto &tex = Engine().graphics.textures[GameTextures_Dude];
 
-   out.c = White;
-   out.moveset = _createMoveSet();
-   out.phy.pos = { 10,10 };
-   out.phy.circle.size = 10.0f;
-   out.phy.maxSpeed = cDudeMoveSpeed;
-   out.phy.invMass = 0.0f;
-   out.renderSize = {(f32)tex.sz.x, (f32)tex.sz.y};
-   out.texture = tex.handle;
 
-   out.status.stamina = out.status.staminaMax = 4;
-   out.status.health = out.status.healthMax = 1;
-
-   return out;
-}
-
-static Dude _createEnemy(Float2 pos) {
-   Dude out;
-
-   auto &tex = Engine().graphics.textures[GameTextures_Dude];
-
-   out.moveset = _createMoveSet();
-   out.c = White;// {1.0f, 0.3f, 0.3f, 1.0f};
-   out.phy.pos = pos;
-   out.phy.circle.size = 10.0f;
-   out.phy.velocity = { 0,0 };
-   out.phy.maxSpeed = cDudeMoveSpeed;
-   out.phy.invMass =(f32)(rand()%50 + 5) / 100.0f;
-   out.renderSize = { (f32)tex.sz.x, (f32)tex.sz.y };
-   out.texture = tex.handle;
-   out.status.stamina = out.status.staminaMax = 3;
-   out.status.health = out.status.healthMax = 1;
-
-   return out;
-}
-
-void DEBUG_gameSpawnDude(GameState& game) {
-   auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 });
-   e.ai.target = &game.maindude;
-   game.baddudes.push_back(e);
-}
-
-
-static void _gameInitNew() {
-   //auto lastUpdate = g_game->lastUpdate;
-   //*g_game = Game();
-   //_gameDataInit(&g_game->data, nullptr);
-   //_createGraphicsObjects(g_game);
-   //g_game->lastUpdate = lastUpdate;
-   //g_game->maindude = _createDude(g_game);
-
-   //auto e = _createEnemy({ 1000, 1000 });
-   //e.ai.target = &g_game->maindude;
-   //g_game->baddudes.push_back(e);
-
-   ////for (int i = 0; i < DUDE_COUNT; ++i) {
-   ////   auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 }, 10.0f);
-   ////   e.ai.target = &game->maindude;
-   ////   game->baddudes.push_back(e);
-   ////}
-}
-
-void gameBegin(GameState& game) {
-   ////_buildGameTextures();
-   //game->lastUpdate = appGetTime();
-   //_gameInitNew();
-
-   //appAddGUI("dudeeditor", [=]() {
-   //   uiEditDude(game->maindude);
-   //   return true;
-   //});
-}
-
-
-
-
-static void _renderSwing(Dude&dude) {
-   auto origin = dude.phy.pos + dude.atk.weaponVector * dude.phy.circle.size;
-
-   auto model = Matrix::identity();
-   model *= Matrix::translate2f(origin);
-   model *= Matrix::rotate2D(v2Angle(dude.atk.weaponVector));
-   model *= Matrix::translate2f({dude.atk.swing.hitbox.x, dude.atk.swing.hitbox.y});
-   model *= Matrix::scale2f({ dude.atk.swing.hitbox.w, dude.atk.swing.hitbox.h });
-
-   uber::resetToDefault();
-   uber::set(Uniform_TransformNormals, true);
-   uber::set(Uniform_NormalTransform, 
-      Matrix::rotate2D(v2Angle({ dude.atk.weaponVector.x, -dude.atk.weaponVector.y }))
-   );
-   uber::set(Uniform_ModelMatrix, model);
-   uber::set(Uniform_Height, cDudeHeight);
-   uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.textures[GameTextures_ShittySword].handle);
-   uber::bindTexture(Uniform_NormalsTexture, Engine().graphics.textures[GameTextures_SwordNormals].handle);
-
-   render::meshRender(Engine().graphics.meshUncentered);
-}
-
-static void _renderDude(GameState& g, Dude& dude) {
-   auto model = Matrix::identity();
-
-   Float2 rotate = dude.mv.facing;
-   if (dude.state == DudeState_ATTACKING) {
-      rotate += dude.atk.weaponVector;
-      rotate /= 2.0f;
-   }
-
-   rotate = v2Normalized(rotate);
-
-   model *= Matrix::translate2f(dude.phy.pos);
-   model *= Matrix::rotate2D(v2Angle(rotate));
-   model *= Matrix::scale2f(dude.renderSize);
-
-
-   uber::resetToDefault();
-   uber::set(Uniform_Height, cDudeHeight);
-
-   if (dudeAlive(dude)) {
-      uber::set(Uniform_Color, dude.c);
-   }
-   else {
-      uber::set(Uniform_Color, DkRed);
-   }
-
-   // rotate the normals map with our texture
-   uber::set(Uniform_TransformNormals, true);
-   uber::set(Uniform_NormalTransform, Matrix::rotate2D(v2Angle({ rotate.x, -rotate.y })) );
-
-   uber::set(Uniform_ModelMatrix, model);
-   uber::bindTexture(Uniform_DiffuseTexture, dude.texture);
-   uber::bindTexture(Uniform_NormalsTexture, Engine().graphics.textures[GameTextures_DudeNormals].handle);
-   render::meshRender(Engine().graphics.mesh);
-
-   //uber::set(Uniform_OutlineOnly, true);
-   //render::meshRender(g_game->mesh);
-
-   if (g.DEBUG.showCollisionDebugging) {
-
-      uber::resetToDefault();
-      model = Matrix::translate2f(dude.phy.pos);
-      model *= Matrix::scale2f({ dude.phy.circle.size * 2, dude.phy.circle.size * 2 });
-      uber::set(Uniform_Color, Cyan);
-      uber::set(Uniform_Alpha, 0.25f);
-      uber::set(Uniform_ModelMatrix, model);
-
-      uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.textures[GameTextures_Circle].handle);
-      render::meshRender(Engine().graphics.mesh);
-   }
-   
-   if (dude.state == DudeState_ATTACKING) {
-      _renderSwing(dude);
-   }
-}
-
-
-
-static void _renderTarget(Float2 pos, ColorRGBAf color) {
-   auto model = Matrix::identity();
-
-   auto sz = Engine().graphics.textures[GameTextures_Target].sz;
-
-   model *= Matrix::translate2f(pos);
-   model *= Matrix::scale2f({ (f32)sz.x, (f32)sz.y });
-
-   uber::resetToDefault();
-   uber::set(Uniform_Color, color);
-   uber::set(Uniform_ModelMatrix, model);
-   uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.textures[GameTextures_Target].handle);
-   render::meshRender(Engine().graphics.mesh);
-}
-
-static void _renderFloor(GameState& game) {
-   auto& c = Constants();
-
-   Float2 fres = { game.map.size.x, game.map.size.y };
-   Float2 tileSize = { 16, 16 };
-   
-   uber::resetToDefault();
-   uber::set(Uniform_Height, cFloorHeight);
-   uber::set(Uniform_TextureMatrix, Matrix::scale2f({ fres.x / tileSize.x, fres.y / tileSize.y }));
-   uber::set(Uniform_ModelMatrix, Matrix::scale2f(fres));
-   uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.textures[GameTextures_Tile].handle);
-   uber::bindTexture(Uniform_NormalsTexture, Engine().graphics.textures[GameTextures_TileNormals].handle);
-   //uber::set(Uniform_ColorOnly, true);
-
-   render::meshRender(Engine().graphics.meshUncentered);
-
-   //if (gameDataGet()->imgui.showCollisionDebugging) {
-   //   Rectf testrect = { 300,300, 500, 200 };
-
-   //   uber::set(Uniform_ColorOnly, true);
-   //   uber::set(Uniform_Color, circleVsAabb(game->maindude.phy.pos, game->maindude.phy.circle.size, testrect) ? Red : Cyan);
-   //   uber::set(Uniform_ModelMatrix, Matrix::translate2f({ testrect.x, testrect.y }) * Matrix::scale2f({ testrect.w, testrect.h }));
-   //   render::meshRender(g_game->meshUncentered);
-   //}
-}
-
-
-/*
-Render Pipe
-
-FBO: UnlitScene[2] = {Diffuse, Normals}
-   BlendMode(DISABLED)
-   DiscardAlpha
-   OutputNormals
-   Bind uDiffuse
-   Bind uNormals
-   Set uHeight
-   Render Floor, Dudes, etc
-
-FBO: Lights[1] = {Diffuse}
-   BlendMode(ADDITIVE)
-   Bind UnlitScene.Normals as uNormals
-   PointLight
-   NormalLighting
-   Set uHeight
-   Clear(AmbientLight)
-   Render Each Light
-
-FBO: LitScene[1] = {Diffuse}
-   BlendMode(DISABLED)
-   Bind UnlitScene.Diffuse as uDiffuse
-   Render UnlitScene
-
-   BlendMode(MULTIPLY)
-   Bind Lights.Diffuse as uDiffuse
-   Render Lights
-
-   (can now re-use Lights to draw a vignette mask and draw it over with multiply)
-
-FBO: Output[1] = {Diffuse}
-   BlendMode(ALPHA_BLENDING)
-   Clear(Black)
-   Render LitScene
-   Render UI
-
-*/
-
-
-void renderUnlitScene(GameState& game) {
-   auto vp = game.camera.viewport;
-   auto view = Matrix::ortho(vp.x, vp.x + vp.w, vp.y, vp.y + vp.h, 1, -1);   
-   
-   render::fboBind(Engine().graphics.unlitScene);
-   uber::set(Uniform_ViewMatrix, view, true);
-   uber::set(Uniform_DiscardAlpha, true, true);
-   uber::set(Uniform_OutputNormals, true, true);
-   uber::resetToDefault();
-
-   render::setBlendMode(BlendMode_DISABLED);   
-   render::clear(Black);
-
-   
-   _renderFloor(game);
-
-   
-   for (auto&& d : game.baddudes) {
-      _renderDude(game, d);
-   }
-   _renderDude(game, game.maindude);
-
-   // restore these flags
-   uber::set(Uniform_DiscardAlpha, false, true);
-   uber::set(Uniform_OutputNormals, false, true);
-}
-
-static void _addLight(f32 size, VPCoords pos, ColorRGBAf c) {
-   uber::set(Uniform_Color, c);
-   uber::set(Uniform_Alpha, 1.0f);
-   //uber::set(Uniform_PointLightRadius, size/2.0f);
-   uber::set(Uniform_LightAttrs, Float3{ 
-      cLightLinearPortion, 
-      cLightSmoothingFactor,
-      cLightIntensity  });
-
-   //uber::set(Uniform_LightIntensity, 1.0f);
-   uber::set(Uniform_ModelMatrix, Matrix::translate2f(pos) * Matrix::scale2f({size, size}));
-   render::meshRender(Engine().graphics.mesh);
-}
-
-void renderLightLayer(GameState& game) {
-   auto vp = game.camera.viewport;
-   auto al = game.DEBUG.ambientLight;
-
-   render::fboBind(Engine().graphics.lightLayer);
-   uber::set(Uniform_ViewMatrix, Matrix::ortho(0, vp.w, 0, vp.h, 1, -1), true);   
-   uber::resetToDefault();
-
-   render::setBlendMode(BlendMode_ADDITION);   
-   render::clear({ al, al, al, al });
-
-   // bind deferred normals map
-   uber::bindTexture(Uniform_NormalsTexture, Engine().graphics.unlitScene.out[1].handle);
-   uber::set(Uniform_PointLight, true);
-   uber::set(Uniform_NormalLighting, true);
-
-   uber::set(Uniform_Height, cLightHeight);
-
-   
-   //uber::set(Uniform_LightIntensity, cLightIntensity);
-
-   //_addLight({ vp.w,vp.w }, { vp.w / 2.0f, vp.h / 2.0f }, Yellow);
-   //_addLight({ 120, 120 }, game->maindude.phy.pos - Float2{ vp.x, vp.y }, Yellow);
-
-   _addLight(150, Float2{200, 200} - Float2{ vp.x, vp.y }, White);
-
-   int i = 0;
-   for (auto&& d : game.baddudes) {
-      static ColorRGBAf c[] = { Red, Green, Blue };
-      //_addLight(80, d.phy.pos - Float2{ vp.x, vp.y }, c[i++ % 3]);
-   }
-   auto candleColor = sRgbToLinear(ColorRGB{ 255,147,41 });
-   _addLight(150, game.io.mousePos.toViewport(game), White);
-}
-
-void renderLitScene(GameState& game) {
-   auto vp = game.camera.viewport;
-
-   render::fboBind(Engine().graphics.litScene);
-   uber::resetToDefault();
-   render::clear(Black);
-
-   render::setBlendMode(BlendMode_DISABLED);
-   uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (f32)vp.w, (f32)vp.h }));
-   uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.unlitScene.out[0].handle);
-   render::meshRender(Engine().graphics.meshUncentered);
-
-   render::setBlendMode(BlendMode_MULITPLY);
-   uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.lightLayer.out[0].handle);
-   render::meshRender(Engine().graphics.meshUncentered);
-
-   
-}
-
-void renderUI(GameState& game) {
-   auto& vp = game.camera.viewport;
-
-   render::fboBind(Engine().graphics.UI);
-
-   uber::resetToDefault();
-   render::clear(Cleared);
-
-   render::setBlendMode(BlendMode_NORMAL);   
-
-   /*if (game->maindude.stamina < game->maindude.staminaMax)*/ {
-      auto tsz = Engine().graphics.textures[GameTextures_GemFilled].sz;
-      Float2 gemSize = { (f32)tsz.x, (f32)tsz.y };
-      f32 gemSpace = 0.0f;
-      auto w = (gemSize.x + gemSpace) * game.maindude.status.staminaMax;
-
-      //Float2 staminaCorner = { game->maindude.phy.pos.x - w / 2.0f, game->maindude.phy.pos.y + game->maindude.phy.circle.size + 20 };
-      Float2 staminaCorner = { 10,10 };
-
-      if (game.maindude.status.stamina == 0) {
-         uber::set(Uniform_Alpha, 1.0f);
-         uber::set(Uniform_Color, Red);
-      }
-      for (int i = 0; i < game.maindude.status.staminaMax; ++i) {
-         
-         auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
-         uber::set(Uniform_ModelMatrix, model);
-         uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.textures[i < game.maindude.status.stamina ? GameTextures_GemFilled : GameTextures_GemEmpty].handle);
-         render::meshRender(Engine().graphics.meshUncentered);
-
-         staminaCorner.x += gemSize.x + gemSpace;
-      }
-
-      uber::resetToDefault();   
-      if (game.maindude.status.stamina != 0) {
-         uber::set(Uniform_Alpha, 0.5f);
-         //uber::set(Uniform_Color, Red);
-      }
-
-      for (int i = 0; i < game.maindude.status.healthMax; ++i) {
-
-         auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
-         uber::set(Uniform_ModelMatrix, model);
-         uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.textures[i < game.maindude.status.health ? GameTextures_HeartFilled : GameTextures_HeartEmpty].handle);
-         render::meshRender(Engine().graphics.meshUncentered);
-
-         staminaCorner.x += gemSize.x + gemSpace;
-      }
-   }
-
-
-   if (game.DEBUG.showMovementDebugging) {
-      const static f32 moveTargetDist = 50.0f;
-      const static f32 aimTargetDist = 100.0f;
-      auto &io = game.io;
-      auto &dude = game.maindude;
-
-      auto pos = dude.phy.pos - Float2{(f32)vp.x, (f32)vp.y};
-
-      _renderTarget(pos + dude.phy.velocity * 100, Cyan);
-      _renderTarget(pos + v2Normalized(dude.mv.facing) * aimTargetDist, Red);
-
-      _renderTarget(pos + io.leftStick * moveTargetDist, DkGreen);
-      _renderTarget(pos + dude.mv.moveVector * 10, Magenta);
-
-      //_renderTarget(pos + io.rightStick * aimTargetDist, Yellow);
-      _renderTarget(pos + dude.mv.faceVector * aimTargetDist, LtGray);
-   }
-}
-
-static void renderOutput(GameState& game, FBO& output) {
-   auto& vp = game.camera.viewport;
-
-   render::fboBind(output);
-
-   uber::resetToDefault();
-   render::clear(Black);
-
-   render::setBlendMode(BlendMode_NORMAL);
-   uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (f32)vp.w, (f32)vp.h }));
-
-   uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.litScene.out[0].handle);
-   render::meshRender(Engine().graphics.meshUncentered);
-
-   uber::bindTexture(Uniform_DiffuseTexture, Engine().graphics.UI.out[0].handle);
-   render::meshRender(Engine().graphics.meshUncentered);
-
-   if (game.mode.type == ModeType_YOUDIED) {
-      render::setBlendMode(BlendMode_MULITPLY);
-      auto ratio = cosInterp(1.0f - ((f32)game.mode.clock / 3000));
-      uber::set(Uniform_Color, ColorRGBAf{ 1.0f, ratio, ratio, 1.0f });
-      uber::set(Uniform_ColorOnly, true);
-      render::meshRender(Engine().graphics.meshUncentered);
-   }
-}
-
-void gameDraw(GameState& g, FBO& output) {
-   auto& c = Constants();
-
-   render::shaderSetActive(Engine().graphics.shader);
-   uber::resetToDefault(true);
-
-   renderUnlitScene(g);
-   renderLightLayer(g);
-   renderLitScene(g);
-   renderUI(g);
-
-   renderOutput(g, output);
-
-   render::fboBind({});
-}
 
 struct FrameData {
    DynamicArray<PhyObject*> phyObjs;
@@ -1187,7 +534,7 @@ void buildFrameData(GameState&game, FrameData& fd) {
    if (fd.phyObjs.size() == 1) {
       ++game.waveSize;
       for (int i = 0; i < game.waveSize; ++i) {
-         DEBUG_gameSpawnDude(game);
+         //DEBUG_gameSpawnDude(game);
       }
    }
 }
@@ -1229,7 +576,7 @@ void gameUpdateMilliStep(GameState& game, FrameData& fd) {
 
    if (game.mode.type == ModeType_YOUDIED) {
       if (++game.mode.clock > 3000) {
-         _gameInitNew();
+         //_gameInitNew();
       }
    }
 }
@@ -1317,24 +664,23 @@ bool gameProcessEvent(GameState& g, SDL_Event* event) {
 
    case SDL_MOUSEMOTION:
       g.lastMouseMove = appGetTime();
-      g.mouseActive = true;
       break;
 
    case SDL_MOUSEBUTTONDOWN:
    case SDL_MOUSEBUTTONUP: {
-      if (g.mouseActive) {
-         bool pressed = event->type == SDL_MOUSEBUTTONDOWN;
-         if (!io.buttonDown[GameButton_RT] && pressed) {
-            io.buttonPressed[GameButton_RT] = true;
-         }
+      //if (g.mouseActive) {
+      //   bool pressed = event->type == SDL_MOUSEBUTTONDOWN;
+      //   if (!io.buttonDown[GameButton_RT] && pressed) {
+      //      io.buttonPressed[GameButton_RT] = true;
+      //   }
 
-         if (io.buttonDown[GameButton_RT] && !pressed) {
-            io.buttonReleased[GameButton_RT] = true;
-         }
+      //   if (io.buttonDown[GameButton_RT] && !pressed) {
+      //      io.buttonReleased[GameButton_RT] = true;
+      //   }
 
-         io.buttonDown[GameButton_RT] = pressed;
-         return true;
-      }
+      //   io.buttonDown[GameButton_RT] = pressed;
+      //   return true;
+      //}
    }
 
 
