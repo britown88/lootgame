@@ -93,6 +93,9 @@
     <ClCompile Include="mode_action.cpp">
       <Filter>Source Files\app</Filter>
     </ClCompile>
+    <ClCompile Include="vex.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h">
@@ -144,6 +147,12 @@
       <Filter>Header Files\game</Filter>
     </ClInclude>
     <ClInclude Include="coords.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="vex.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="parser.h">
       <Filter>Header Files\utility</Filter>
     </ClInclude>
   </ItemGroup>

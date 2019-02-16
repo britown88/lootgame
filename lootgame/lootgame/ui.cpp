@@ -2,12 +2,14 @@
 #include "game.h"
 
 #include <imgui.h>
+#include <misc/cpp/imgui_stdlib.h>
 #include <SDL2/SDL.h>
 
 #include <functional>
 
 #include "IconsFontAwesome.h"
 #include "scf.h"
+#include "vex.h"
 
 static ImGuiWindowFlags BorderlessFlags =
       ImGuiWindowFlags_NoMove |
@@ -29,6 +31,63 @@ struct SCFTestResultState {
    void* data;
    u32 size;
 };
+
+struct VexTestState {
+   std::string testInput;
+};
+
+static void _renderNode(VexNode * node) {
+   std::string tag(node->tag.begin, node->tag.end);
+   std::string body(node->body.begin, node->body.end);
+   std::string span(node->span.begin, node->span.end);
+
+   if (ImGui::TreeNodeEx(span.c_str(), ImGuiTreeNodeFlags_DefaultOpen, "Tag: [%s]", tag.c_str())) {
+      if (ImGui::TreeNodeEx("body", ImGuiTreeNodeFlags_DefaultOpen, "Body")) {
+         ImGui::TextWrapped(body.c_str());
+         ImGui::TreePop();
+      }
+      if (ImGui::TreeNode("Span")) {
+         ImGui::TextWrapped(span.c_str());
+         ImGui::TreePop();
+      }
+
+      if (ImGui::TreeNodeEx("children", ImGuiTreeNodeFlags_DefaultOpen, "Children")) {
+         auto iter = node->children;
+         while (iter) {
+            _renderNode(iter);
+            iter = iter->next;
+         }
+
+         ImGui::TreePop();
+      }
+
+      ImGui::TreePop();
+   }
+}
+
+static bool _doVexTest(VexTestState &state) {
+   bool p_open = true;
+
+   if (ImGui::Begin("Vex Testing", &p_open, 0)) {
+      ImGui::Columns(2);
+
+      ImGui::InputTextMultiline("", &state.testInput, ImGui::GetContentRegionAvail());
+      ImGui::NextColumn();
+
+      if (ImGui::BeginChild("render")) {
+         auto vex = vexCreate(state.testInput);
+         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Always);
+         _renderNode(vex);
+         vexDestroy(vex);
+      }
+      ImGui::EndChild();
+
+      ImGui::Columns(1);
+   }
+   ImGui::End();
+
+   return p_open;
+}
 
 static void _uiDoSCFReader(SCFReader &view) {
    while (!scfReaderNull(view) && !scfReaderAtEnd(view)) {
@@ -220,6 +279,13 @@ static void _mainMenu() {
             SCFTestState state;
             appAddGUI("SCF Testing", [=]() mutable {
                return _doSCFTest(state);
+            });
+         }
+
+         if (ImGui::MenuItem("Vex Testing")) {
+            VexTestState state;
+            appAddGUI("Vex Testing", [=]() mutable {
+               return _doVexTest(state);
             });
          }
 
