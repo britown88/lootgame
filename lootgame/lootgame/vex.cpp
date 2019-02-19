@@ -3,6 +3,23 @@
 
 #include <string.h>
 
+static bool _vexspancmp(VexSpan const& lhs, const char* rhs, int rhsSize) {
+   if (rhsSize != lhs.end - lhs.begin) {
+      return false;
+   }
+   auto a = lhs.begin;
+   auto b = rhs;
+   while (a < lhs.end) {
+      if (*a++ != *b++) {
+         return false;
+      }
+   }
+   return true;
+}
+
+bool VexSpan::operator==(VexSpan const& other) { return _vexspancmp(*this, other.begin, other.end - other.begin); }
+bool VexSpan::operator==(std::string const& other) { return _vexspancmp(*this, other.c_str(), other.size()); }
+
 static bool _acceptSigil(StringParser& p) {
    while (!p.atEnd()) {
       if (p.accept('@')) return true;
@@ -85,9 +102,10 @@ static void _parseNode(VexNode* node, StringParser &p) {
          parseBody = true;
       }
       else if (p.accept('(')) { // everythings a node
+         int bracketCount = 1;
+         while (p.accept('(')) { ++bracketCount; }
 
          node->body.begin = p.pos;
-
          int scopeStack = 1;
 
          // find end parens
@@ -98,14 +116,22 @@ static void _parseNode(VexNode* node, StringParser &p) {
             }  
 
             if (p.accept(')')) {
-               --scopeStack;
+               int newbracketCount = 1;
+               while (newbracketCount < bracketCount && p.accept(')')) { ++newbracketCount; }
+               if (newbracketCount == bracketCount) {
+                  --scopeStack;
+               }
                if (!scopeStack) {
-                  node->body.end = p.pos - 1;
+                  node->body.end = p.pos - bracketCount;
                   break;
                }
             } 
             else if (p.accept('(')) {
-               ++scopeStack;
+               int newbracketCount = 1;
+               while (newbracketCount < bracketCount && p.accept('(')) { ++newbracketCount; }
+               if (newbracketCount == bracketCount) {
+                  ++scopeStack;
+               }
             }
             else {
                p.skip();
@@ -138,8 +164,6 @@ static void _parseNode(VexNode* node, StringParser &p) {
                subp.skip();
             }
          }
-
-         node->body.end = p.pos;
       }
       else { // this node is done
          node->body = { p.pos, p.pos };         

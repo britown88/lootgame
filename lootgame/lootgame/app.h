@@ -15,7 +15,12 @@
 
 struct AppConfig {
    const char* assetFolder = nullptr;
+
+   bool reflectgen = false;
+   const char* reflectTarget = nullptr;
 };
+
+void runReflectGen(AppConfig const& config);
 
 // APP
 typedef struct App App;

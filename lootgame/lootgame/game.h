@@ -26,7 +26,7 @@ struct GraphicObjects {
    bool reloadShaders();
 };
 
-
+// @reflect{
 struct EngineConstants {
    Int2 resolution = { 1920, 1080 };
 
@@ -52,8 +52,7 @@ struct EngineConstants {
    Milliseconds cooldownOnDamagedStaminaEmpty = 1000;
    Milliseconds cooldownOnDamagedStamina = 250;
    Milliseconds cooldownOnDamagedHealth = 500;
-};
-
+};//}
 
 struct EngineState {   
    ColorRGBAf bgClearColor = { 0.45f, 0.55f, 0.60f, 1.0f };  // clear color behind all imgui windows
@@ -84,7 +83,7 @@ typedef enum {
 } GameButton_;
 typedef byte GameButton;
 
-
+// @reflect{
 struct IO {
    Coords mousePos = { 0,0 };
 
@@ -97,7 +96,7 @@ struct IO {
    bool buttonDown[GameButton_COUNT];
    bool buttonPressed[GameButton_COUNT];
    bool buttonReleased[GameButton_COUNT];
-};
+};//}
 
 struct GameCamera {
    Rectf viewport;
@@ -143,13 +142,15 @@ struct Movement {
 
 struct Dude;
 
+//@reflect{
 struct Behavior {
    Milliseconds started;
    Dude* target = nullptr;
    int dir = 1;
    bool attack = false;
-};
+};//}
 
+//@reflect{
 struct AttackState {
    Float2 weaponVector;
 
@@ -159,7 +160,7 @@ struct AttackState {
    int combo;
 
    DynamicArray<Dude*> hits;
-};
+};//}
 
 struct CooldownState {
    Milliseconds duration;
@@ -232,7 +233,7 @@ struct GameMode {
 };
 
 
-
+//@reflect{
 struct GameState {
    bool fullscreen = false;
 
@@ -255,7 +256,7 @@ struct GameState {
    Time lastUpdate;
 
    int waveSize = 1;
-};
+};//}
 
 void gameBeginFrame(GameState& g);
 

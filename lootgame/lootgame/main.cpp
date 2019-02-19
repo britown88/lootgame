@@ -13,6 +13,10 @@ static void _parseArgs(int argc, char** argv, AppConfig &config) {
       if (!strcmp(*arg, "-assets") && ++arg < end) {
          config.assetFolder = *arg;
       }
+      else if (!strcmp(*arg, "-reflectgen") && ++arg < end) {
+         config.reflectgen = true;
+         config.reflectTarget = *arg;
+      }
    }
 }
 
@@ -23,14 +27,17 @@ int main(int argc, char** argv)
    AppConfig config;
    _parseArgs(argc, argv, config);
 
-   auto app = appCreate(config);
-
-   appCreateWindow(app, WindowConfig{ 1280, 720, "Making Games is Fucking Hard" });
-
-   while (appRunning(app)) {
-      appStep(app);
+   if (config.reflectgen) {
+      runReflectGen(config);
    }
-
-   appDestroy(app);
+   else {
+      auto app = appCreate(config);
+      appCreateWindow(app, WindowConfig{ 1280, 720, "Making Games is Fucking Hard" });
+      while (appRunning(app)) {
+         appStep(app);
+      }
+      appDestroy(app);
+   }
+   
    return 0;
 }

@@ -12,10 +12,7 @@ static int _reloadShader(GraphicObjects &gfx) {
    auto vertex = fileReadString("assets/vertex.glsl");
    auto fragment = fileReadString("assets/fragment.glsl");
 
-   auto s = render::shaderBuild(vertex, fragment);
-
-   free(vertex);
-   free(fragment);
+   auto s = render::shaderBuild(vertex.c_str(), fragment.c_str());
 
    if (s == 0) {
       return 0;

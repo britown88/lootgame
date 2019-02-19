@@ -2,6 +2,8 @@
 #include <nowide/convert.hpp>
 #include <Windows.h>
 
+#include <filesystem>
+
 std::string openFile(OpenFileConfig const& config) {
 
    OPENFILENAME ofn = { 0 };
@@ -93,13 +95,13 @@ byte *fileReadBinary(StringView path, u64 *fsize) {
    return mem;
 }
 
-char *fileReadString(StringView path) {
+std::string fileReadString(StringView path) {
 
    FILE *f = fopen(path, "rt");
    static char buff[100];
 
    if (!f) {
-      return nullptr;
+      return "";
    }
 
    std::string out;
@@ -108,7 +110,7 @@ char *fileReadString(StringView path) {
       out += buff;
    }
 
-   return _strdup(out.c_str());
+   return std::move(out);
 }
 
 

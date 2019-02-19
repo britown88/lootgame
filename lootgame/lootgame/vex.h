@@ -3,8 +3,12 @@
 
 struct VexSpan {
    const char* begin = nullptr;
-   const char* end = nullptr;
+   const char* end = nullptr; 
+
+   bool operator==(VexSpan const& other);
+   bool operator==(std::string const& other);
 };
+
 
 struct VexNode {
    VexSpan span, tag, body;
