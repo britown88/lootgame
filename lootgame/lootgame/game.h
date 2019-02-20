@@ -64,7 +64,7 @@ extern EngineConstants Const;
 extern EngineState Engine;
 extern GraphicObjects Graphics;
 extern Texture* Textures;
-
+// @reflect{
 typedef enum {
    GameButton_LEFT = 0,
    GameButton_RIGHT,
@@ -80,7 +80,7 @@ typedef enum {
    GameButton_RT,
 
    GameButton_COUNT
-} GameButton_;
+} GameButton_;//}
 typedef byte GameButton;
 
 // @reflect{
@@ -235,6 +235,7 @@ struct GameMode {
 
 //@reflect{
 struct GameState {
+
    bool fullscreen = false;
 
    IO io;

@@ -9,7 +9,7 @@ typedef u32 TextureHandle;
 typedef u32 TextureSlot;
 typedef u32 VBOHandle;
 typedef u32 FBOHandle;
-
+//@reflect{
 enum TextureFlag_ {
    TextureFlag_WrapRepeat = (1 << 0),
    TextureFlag_WrapClamp = (1 << 1),
@@ -29,7 +29,7 @@ enum TextureFlag_ {
 
    TextureFlag_Defaults = TextureFlag_ClampedNearest | TextureFlag_Color_SRGBA,
    TextureFlag_FBODefaults = TextureFlag_ClampedNearest | TextureFlag_Color_RGBA16F
-};
+};//}
 typedef u16 TextureFlag;
 
 struct Texture {

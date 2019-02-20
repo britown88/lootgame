@@ -9,8 +9,23 @@
 
 #include <vector>
 
-struct StructMember {
-   std::string type;
+struct ParsedEnumMember {
+   std::string name;
+   std::string constructor;
+};
+
+struct ParsedEnum {
+   std::string name;
+   std::vector<ParsedEnumMember> members;
+};
+
+struct ParsedType {
+   std::string name;
+   int pointers = 0;
+};
+
+struct ParsedStructMember {
+   ParsedType type;
    std::string name;
    bool staticArray = false;
    std::string arraySize;
@@ -18,11 +33,12 @@ struct StructMember {
    std::string constructor;
 };
 
-struct StructContents {
+struct ParsedStruct {
    std::string name;
    std::string anonMemberName;
-   std::vector<StructMember> members;
-   std::vector<StructContents> children;
+   std::vector<ParsedStructMember> members;
+   std::vector<ParsedStruct> children;
+   std::vector<ParsedEnum> enums;
 };
 
 /*
@@ -78,6 +94,7 @@ static bool _acceptIdChar(StringParser& p) {
 static bool _acceptIdentifier(StringParser& p) {
    if (_acceptIdStartChar(p)) {
       while (!p.atEnd() && _acceptIdChar(p));
+      while (!p.atEnd() && p.accept("::") && _acceptIdentifier(p));
       return true;
    }
    return false;
@@ -110,13 +127,22 @@ static void _skipToExpressionEnd(StringParser& p) {
    }
 }
 
+static bool _acceptPrivacy(StringParser& p) {
+   if (p.accept("public") || p.accept("private") || p.accept("protected")) {
+      _acceptSkippable(p);
+      p.accept(':');
+      return true;
+   }
+   return false;
+}
+
 
 static bool _acceptTemplateArguments(StringParser& p) {
    if (p.accept('<')) {
       int stack = 1;
       while (!p.atEnd()) {
-         if (p.accept('<')) { 
-            ++stack; 
+         if (p.accept('<')) {
+            ++stack;
          }
          else if (p.accept('>')) {
             if (--stack == 0) {
@@ -131,22 +157,55 @@ static bool _acceptTemplateArguments(StringParser& p) {
    return false;
 }
 
-static bool _acceptType(StringParser& p, std::string& output) {
-   const char* typeStart = p.pos;
 
+// skips member lines that begin wtih static, virtual, typedef, friend, or template
+static bool _acceptSkippableExpression(StringParser& p) {
+   if (p.accept("static") || p.accept("virtual") || p.accept("typedef") || p.accept("friend")) {
+      _skipToExpressionEnd(p);
+      return true;
+   }
+   else if (p.accept("template")) {
+      _acceptSkippable(p);
+      _acceptTemplateArguments(p);
+      return true;
+   }
+   return false;
+}
+
+
+static bool _acceptType(StringParser& p, ParsedType& output) {   
+   auto start = p.pos;
+   if (p.accept("const")) {
+      _acceptSkippable(p);
+   }
+
+   const char* typeStart = p.pos;
    if (_acceptIdentifier(p)) {
       const char* typeEnd = p.pos;
       _acceptSkippable(p);
-      
-      while (!p.atEnd() && (p.accept('*') || p.accept('&') || p.accept("const") ||
-                            _acceptTemplateArguments(p))) {
+
+      if (_acceptTemplateArguments(p)) {
          typeEnd = p.pos;
-         _acceptSkippable(p);       
       }
-      output.assign(typeStart, typeEnd);
+      
+      while (!p.atEnd()){
+         if (p.accept('*')) {
+            ++output.pointers;
+            _acceptSkippable(p);
+         }
+         else if (p.accept('&') || p.accept("const")) {
+            _acceptSkippable(p);
+         }
+         else {
+            break;
+         }
+      }
+      output.name.assign(typeStart, typeEnd);
       return true;
    }
 
+   // rewind here because we may have eaten the const
+   p.pos = start;
    return false;
 }
 
@@ -176,7 +235,8 @@ static bool _acceptArrayDefinition(StringParser& p, std::string& size) {
    return false;
 }
 
-static bool _acceptConstructor(StringParser& p, std::string& output) {
+static bool _acceptConstructor(StringParser& p, std::string& output, char endChar = ';') {
+   auto start = p.pos;
    if (p.accept('=')) {
       _acceptSkippable(p);
 
@@ -185,7 +245,7 @@ static bool _acceptConstructor(StringParser& p, std::string& output) {
 
       while (!p.atEnd()) {
          if (!_acceptStringLiteral(p)) {
-            if (p.accept(';')) {
+            if (p.accept(endChar)) {
                output.assign(outStart, p.pos - 1);
                return true;
             }
@@ -193,11 +253,12 @@ static bool _acceptConstructor(StringParser& p, std::string& output) {
          }
       }
    }
+   p.pos = start;
    return false;
 }
 
 // rewinds to start if failed
-static bool _acceptMember(StringParser& p, StructMember &output) {
+static bool _acceptMember(StringParser& p, ParsedStructMember &output) {
    auto start = p.pos;
    if (_acceptType(p, output.type)) {
 
@@ -234,7 +295,14 @@ static bool _acceptMember(StringParser& p, StructMember &output) {
    return false;
 }
 
-static bool _acceptStruct(StringParser& p, StructContents &output) {
+static bool _acceptEnum(StringParser& p, ParsedEnum& output);
+
+static bool _acceptStruct(StringParser& p, ParsedStruct &output) {
+   auto start = p.pos;
+   if (p.accept("const")) {
+      _acceptSkippable(p);
+   }
+
    if (p.accept("struct")) {
       _acceptSkippable(p);
 
@@ -247,26 +315,33 @@ static bool _acceptStruct(StringParser& p, StructContents &output) {
          _acceptSkippable(p);
 
          while (!p.atEnd()) {
-            StructMember newMember;
-            StructContents child;
-            if (_acceptStruct(p, child)) {
-               output.children.push_back(child);
-            }
-            else if (_acceptMember(p, newMember)) {
-               output.members.push_back(newMember);
-            }
-            else {
-               _acceptSkippable(p);
-               if (p.accept('}')) {
-                  _acceptSkippable(p);
-                  auto anonStart = p.pos;
-                  _acceptIdentifier(p);
-                  output.anonMemberName.assign(anonStart, p.pos);
-                  _skipToExpressionEnd(p);
-                  return true;
+            if (!_acceptSkippableExpression(p) && !_acceptPrivacy(p)) {
+               ParsedStructMember newMember;
+               ParsedStruct child;
+               ParsedEnum newEnum;
+
+               if (_acceptEnum(p, newEnum)) {
+                  output.enums.push_back(newEnum);
+               }
+               if (_acceptStruct(p, child)) {
+                  output.children.push_back(child);
+               }
+               else if (_acceptMember(p, newMember)) {
+                  output.members.push_back(newMember);
                }
                else {
-                  _skipToExpressionEnd(p);
+                  _acceptSkippable(p);
+                  if (p.accept('}')) {
+                     _acceptSkippable(p);
+                     auto anonStart = p.pos;
+                     _acceptIdentifier(p);
+                     output.anonMemberName.assign(anonStart, p.pos);
+                     _skipToExpressionEnd(p);
+                     return true;
+                  }
+                  else {
+                     _skipToExpressionEnd(p);
+                  }
                }
             }
 
@@ -276,39 +351,138 @@ static bool _acceptStruct(StringParser& p, StructContents &output) {
 
    }
 
+   p.pos = start;
+   return false;
+}
+static bool _acceptEnumMember(StringParser& p, ParsedEnumMember& output, bool&finalMember) {
+   auto idStart = p.pos;
+   if (_acceptIdentifier(p)) {
+      output.name.assign(idStart, p.pos);
+      _acceptSkippable(p);
+      if (_acceptConstructor(p, output.constructor, ',') || p.accept(',')) {
+         return true;
+      }
+      else if (_acceptConstructor(p, output.constructor, '}') || p.accept('}')) {
+         finalMember = true;
+         return true;
+      } 
+   }
    return false;
 }
 
 
-void reflectNode(VexNode* node) {
+bool _acceptEnum(StringParser& p, ParsedEnum& output) {
+   auto start = p.pos;
+   if (p.accept("typedef")) {
+      _acceptSkippable(p);
+   }
+
+   if (p.accept("enum")) {
+      _acceptSkippable(p);
+      auto idStart = p.pos;
+      if (_acceptIdentifier(p)) {
+         output.name.assign(idStart, p.pos);
+      }
+      _acceptSkippable(p);
+      if (p.accept('{')) {
+         _acceptSkippable(p);
+         while (!p.atEnd()) {
+            ParsedEnumMember newMember;
+            bool finalmember = false;
+            if (_acceptEnumMember(p, newMember, finalmember)) {
+               output.members.push_back(newMember);
+               if (finalmember) {
+                  _acceptSkippable(p);;
+                  auto idStart = p.pos;
+                  if (_acceptIdentifier(p)) {
+                     output.name.assign(idStart, p.pos);
+                  }
+                  _acceptSkippable(p);
+                  p.accept(';');
+                  return true;
+               }
+            }
+            else if (p.accept('}')) {
+               _acceptSkippable(p);
+               auto idStart = p.pos;
+               if (_acceptIdentifier(p)) {
+                  output.name.assign(idStart, p.pos);
+               }
+               _acceptSkippable(p);
+               p.accept(';');
+               return true;
+            }
+            _acceptSkippable(p);
+         }
+      }
+   }
+
+   p.pos = start;
+   return false;
+}
+
+struct ParsedFile {
+   fsys::path path;
+
+   std::vector<ParsedStruct> structs;
+   std::vector<ParsedEnum> enums;
+
+   operator bool() { return !structs.empty() || !enums.empty(); }
+};
+
+
+static bool _parseNode(VexNode* node, ParsedFile& targetFile) {
    StringParser p = { node->body.begin, node->body.end };
 
    _acceptSkippable(p);
-   StructContents newStruct;
+   ParsedStruct newStruct;
+   ParsedEnum newEnum;
 
-   _acceptStruct(p, newStruct);
+   if (_acceptStruct(p, newStruct)) {
+      targetFile.structs.push_back(newStruct);
+      return true;
+   }
+   else if (_acceptEnum(p, newEnum)) {
+      targetFile.enums.push_back(newEnum);
+      return true;
+   }
 
-   return;
+   return false;;
+}
+
+static ParsedFile _parseFile(fsys::path path) {
+   ParsedFile file;
+   auto ext = path.extension();
+
+   if (ext == ".h" || ext == ".hpp" || ext == ".c" || ext == ".cpp") {
+      file.path = path;
+
+      auto content = fileReadString(path.string().c_str());
+      auto vex = vexCreate(content);
+
+      auto vexIter = vex->children;
+      while (vexIter) {
+         if (vexIter->tag == "reflect") {
+            _parseNode(vexIter, file);
+         }
+         vexIter = vexIter->next;
+      }
+
+      vexDestroy(vex);
+   }
+
+   return file;
 }
 
 
 void runReflectGen(AppConfig const& config) {
-   forEachFileInFolder(config.reflectTarget, [](fsys::path const& path) {
-      auto ext = path.extension();
+   std::vector<ParsedFile> files;
 
-      if (ext == ".h" || ext == ".hpp" || ext == ".c" || ext == ".cpp") {
-         auto content = fileReadString(path.string().c_str());
-         auto vex = vexCreate(content);
-
-         auto vexIter = vex->children;
-         while (vexIter) {
-            if (vexIter->tag == "reflect") {
-               reflectNode(vexIter);
-            }
-            vexIter = vexIter->next;
-         }
-
-         vexDestroy(vex);
+   forEachFileInFolder(config.reflectTarget, [&](fsys::path const& path) {
+      if (auto file = _parseFile(path)) {
+         files.push_back(file);
       }
    });
+
+   return;
 }
