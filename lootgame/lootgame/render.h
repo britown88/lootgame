@@ -4,11 +4,11 @@
 #include "math.h"
 #include "dynarray.h"
 
-typedef u32 ShaderHandle;
-typedef u32 TextureHandle;
-typedef u32 TextureSlot;
-typedef u32 VBOHandle;
-typedef u32 FBOHandle;
+typedef uint32_t ShaderHandle;
+typedef uint32_t TextureHandle;
+typedef uint32_t TextureSlot;
+typedef uint32_t VBOHandle;
+typedef uint32_t FBOHandle;
 //@reflect{
 enum TextureFlag_ {
    TextureFlag_WrapRepeat = (1 << 0),
@@ -30,7 +30,7 @@ enum TextureFlag_ {
    TextureFlag_Defaults = TextureFlag_ClampedNearest | TextureFlag_Color_SRGBA,
    TextureFlag_FBODefaults = TextureFlag_ClampedNearest | TextureFlag_Color_RGBA16F
 };//}
-typedef u16 TextureFlag;
+typedef uint16_t TextureFlag;
 
 struct Texture {
    Int2 sz;
@@ -49,7 +49,7 @@ typedef enum {
 
    VAttrib_COUNT
 }VAttrib_;
-typedef u16 VAttrib;
+typedef uint16_t VAttrib;
 
 struct Vertex {
    Float2 pos2, tex2;
@@ -57,8 +57,8 @@ struct Vertex {
 
 struct Mesh {
    VBOHandle handle = 0;
-   u32 vCount = 0;
-   i32 vSize = 0;
+   uint32_t vCount = 0;
+   int32_t vSize = 0;
 };
 
 enum BlendMode {
@@ -77,7 +77,7 @@ enum Uniform_ {
 
    Uniform_COUNT
 };
-typedef u32 Uniform;
+typedef uint32_t Uniform;
 
 
 
@@ -126,8 +126,8 @@ namespace render{
 
    // uniform sets
    void uSetBool(const char* u, bool value);
-   void uSetUint(const char* u, u32 value);
-   void uSetFloat(const char* u, f32 value);
+   void uSetUint(const char* u, uint32_t value);
+   void uSetFloat(const char* u, float value);
    void uSetFloat2(const char* u, Float2 const& value);
    void uSetFloat3(const char* u, Float3 const& value);
    void uSetMatrix(const char* u, Matrix const& value);
@@ -142,7 +142,7 @@ namespace render{
    void fboBind(FBO const& fbo);
 
    // VBO
-   Mesh meshBuild(Vertex const* vertices, u32 vCount);
+   Mesh meshBuild(Vertex const* vertices, uint32_t vCount);
    void meshDestroy(Mesh& m);
 
    void meshRender(Mesh const& m);

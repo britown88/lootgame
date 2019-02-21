@@ -20,7 +20,7 @@ struct StringViewHash {
    }
 };
 
-Symbol intern(StringView str) {
+Symbol* intern(StringView str) {
    static std::unordered_set < StringView, StringViewHash, StringViewEqual > table;
    auto search = table.find(str);
    if (search != table.end()) {

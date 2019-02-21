@@ -9,7 +9,7 @@ Map* mapCreate();
 struct PointLight {
    ColorRGBAf color;
    Float2 pos;
-   f32 size;
+   float size;
 
    // linear portion, smoothing factor, intensity
    Float3 attrs;

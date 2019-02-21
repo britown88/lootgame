@@ -27,7 +27,7 @@ typedef struct App App;
 App* appCreate(AppConfig const& config);
 
 typedef struct {
-   u32 w, h;
+   uint32_t w, h;
    StringView title;
 }WindowConfig;
 

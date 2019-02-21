@@ -17,9 +17,9 @@ std::string openFile(OpenFileConfig const& config);
 
 std::string cwd();
 
-byte *fileReadBinary(StringView path, u64 *fsize);
+byte *fileReadBinary(StringView path, uint64_t *fsize);
 std::string fileReadString(StringView path);
 
-int writeBinaryFile(StringView path, byte* buffer, u64 size);
+int writeBinaryFile(StringView path, byte* buffer, uint64_t size);
 
 std::string pathGetFilename(StringView path);

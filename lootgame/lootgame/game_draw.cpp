@@ -72,7 +72,7 @@ static void _renderDudeCollision(GameState& g, Dude& dude) {
 
    auto model = Matrix::identity();
    
-   model = Matrix::translate2f(dude.phy.pos - Float2{ (f32)vp.x, (f32)vp.y });
+   model = Matrix::translate2f(dude.phy.pos - Float2{ (float)vp.x, (float)vp.y });
    model *= Matrix::scale2f({ dude.phy.circle.size * 2, dude.phy.circle.size * 2 });
    uber::set(Uniform_Color, DkGreen);
    uber::set(Uniform_Alpha, 0.25f);
@@ -90,7 +90,7 @@ static void _renderTarget(Float2 pos, ColorRGBAf color) {
    auto sz = Textures[GameTextures_Target].sz;
 
    model *= Matrix::translate2f(pos);
-   model *= Matrix::scale2f({ (f32)sz.x, (f32)sz.y });
+   model *= Matrix::scale2f({ (float)sz.x, (float)sz.y });
 
    uber::resetToDefault();
    uber::set(Uniform_Color, color);
@@ -192,7 +192,7 @@ void renderUnlitScene(GameState& game) {
    uber::set(Uniform_OutputNormals, false, true);
 }
 
-static void _addLight(f32 size, VPCoords pos, ColorRGBAf c) {
+static void _addLight(float size, VPCoords pos, ColorRGBAf c) {
    uber::set(Uniform_Color, c);
    uber::set(Uniform_Alpha, 1.0f);
    //uber::set(Uniform_PointLightRadius, size/2.0f);
@@ -249,7 +249,7 @@ void renderLitScene(GameState& game) {
    render::clear(Black);
 
    render::setBlendMode(BlendMode_DISABLED);
-   uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (f32)vp.w, (f32)vp.h }));
+   uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (float)vp.w, (float)vp.h }));
    uber::bindTexture(Uniform_DiffuseTexture, Graphics.unlitScene.out[0].handle);
    render::meshRender(Graphics.meshUncentered);
 
@@ -272,8 +272,8 @@ void renderUI(GameState& game) {
 
    /*if (game->maindude.stamina < game->maindude.staminaMax)*/ {
       auto tsz = Textures[GameTextures_GemFilled].sz;
-      Float2 gemSize = { (f32)tsz.x, (f32)tsz.y };
-      f32 gemSpace = 0.0f;
+      Float2 gemSize = { (float)tsz.x, (float)tsz.y };
+      float gemSpace = 0.0f;
       auto w = (gemSize.x + gemSpace) * game.maindude.status.staminaMax;
 
       //Float2 staminaCorner = { game->maindude.phy.pos.x - w / 2.0f, game->maindude.phy.pos.y + game->maindude.phy.circle.size + 20 };
@@ -320,12 +320,12 @@ void renderUI(GameState& game) {
 
 
    if (game.DEBUG.showMovementDebugging) {
-      const static f32 moveTargetDist = 50.0f;
-      const static f32 aimTargetDist = 100.0f;
+      const static float moveTargetDist = 50.0f;
+      const static float aimTargetDist = 100.0f;
       auto &io = game.io;
       auto &dude = game.maindude;
 
-      auto pos = dude.phy.pos - Float2{ (f32)vp.x, (f32)vp.y };
+      auto pos = dude.phy.pos - Float2{ (float)vp.x, (float)vp.y };
 
       _renderTarget(pos + dude.phy.velocity * 100, Cyan);
       _renderTarget(pos + v2Normalized(dude.mv.facing) * aimTargetDist, Red);
@@ -347,7 +347,7 @@ static void renderOutput(GameState& game, FBO& output) {
    render::clear(Black);
 
    render::setBlendMode(BlendMode_NORMAL);
-   uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (f32)vp.w, (f32)vp.h }));
+   uber::set(Uniform_ModelMatrix, Matrix::scale2f({ (float)vp.w, (float)vp.h }));
 
    uber::bindTexture(Uniform_DiffuseTexture, Graphics.litScene.out[0].handle);
    render::meshRender(Graphics.meshUncentered);
@@ -357,7 +357,7 @@ static void renderOutput(GameState& game, FBO& output) {
 
    if (game.mode.type == ModeType_YOUDIED) {
       render::setBlendMode(BlendMode_MULITPLY);
-      auto ratio = cosInterp(1.0f - ((f32)game.mode.clock / 3000));
+      auto ratio = cosInterp(1.0f - ((float)game.mode.clock / 3000));
       uber::set(Uniform_Color, ColorRGBAf{ 1.0f, ratio, ratio, 1.0f });
       uber::set(Uniform_ColorOnly, true);
       render::meshRender(Graphics.meshUncentered);

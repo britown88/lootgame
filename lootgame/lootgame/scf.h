@@ -27,14 +27,14 @@ bool scfReaderNull(SCFReader const& view);
 bool scfReaderAtEnd(SCFReader const& view);
 
 SCFType scfReaderPeek(SCFReader const& view);
-u32 scfReaderRemaining(SCFReader const& view);
+uint32_t scfReaderRemaining(SCFReader const& view);
 void scfReaderSkip(SCFReader& view);
 
 SCFReader scfReadList(SCFReader& view);
-i32 const* scfReadInt(SCFReader& view);
-f32 const* scfReadFloat(SCFReader& view);
+int32_t const* scfReadInt(SCFReader& view);
+float const* scfReadFloat(SCFReader& view);
 StringView scfReadString(SCFReader& view);
-byte const* scfReadBytes(SCFReader& view, u32* sizeOut);
+byte const* scfReadBytes(SCFReader& view, uint32_t* sizeOut);
 
 typedef struct SCFWriter SCFWriter;
 
@@ -43,11 +43,11 @@ void scfWriterDestroy(SCFWriter* writer);
 
 void scfWriteListBegin(SCFWriter* writer);
 void scfWriteListEnd(SCFWriter* writer);
-void scfWriteInt(SCFWriter* writer, i32 i);
-void scfWriteFloat(SCFWriter* writer, f32 f);
+void scfWriteInt(SCFWriter* writer, int32_t i);
+void scfWriteFloat(SCFWriter* writer, float f);
 void scfWriteString(SCFWriter* writer, StringView string);
-void scfWriteBytes(SCFWriter* writer, void const* data, u32 size);
+void scfWriteBytes(SCFWriter* writer, void const* data, uint32_t size);
 
-void* scfWriteToBuffer(SCFWriter* writer, u32* sizeOut);
+void* scfWriteToBuffer(SCFWriter* writer, uint32_t* sizeOut);
 
 void DEBUG_imShowWriterStats(SCFWriter *writer);

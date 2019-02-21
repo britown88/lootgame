@@ -20,6 +20,6 @@ enum GameTextures_ {
 
    GameTexture_COUNT
 };
-typedef u32 GameTexture;
+typedef uint32_t GameTexture;
 
 

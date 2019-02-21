@@ -71,9 +71,9 @@ std::string pathGetFilename(StringView path) {
    return pathStr.substr(begin, len);
 }
 
-byte *fileReadBinary(StringView path, u64 *fsize) {
+byte *fileReadBinary(StringView path, uint64_t *fsize) {
    byte *mem;
-   u64 fsizeBuffer = 0;
+   uint64_t fsizeBuffer = 0;
    FILE *f = fopen(path, "rb");
 
    if (!fsize) {
@@ -116,7 +116,7 @@ std::string fileReadString(StringView path) {
 
 
 
-int writeBinaryFile(StringView path, byte* buffer, u64 size) {
+int writeBinaryFile(StringView path, byte* buffer, uint64_t size) {
    auto fOut = fopen(path, "wb");
    if (!fOut) {
       return 0;

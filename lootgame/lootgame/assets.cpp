@@ -28,11 +28,11 @@ static int _reloadShader(GraphicObjects &gfx) {
 
 
 static Texture _textureBuildFromFile(const char* path, TextureFlag flags = TextureFlag_Defaults) {
-   u64 sz = 0;
-   i32 x, y, comp;
+   uint64_t sz = 0;
+   int32_t x, y, comp;
    x = y = comp = 0;
    auto mem = fileReadBinary(path, &sz);
-   auto png = stbi_load_from_memory(mem, (i32)sz, &x, &y, &comp, 4);
+   auto png = stbi_load_from_memory(mem, (int32_t)sz, &x, &y, &comp, 4);
    auto out = render::textureBuild({ x, y }, flags, (ColorRGBA*)png);
 
    free(mem);

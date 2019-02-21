@@ -6,73 +6,73 @@ static const float RAD2DEG = 180.0f / PI;
 static const float DEG2RAD = PI / 180.0f;
 
 typedef struct {
-   i32 x, y;
+   int32_t x, y;
 } Int2;
 
 typedef struct {
-   i32 x, y, z;
+   int32_t x, y, z;
 } Int3;
 
 struct Float2 {
-   f32 x = 0, y = 0;
+   float x = 0, y = 0;
 
    inline Float2 operator-(Float2 lhs) const { return { x - lhs.x, y - lhs.y }; }
    inline Float2 operator-() const { return { -x, -y }; }
    inline Float2 operator+(Float2 lhs) const { return { x + lhs.x, y + lhs.y }; }
-   inline Float2 operator*(f32 s) const { return { x * s, y * s }; }
-   inline Float2 operator/(f32 s) const { return { x / s, y /s }; }
+   inline Float2 operator*(float s) const { return { x * s, y * s }; }
+   inline Float2 operator/(float s) const { return { x / s, y /s }; }
    inline Float2 operator/(Float2 lhs) const { return { x / lhs.x, y / lhs.y }; }
 
    inline Float2& operator-=(Float2 lhs) { x -= lhs.x; y -= lhs.y; return *this; }
    inline Float2& operator+=(Float2 lhs) { x += lhs.x; y += lhs.y; return *this; }
-   inline Float2& operator/=(f32 s) { x /= s; y /= s; return *this; }
-   inline Float2& operator*=(f32 s) { x *= s; y *= s; return *this; }
+   inline Float2& operator/=(float s) { x /= s; y /= s; return *this; }
+   inline Float2& operator*=(float s) { x *= s; y *= s; return *this; }
 };
 
 typedef struct {
-   f32 x, y, z;
+   float x, y, z;
 } Float3;
 
 Float3 vCross(Float3 a, Float3 b);
-f32 vDot(Float3 a, Float3 b);
+float vDot(Float3 a, Float3 b);
 Float3 vSubtract(Float3 a, Float3 b);
 Float3 vAdd(Float3 a, Float3 b);
 Float3 vNormalized(Float3 v);
-Float3 vScale(Float3 v, f32 s);
+Float3 vScale(Float3 v, float s);
 
-f32 v2Dot(Float2 a, Float2 b);
-f32 v2Dist(Float2 a, Float2 b);
-f32 v2DistSquared(Float2 a, Float2 b);
-f32 v2Len(Float2 v);
-f32 v2LenSquared(Float2 v);
+float v2Dot(Float2 a, Float2 b);
+float v2Dist(Float2 a, Float2 b);
+float v2DistSquared(Float2 a, Float2 b);
+float v2Len(Float2 v);
+float v2LenSquared(Float2 v);
 Float2 v2Subtract(Float2 a, Float2 b);
 Float2 v2Add(Float2 a, Float2 b);
 Float2 v2Normalized(Float2 v);
-Float2 v2Scale(Float2 v, f32 s);
+Float2 v2Scale(Float2 v, float s);
 
-f32 v2Determinant(Float2 a, Float2 b); //helper.  determines orientation of two vectors, positive vs. negative means clockwise/counterclockwise orientation
+float v2Determinant(Float2 a, Float2 b); //helper.  determines orientation of two vectors, positive vs. negative means clockwise/counterclockwise orientation
 Float2 v2Rotate(Float2 direction, Float2 rotation); //complex number rotation!!
-Float2 v2FromAngle(f32 radians);
+Float2 v2FromAngle(float radians);
 Float2 v2Conjugate(Float2 unit);
-f32 v2Angle(Float2 v);
+float v2Angle(Float2 v);
 Float2 v2Orthogonal(Float2 v);
-Float2 v2CapLength(Float2 v, f32 max);
+Float2 v2CapLength(Float2 v, float max);
 
 //direction is the current direction, target is the target direction
 //perFrame is Float2{cos(anglePerFrame), sin(anglePerFrame)} - this can be precalculated, to avoid runtime trig
 Float2 v2RotateTowards(Float2 direction, Float2 target, Float2 perFrame);
-Float2 v2MoveTowards(Float2 position, Float2 target, f32 speed);
+Float2 v2MoveTowards(Float2 position, Float2 target, float speed);
 
 
 typedef struct {
-   i32 x, y, w, h;
+   int32_t x, y, w, h;
 } Recti;
 
 typedef struct {
-   f32 x, y, w, h;
+   float x, y, w, h;
 } Rectf;
 
-static void rectiOffset(Recti *r, i32 x, i32 y) {
+static void rectiOffset(Recti *r, int32_t x, int32_t y) {
    r->x += x;
    r->y += y;
 }
@@ -94,7 +94,7 @@ static bool rectiIntersects(Recti a, Recti b) {
 }
 
 // collisions
-bool circleVsAabb(Float2 co, f32 cr, Rectf const& aabb);
+bool circleVsAabb(Float2 co, float cr, Rectf const& aabb);
 
 Recti getProportionallyFitRect(Float2 srcSize, Float2 destSize);
 Recti getProportionallyFitRect(Int2 srcSize, Int2 destSize);
@@ -138,12 +138,12 @@ public:
 
 // Intersects ray r = p + td, |d| = 1, with sphere co,cr and, if intersecting,
 // returns t value of intersection and intersection point q
-int intersectRaySphere(Float2 p, Float2 d, Float2 co, f32 cr, f32& t, Float2& q);
+int intersectRaySphere(Float2 p, Float2 d, Float2 co, float cr, float& t, Float2& q);
 
-f32 clamp(f32 f, f32 min, f32 max);
+float clamp(float f, float min, float max);
 
 // interps
-f32 lerp(f32 v1, f32 v2, f32 t);
-f32 cosInterp(f32 t);
-f32 cosInterp(f32 v1, f32 v2, f32 t);
-f32 smoothstep(f32 v1, f32 v2, f32 t);
+float lerp(float v1, float v2, float t);
+float cosInterp(float t);
+float cosInterp(float v1, float v2, float t);
+float smoothstep(float v1, float v2, float t);

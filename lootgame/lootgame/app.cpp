@@ -48,7 +48,7 @@ struct App {
 
    std::unordered_map<std::string, Dialog> dlgs;
 
-   u64 timerStart, timerFreq;
+   uint64_t timerStart, timerFreq;
 };
 
 static App* g_app = nullptr;

@@ -6,23 +6,11 @@
 
 
 typedef uint8_t   byte;
-typedef int8_t    sbyte;
-typedef int16_t   i16;
-typedef uint16_t  u16;
-typedef int32_t   i32;
-typedef uint32_t  u32;
-typedef int64_t   i64;
-typedef uint64_t  u64;
-typedef intptr_t  iPtr;
-typedef uintptr_t uPtr;
-typedef float     f32;
-typedef double    f64;
 
 typedef const char *StringView;
-typedef const char *InternString;
-typedef InternString Symbol;
+typedef const char Symbol;
 
-Symbol intern(StringView str);
+Symbol* intern(StringView str);
 std::string format(StringView fmt, ...);
 
 #ifndef __cplusplus
@@ -45,12 +33,12 @@ typedef byte      bool;
 #define LEN(a) (sizeof(a)/sizeof(a)[0])
 
 //sentinel values
-//#define vecNDef ((u32)-1)
+//#define vecNDef ((uint32_t)-1)
 
 //time
-typedef u64 Microseconds;
-typedef u64 Milliseconds;
-typedef u32 Seconds;
+typedef uint64_t Microseconds;
+typedef uint64_t Milliseconds;
+typedef uint32_t Seconds;
 
 #pragma pack(push, 1)
 typedef struct Time {
@@ -92,15 +80,15 @@ typedef struct {
 } ColorRGBA;
 
 typedef struct {
-   f32 r, g, b;
+   float r, g, b;
 } ColorRGBf;
 
 typedef struct {
-   f32 h, s, v;
+   float h, s, v;
 } ColorHSV;
 
 typedef struct {
-   f32 r, g, b, a;
+   float r, g, b, a;
 } ColorRGBAf;
 #pragma pack(pop)
 

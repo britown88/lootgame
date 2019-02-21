@@ -6,8 +6,8 @@ UNIFORM(uViewMatrix,	   ViewMatrix,		Matrix,		Matrix::identity())
 UNIFORM(uNormalTransform,NormalTransform,Matrix,	Matrix::identity())
 
 UNIFORM(uColor,			Color,			ColorRGBAf, {1,1,1,1})
-UNIFORM(uAlpha,			Alpha,			f32,		   1)
-UNIFORM(uHeight,			Height,			f32,		   0)
+UNIFORM(uAlpha,			Alpha,			Float,		   1)
+UNIFORM(uHeight,			Height,			Float,		   0)
 
 UNIFORM(uDiffuse,		   DiffuseTexture,TextureSlot, 0)
 UNIFORM(uNormals,		   NormalsTexture,TextureSlot, 1)

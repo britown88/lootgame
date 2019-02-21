@@ -8,11 +8,11 @@
 struct PhyCollision {
    PhyObject* a = nullptr;
    PhyObject* b = nullptr;
-   f32 time = 0.0f;
+   float time = 0.0f;
 };
 
 
-void getAllPhyCollisions(DynamicArray<PhyObject*>& objs, DynamicArray<PhyCollision>& collisions, f32 &timeRemaining) {
+void getAllPhyCollisions(DynamicArray<PhyObject*>& objs, DynamicArray<PhyCollision>& collisions, float &timeRemaining) {
 
    auto oe = objs.end();
    for (auto i = objs.begin(); i != oe; ++i) {
@@ -21,14 +21,14 @@ void getAllPhyCollisions(DynamicArray<PhyObject*>& objs, DynamicArray<PhyCollisi
          auto& b = *j;
 
          auto combinedSize = a->circle.size + b->circle.size;
-         f32 rangeCheck = //v2DistSquared(a->pos + a->velocity, b->pos + b->velocity);
+         float rangeCheck = //v2DistSquared(a->pos + a->velocity, b->pos + b->velocity);
             v2LenSquared({
             (a->pos.x + a->velocity.x) - (b->pos.x + b->velocity.x),
             (a->pos.y + a->velocity.y) - (b->pos.y + b->velocity.y)
                });
 
          if (rangeCheck < combinedSize*combinedSize) {
-            f32 t = 0.0f;
+            float t = 0.0f;
             Float2 q = { 0,0 };
 
             auto avelscaled = a->velocity * timeRemaining;
@@ -150,7 +150,7 @@ void resolveOverlaps(DynamicArray<PhyObject*>& objs, IslandPartitionSet* pSet) {
 
             auto combinedSize = a->circle.size + b->circle.size;
             auto connectRange = combinedSize + (a->maxSpeed + b->maxSpeed);
-            f32 distanceSquared = v2LenSquared({ a->pos.x - b->pos.x, a->pos.y - b->pos.y });
+            float distanceSquared = v2LenSquared({ a->pos.x - b->pos.x, a->pos.y - b->pos.y });
 
             bool connected = distanceSquared < connectRange * connectRange;
 
@@ -208,7 +208,7 @@ void updatePhyPositions(DynamicArray<PhyObject*>& objs) {
 
       }
 
-      f32 timeRemaining = 1.0f;
+      float timeRemaining = 1.0f;
       int attemptsToResolve = 0;
 
       while (timeRemaining > 0.0f && attemptsToResolve < 32) {

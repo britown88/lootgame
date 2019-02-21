@@ -11,6 +11,7 @@
 #include "scf.h"
 #include "vex.h"
 
+
 static ImGuiWindowFlags BorderlessFlags =
       ImGuiWindowFlags_NoMove |
       ImGuiWindowFlags_NoResize |
@@ -29,7 +30,7 @@ struct SCFTestState {
 
 struct SCFTestResultState {
    void* data;
-   u32 size;
+   uint32_t size;
 };
 
 struct VexTestState {
@@ -309,7 +310,7 @@ static void _mainMenu() {
 static void _renderViewerFBO(GameState& g, FBO& output) {
    auto sz = ImGui::GetContentRegionAvail();
 
-   auto rect = getProportionallyFitRect(output.sz, { (i32)sz.x, (i32)sz.y });
+   auto rect = getProportionallyFitRect(output.sz, { (int32_t)sz.x, (int32_t)sz.y });
 
    ImDrawList* draw_list = ImGui::GetWindowDrawList();
    const ImVec2 p = ImGui::GetCursorScreenPos();
@@ -320,7 +321,7 @@ static void _renderViewerFBO(GameState& g, FBO& output) {
 
    draw_list->AddRectFilled(a, b, IM_COL32_BLACK);
    draw_list->AddCallback([](auto, auto) { render::enableSRGB();  }, nullptr);
-   draw_list->AddImage( (ImTextureID)(iPtr)output.out[0].handle, a, b );
+   draw_list->AddImage( (ImTextureID)(intptr_t)output.out[0].handle, a, b );
    draw_list->AddCallback([](auto, auto) { render::disableSRGB(); }, nullptr);
 }
 
@@ -485,7 +486,7 @@ void uiEditDude(Dude& dude) {
          ImGui::InputFloat("Speed Cap Accel", &c.dudeSpeedCapEasing, 0.001f, 0.01f, 4);
          ImGui::InputFloat("Backward Penalty", &c.dudeBackwardsPenalty, 0.1f, 0.01f, 4);
 
-         f32 ratio = dude.mv.moveSpeedCap / 0.5f;
+         float ratio = dude.mv.moveSpeedCap / 0.5f;
          ImGui::ProgressBar(ratio, ImVec2(-1, 0), "Speed Cap");
 
          ImGui::Unindent();

@@ -30,21 +30,21 @@ struct GraphicObjects {
 struct EngineConstants {
    Int2 resolution = { 1920, 1080 };
 
-   f32 floorHeight = 0.0f;
-   f32 dudeHeight = 0.1f;
-   f32 lightHeight = 0.2f;
-   f32 lightLinearPortion = 0.0f;
-   f32 lightSmoothingFactor = 0.4f;
-   f32 lightIntensity = 100.0f;
+   float floorHeight = 0.0f;
+   float dudeHeight = 0.1f;
+   float lightHeight = 0.2f;
+   float lightLinearPortion = 0.0f;
+   float lightSmoothingFactor = 0.4f;
+   float lightIntensity = 100.0f;
 
-   f32 dudeAcceleration = 0.005f;
-   f32 dudeRotationSpeed = 0.010f;
-   f32 dudeMoveSpeed = 0.100f;
-   f32 dudeDashSpeed = 0.300f;
-   f32 dudeSpeedCapEasing = 0.0003f;
-   f32 dudeBackwardsPenalty = 0.250f;
-   f32 dudeDashDistance = 50.0f;
-   f32 dudeKnockbackDistance = 0.0f;
+   float dudeAcceleration = 0.005f;
+   float dudeRotationSpeed = 0.010f;
+   float dudeMoveSpeed = 0.100f;
+   float dudeDashSpeed = 0.300f;
+   float dudeSpeedCapEasing = 0.0003f;
+   float dudeBackwardsPenalty = 0.250f;
+   float dudeDashDistance = 50.0f;
+   float dudeKnockbackDistance = 0.0f;
 
    Milliseconds dudePostDashCooldown = 100;
    Milliseconds dudeBaseStaminaTickRecoveryTime = 500;
@@ -90,8 +90,8 @@ struct IO {
    Float2 leftStick;   // unit vector of left stick
    Float2 rightStick;  // unit vector of right stick
 
-   f32 leftTrigger = 0.0f; // 0-1 analog trigger
-   f32 rightTrigger = 0.0f;// 0-1 analog trigger
+   float leftTrigger = 0.0f; // 0-1 analog trigger
+   float rightTrigger = 0.0f;// 0-1 analog trigger
 
    bool buttonDown[GameButton_COUNT];
    bool buttonPressed[GameButton_COUNT];
@@ -116,10 +116,10 @@ enum SwingPhase {
 };
 
 struct AttackSwing {
-   f32 lungeDist; // character will luinge forward between windup and swing
-   f32 lungeSpeed; // perms
+   float lungeDist; // character will luinge forward between windup and swing
+   float lungeSpeed; // perms
 
-   f32 swipeAngle; // full range of the weapon swipe, in degrees
+   float swipeAngle; // full range of the weapon swipe, in degrees
    Milliseconds swingDur; // total time for the attack
    Milliseconds windupDur; // vulnerability period before swing
    Milliseconds cooldownDur; // period before user is free again
@@ -133,8 +133,8 @@ struct MoveSet {
 
 
 struct Movement {
-   f32 moveSpeedCap = 0.0f;       // updated per frame, interpolates toward moveSpeedCapTarget
-   f32 moveSpeedCapTarget = 0.0f; // updated per frame, max speed based on length of move vector and velocity direction vs facing
+   float moveSpeedCap = 0.0f;       // updated per frame, interpolates toward moveSpeedCapTarget
+   float moveSpeedCapTarget = 0.0f; // updated per frame, max speed based on length of move vector and velocity direction vs facing
    Float2 moveVector = { 0.0f, 0.0f };   // vector length 0-1 for movement amount/direction
    Float2 faceVector = { 0.0f, 0.0f };  // unit vector for target facing, facing will interpolate toward this angle
    Float2 facing = { 1, 0 };  // unit vector for character facing  
@@ -193,7 +193,7 @@ struct Shove {
    Float2 startPos;
    Milliseconds start;
    Milliseconds dur;
-   f32 speed; // only stored so we can restore speed correctly
+   float speed; // only stored so we can restore speed correctly
 };
 
 struct Dude {
@@ -224,7 +224,7 @@ enum ModeType_ {
    ModeType_ACTION = 0,
    ModeType_YOUDIED
 };
-typedef u16 ModeType;
+typedef uint16_t ModeType;
 
 struct GameMode {
    ModeType type = ModeType_ACTION;
@@ -247,7 +247,7 @@ struct GameState {
    struct {
       bool showMovementDebugging = false;
       bool showCollisionDebugging = false;
-      f32 ambientLight = 0.0f;
+      float ambientLight = 0.0f;
    } DEBUG;
 
    Dude maindude;

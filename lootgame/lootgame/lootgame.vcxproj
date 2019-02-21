@@ -167,6 +167,7 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     <ClCompile Include="mode_action.cpp" />
     <ClCompile Include="phy.cpp" />
     <ClCompile Include="reflectgen.cpp" />
+    <ClCompile Include="reflection.cpp" />
     <ClCompile Include="vex.cpp" />
     <ClCompile Include="win.cpp" />
     <ClCompile Include="colors.cpp" />
@@ -192,6 +193,7 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     <ClInclude Include="map.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="phy.h" />
+    <ClInclude Include="reflection.h" />
     <ClInclude Include="ui.h" />
     <ClInclude Include="vex.h" />
     <ClInclude Include="win.h" />

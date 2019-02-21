@@ -8,7 +8,7 @@ Float3 vCross(Float3 v1, Float3 v2) {
    };
    return out;
 }
-f32 vDot(Float3 v1, Float3 v2) {
+float vDot(Float3 v1, Float3 v2) {
    return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z);
 }
 Float3 vSubtract(Float3 a, Float3 b) {
@@ -17,26 +17,26 @@ Float3 vSubtract(Float3 a, Float3 b) {
 Float3 vAdd(Float3 a, Float3 b) {
    return { a.x + b.x, a.y + b.y, a.z + b.z };
 }
-Float3 vScale(Float3 a, f32 s) {
+Float3 vScale(Float3 a, float s) {
    return { a.x * s, a.y * s, a.z * s };
 }
 Float3 vNormalized(Float3 v) {
    return vScale(v, sqrtf(vDot(v, v)));
 }
 
-f32 v2Dot(Float2 v1, Float2 v2) {
+float v2Dot(Float2 v1, Float2 v2) {
    return (v1.x * v2.x) + (v1.y * v2.y);
 }
-f32 v2Dist(Float2 a, Float2 b) {
+float v2Dist(Float2 a, Float2 b) {
    return v2Len(b - a);
 }
-f32 v2DistSquared(Float2 a, Float2 b) {
+float v2DistSquared(Float2 a, Float2 b) {
    return v2LenSquared(b - a);
 }
-f32 v2Len(Float2 v) {
+float v2Len(Float2 v) {
    return sqrtf(v2Dot(v, v));
 }
-f32 v2LenSquared(Float2 v) {
+float v2LenSquared(Float2 v) {
    return v2Dot(v, v);
 }
 Float2 v2Subtract(Float2 a, Float2 b) {
@@ -45,7 +45,7 @@ Float2 v2Subtract(Float2 a, Float2 b) {
 Float2 v2Add(Float2 a, Float2 b) {
    return { a.x + b.x, a.y + b.y };
 }
-Float2 v2Scale(Float2 a, f32 s) {
+Float2 v2Scale(Float2 a, float s) {
    return { a.x * s, a.y * s };
 }
 Float2 v2Normalized(Float2 v) {
@@ -55,7 +55,7 @@ Float2 v2Normalized(Float2 v) {
    }
    return { 0,0 };
 }
-f32 v2Angle(Float2 v) {
+float v2Angle(Float2 v) {
    return atan2f(v.y, v.x);
 }
 Float2 v2Orthogonal(Float2 v) {
@@ -63,7 +63,7 @@ Float2 v2Orthogonal(Float2 v) {
 }
 
 //helper.  determines orientation of two vectors, positive vs. negative means clockwise/counterclockwise orientation
-f32 v2Determinant(Float2 a, Float2 b) {
+float v2Determinant(Float2 a, Float2 b) {
    return a.x * b.y - a.y * b.x;
 }
 //complex number rotation!!
@@ -79,7 +79,7 @@ Float2 v2Rotate(Float2 direction, Float2 rotation) {
 Float2 v2Conjugate(Float2 unit) {
    return Float2{ unit.x, -unit.y };
 }
-Float2 v2FromAngle(f32 radians) {
+Float2 v2FromAngle(float radians) {
    return { cosf(radians), sinf(radians) };
 }
 
@@ -105,9 +105,9 @@ Float2 v2RotateTowards(Float2 direction, Float2 target, Float2 perFrame) {
    return direction;
 }
 
-Float2 v2MoveTowards(Float2 position, Float2 target, f32 speed) {
+Float2 v2MoveTowards(Float2 position, Float2 target, float speed) {
    auto dir = target - position;
-   f32 length = sqrtf(v2Dot(dir, dir));
+   float length = sqrtf(v2Dot(dir, dir));
 
    if (length < speed) {
       return target;
@@ -116,7 +116,7 @@ Float2 v2MoveTowards(Float2 position, Float2 target, f32 speed) {
    return position + dir * (speed / length);
 }
 
-Float2 v2CapLength(Float2 v, f32 max) {
+Float2 v2CapLength(Float2 v, float max) {
    auto lensq = v2LenSquared(v);
    if (lensq > max*max) {
       if (lensq > 0.001f) {
@@ -128,7 +128,7 @@ Float2 v2CapLength(Float2 v, f32 max) {
 }
 
 
-bool circleVsAabb(Float2 co, f32 cr, Rectf const& aabb) {
+bool circleVsAabb(Float2 co, float cr, Rectf const& aabb) {
    Float2 a = { aabb.x, aabb.y };
    Float2 b = { a.x + aabb.w, a.y + aabb.h };
 
@@ -147,7 +147,7 @@ bool circleVsAabb(Float2 co, f32 cr, Rectf const& aabb) {
 
 
 
-i32 int2Dot(Int2 v1, Int2 v2) {
+int32_t int2Dot(Int2 v1, Int2 v2) {
    return v1.x * v2.x + v1.y * v2.y;
 }
 
@@ -159,12 +159,12 @@ Int2 int2Subtract(Int2 v1, Int2 v2) {
    return Int2{ v1.x - v2.x, v1.y - v2.y };
 }
 
-i32 pointOnLine(Int2 l1, Int2 l2, Int2 point) {
+int32_t pointOnLine(Int2 l1, Int2 l2, Int2 point) {
    return int2Dot(int2Perp(int2Subtract(l2, l1)), int2Subtract(point, l1));
 }
 
 bool lineSegmentIntersectsAABBi(Int2 l1, Int2 l2, Recti *rect) {
-   i32 topleft, topright, bottomright, bottomleft;
+   int32_t topleft, topright, bottomright, bottomleft;
 
    if (l1.x > rect->x + rect->w && l2.x > rect->x + rect->w) { return false; }
    if (l1.x < rect->x && l2.x < rect->x) { return false; }
@@ -189,8 +189,8 @@ bool lineSegmentIntersectsAABBi(Int2 l1, Int2 l2, Recti *rect) {
 }
 Recti getProportionallyFitRect(Int2 srcSize, Int2 destSize) {
    return getProportionallyFitRect(
-      Float2{ (f32)srcSize.x, (f32)srcSize.y }, 
-      Float2{ (f32)destSize.x, (f32)destSize.y });
+      Float2{ (float)srcSize.x, (float)srcSize.y }, 
+      Float2{ (float)destSize.x, (float)destSize.y });
 }
 Recti getProportionallyFitRect(Float2 srcSize, Float2 destSize) {
    float rw = (float)destSize.x;
@@ -200,9 +200,9 @@ Recti getProportionallyFitRect(Float2 srcSize, Float2 destSize) {
 
    float ratio = MIN(rw / cw, rh / ch);
 
-   Recti out = { 0, 0, (i32)(cw * ratio), (i32)(ch * ratio) };
-   out.x += (i32)((rw - out.w) / 2.0f);
-   out.y += (i32)((rh - out.h) / 2.0f);
+   Recti out = { 0, 0, (int32_t)(cw * ratio), (int32_t)(ch * ratio) };
+   out.x += (int32_t)((rw - out.w) / 2.0f);
+   out.y += (int32_t)((rh - out.h) / 2.0f);
 
    return out;
 }
@@ -321,7 +321,7 @@ Matrix Matrix::translate3f(Float3 const &v) {
 }
 Matrix Matrix::invert(Matrix const &m) {
    Matrix inv;
-   f32 det;
+   float det;
    int i;
 
    inv[0] = m[5] * m[10] * m[15] -
@@ -518,7 +518,7 @@ float const &Matrix::operator[](size_t index) const {
 }
 
 
-static f32 s2lin(f32 x) {
+static float s2lin(float x) {
    if (x <= 0.04045f) {
       return x * (1.0f / 12.92f);
    }
@@ -527,7 +527,7 @@ static f32 s2lin(f32 x) {
    }
 }
 
-static f32 lin2s(f32 x) {
+static float lin2s(float x) {
    if (x <= 0.0031308f) {
       return x * 12.92f;
    }
@@ -536,7 +536,7 @@ static f32 lin2s(f32 x) {
    }
 }
 
-static f32 i255 = 1.0f / 255.0f;
+static float i255 = 1.0f / 255.0f;
 
 ColorRGBAf sRgbToLinear(ColorRGBAf const& srgb) {
    return { s2lin(srgb.r), s2lin(srgb.g), s2lin(srgb.b), srgb.a };
@@ -574,7 +574,7 @@ ColorRGBA srgbPremultipleAlpha(ColorRGBA const& srgb) {
 
 // Intersects ray r = p + td, |d| = 1, with sphere co,cr and, if intersecting,
 // returns t value of intersection and intersection point q
-int intersectRaySphere(Float2 p, Float2 d, Float2 co, f32 cr, f32& t, Float2& q) {
+int intersectRaySphere(Float2 p, Float2 d, Float2 co, float cr, float& t, Float2& q) {
    auto m = p - co;
    auto b = v2Dot(m, d);
    auto c = v2Dot(m, m) - cr * cr;
@@ -594,22 +594,22 @@ int intersectRaySphere(Float2 p, Float2 d, Float2 co, f32 cr, f32& t, Float2& q)
 }
 
 
-f32 clamp(f32 f, f32 min, f32 max) {
+float clamp(float f, float min, float max) {
    return f > max ? max : (f < min ? min : f);
 }
 
 // interps
-f32 lerp(f32 v1, f32 v2, f32 t) {
+float lerp(float v1, float v2, float t) {
    return (v2 - v1) * t;
 }
-f32 cosInterp(f32 t) {
+float cosInterp(float t) {
    return (1.0f - cosf(t * PI)) / 2;
 }
-f32 cosInterp(f32 v1, f32 v2, f32 t) {
-   f32 t2 = cosInterp(t);
+float cosInterp(float v1, float v2, float t) {
+   float t2 = cosInterp(t);
    return lerp(v1, v2, t2);
 }
-f32 smoothstep(f32 v1, f32 v2, f32 t) {
+float smoothstep(float v1, float v2, float t) {
    t = clamp((t - v1) / (v2 - v1), 0.0f, 1.0f);
    return t * t * (3.0f - 2.0f * t);
 }

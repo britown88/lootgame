@@ -70,11 +70,11 @@ void dudeSetState(Dude& d, DudeState state, Milliseconds startTimeOffset) {
 }
 
 Milliseconds calcNextStaminaTickTime(int stam, int max) {
-   auto ratio = (f32)stam / max;
+   auto ratio = (float)stam / max;
    return Const.dudeBaseStaminaTickRecoveryTime + (Milliseconds)(Const.dudeBaseStaminaTickRecoveryTime * cosInterp(1 - ratio));
 }
 
-void dudeShove(Dude&d, Float2 dir, f32 speed, f32 distance) {
+void dudeShove(Dude&d, Float2 dir, float speed, float distance) {
    if (distance <= 0.0f || speed <= 0.0f) {
       return;
    }
@@ -135,7 +135,7 @@ void dudeUpdateStateCooldown(Dude& d) {
    }
 }
 
-void dudeBeginDash(Dude& d, f32 speed) {
+void dudeBeginDash(Dude& d, float speed) {
    if (dudeSpendStamina(d, 1)) {
       
       dudeSetState(d, DudeState_DASH);
@@ -421,7 +421,7 @@ void dudeUpdateVelocity(Dude& d) {
 
    if (!d.shoved) {
       // scale mvspeed based on facing;
-      f32 facedot = v2Dot(v2Normalized(d.phy.velocity), d.mv.facing);
+      float facedot = v2Dot(v2Normalized(d.phy.velocity), d.mv.facing);
       auto scaledSpeed = (d.phy.maxSpeed * (1 - Const.dudeBackwardsPenalty)) + (d.phy.maxSpeed * Const.dudeBackwardsPenalty * facedot);
 
       // set the target speed
@@ -489,7 +489,7 @@ void dudeUpdateBehavior(Dude& dude) {
    if (dist > 300.0f) {
       auto vec = v2Normalized(target.phy.pos - dude.phy.pos);
        dude.mv.faceVector = vec;
-       dude.mv.moveVector = v2Normalized(vec + v2Orthogonal(vec) * (f32)dude.ai.dir);
+       dude.mv.moveVector = v2Normalized(vec + v2Orthogonal(vec) * (float)dude.ai.dir);
    }
    else {
       auto unitToTarget = v2Normalized(target.phy.pos - dude.phy.pos);
@@ -497,7 +497,7 @@ void dudeUpdateBehavior(Dude& dude) {
 
       if (dist < 200.0f) {
          // too close, back up
-         dude.mv.moveVector = v2Normalized(-unitToTarget + v2Orthogonal(unitToTarget) * (f32)dude.ai.dir);
+         dude.mv.moveVector = v2Normalized(-unitToTarget + v2Orthogonal(unitToTarget) * (float)dude.ai.dir);
 
          //if (dist < 100.0f) {
          //   dudeBeginAttack(dude, 1, 0);
@@ -505,7 +505,7 @@ void dudeUpdateBehavior(Dude& dude) {
       }
       else {
          
-         dude.mv.moveVector = v2Orthogonal(unitToTarget) * 0.1f * (f32)dude.ai.dir;
+         dude.mv.moveVector = v2Orthogonal(unitToTarget) * 0.1f * (float)dude.ai.dir;
       }
    }
 }

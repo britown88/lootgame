@@ -8,6 +8,7 @@
 using namespace render;
 
 typedef bool Bool;
+typedef float Float;
 
 static ShaderHandle g_activeShader = 0;
 
@@ -23,7 +24,7 @@ struct UberShader {
          Matrix,
          TextureSlot,
          ColorRGBAf,
-         f32,
+         Float,
          Float2,
          Float3,
          Bool
@@ -55,7 +56,7 @@ struct UberShader {
             case UData::ColorRGBAf:
                render::uSetColor(dataMap[i].name, *(ColorRGBAf*)(((byte*)&defaults) + dataMap[i].offset));
                break;
-            case UData::f32:
+            case UData::Float:
                render::uSetFloat(dataMap[i].name, *(float*)(((byte*)&defaults) + dataMap[i].offset));
                break;
             case UData::Float2:
@@ -204,8 +205,8 @@ void render::setBlendMode(BlendMode mode) {
 }
 
 // shaders
-static u32 _compile(const char* shader, i32 type) {
-   u32 handle = glCreateShader(type);
+static uint32_t _compile(const char* shader, int32_t type) {
+   uint32_t handle = glCreateShader(type);
    if (handle) {
       int compileStatus;
       const GLchar **source = &shader;
@@ -227,7 +228,7 @@ static u32 _compile(const char* shader, i32 type) {
 
    return handle;
 }
-static ShaderHandle _link(u32 vertex, u32 fragment) {
+static ShaderHandle _link(uint32_t vertex, uint32_t fragment) {
    ShaderHandle handle = glCreateProgram();
    if (handle) {
       int linkStatus;
@@ -404,11 +405,11 @@ void render::uSetBool(const char* u, bool value) {
    auto uHandle = glGetUniformLocation(g_activeShader, u);
    glUniform1i(uHandle, value);
 }
-void render::uSetUint(const char* u, u32 value) {
+void render::uSetUint(const char* u, uint32_t value) {
    auto uHandle = glGetUniformLocation(g_activeShader, u);
    glUniform1ui(uHandle, value);
 }
-void render::uSetFloat(const char* u, f32 value) {
+void render::uSetFloat(const char* u, float value) {
    auto uHandle = glGetUniformLocation(g_activeShader, u);
    glUniform1f(uHandle, value);
 }
@@ -433,9 +434,9 @@ void render::uSetTextureSlot(const char* u, TextureSlot const& value) {
    glUniform1i(uHandle, value);
 }
 
-Mesh render::meshBuild(Vertex const* vertices, u32 vCount) {
+Mesh render::meshBuild(Vertex const* vertices, uint32_t vCount) {
    Mesh out;
-   out.vSize = (i32)sizeof(Vertex);
+   out.vSize = (int32_t)sizeof(Vertex);
    out.vCount = vCount;
 
    glGenBuffers(1, (GLuint*)&out.handle);
@@ -453,18 +454,18 @@ void render::meshRender(Mesh const& m) {
 
    glBindBuffer(GL_ARRAY_BUFFER, m.handle);
 
-   for (u32 i = 0; i < VAttrib_COUNT; ++i) {
+   for (uint32_t i = 0; i < VAttrib_COUNT; ++i) {
       glDisableVertexAttribArray(i);
    }
 
    auto p = (void*)offsetof(Vertex, pos2);
    auto t = (void*)offsetof(Vertex, tex2);
 
-   glEnableVertexAttribArray((u32)VAttrib_Pos2);
-   glVertexAttribPointer((u32)VAttrib_Pos2, 2, GL_FLOAT, GL_FALSE, m.vSize, (void*)offsetof(Vertex, pos2));
+   glEnableVertexAttribArray((uint32_t)VAttrib_Pos2);
+   glVertexAttribPointer((uint32_t)VAttrib_Pos2, 2, GL_FLOAT, GL_FALSE, m.vSize, (void*)offsetof(Vertex, pos2));
 
-   glEnableVertexAttribArray((u32)VAttrib_Tex2);
-   glVertexAttribPointer((u32)VAttrib_Tex2, 2, GL_FLOAT, GL_FALSE, m.vSize, (void*)offsetof(Vertex, tex2));
+   glEnableVertexAttribArray((uint32_t)VAttrib_Tex2);
+   glVertexAttribPointer((uint32_t)VAttrib_Tex2, 2, GL_FLOAT, GL_FALSE, m.vSize, (void*)offsetof(Vertex, tex2));
 
    glDrawArrays(GL_TRIANGLES, 0, m.vCount);
 }

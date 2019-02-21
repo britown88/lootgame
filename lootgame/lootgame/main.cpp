@@ -2,8 +2,7 @@
 #include "app.h"
 #include "lpp.h"
 
-
-
+#include "reflection.h"
 
 static void _parseArgs(int argc, char** argv, AppConfig &config) {
    auto begin = argv + 1;
@@ -22,15 +21,19 @@ static void _parseArgs(int argc, char** argv, AppConfig &config) {
 
 int main(int argc, char** argv)
 {
-   lppStartup();   
+   lppStartup();
 
    AppConfig config;
    _parseArgs(argc, argv, config);
-
+/*
    if (config.reflectgen) {
       runReflectGen(config);
    }
-   else {
+   else */{
+      reflectionStartup();
+
+      auto testtype = reflect<std::unordered_map<Symbol*, std::vector<std::string>>>();
+
       auto app = appCreate(config);
       appCreateWindow(app, WindowConfig{ 1280, 720, "Making Games is Fucking Hard" });
       while (appRunning(app)) {

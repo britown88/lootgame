@@ -55,7 +55,7 @@ static Dude _createDude(GameState& game) {
    out.phy.circle.size = 10.0f;
    out.phy.maxSpeed = Const.dudeMoveSpeed;
    out.phy.invMass = 0.0f;
-   out.renderSize = { (f32)tex.sz.x, (f32)tex.sz.y };
+   out.renderSize = { (float)tex.sz.x, (float)tex.sz.y };
    out.texture = tex.handle;
 
    out.status.stamina = out.status.staminaMax = 4;
@@ -75,8 +75,8 @@ static Dude _createEnemy(Float2 pos) {
    out.phy.circle.size = 10.0f;
    out.phy.velocity = { 0,0 };
    out.phy.maxSpeed = Const.dudeMoveSpeed;
-   out.phy.invMass = (f32)(rand() % 50 + 5) / 100.0f;
-   out.renderSize = { (f32)tex.sz.x, (f32)tex.sz.y };
+   out.phy.invMass = (float)(rand() % 50 + 5) / 100.0f;
+   out.renderSize = { (float)tex.sz.x, (float)tex.sz.y };
    out.texture = tex.handle;
    out.status.stamina = out.status.staminaMax = 3;
    out.status.health = out.status.healthMax = 1;
@@ -98,7 +98,7 @@ void gameStartActionMode(GameState &g) {
    g.baddudes.push_back(e);
 
    for (int i = 0; i < DUDE_COUNT; ++i) {
-      auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 });
+      auto e = _createEnemy({ (float)(rand() % 1820) + 100, (float)(rand() % 980) + 100 });
       e.ai.target = &g.maindude;
       g.baddudes.push_back(e);
    }
@@ -111,7 +111,7 @@ void gameStartActionMode(GameState &g) {
 
 
 void DEBUG_gameSpawnDude(GameState& game) {
-   auto e = _createEnemy({ (f32)(rand() % 1820) + 100, (f32)(rand() % 980) + 100 });
+   auto e = _createEnemy({ (float)(rand() % 1820) + 100, (float)(rand() % 980) + 100 });
    e.ai.target = &game.maindude;
    game.baddudes.push_back(e);
 }

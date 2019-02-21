@@ -99,6 +99,9 @@
     <ClCompile Include="reflectgen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="reflection.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h">
@@ -159,6 +162,9 @@
       <Filter>Header Files\utility</Filter>
     </ClInclude>
     <ClInclude Include="fsys.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="reflection.h">
       <Filter>Header Files\utility</Filter>
     </ClInclude>
   </ItemGroup>
