@@ -30,7 +30,7 @@ struct SCFTestState {
 
 struct SCFTestResultState {
    void* data;
-   uint32_t size;
+   uint64_t size;
 };
 
 struct VexTestState {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "defs.h"
+#include "scf.h"
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -39,8 +40,8 @@ struct TypeMetadataFunctions {
    void(*insert)(void* data, void* obj) = nullptr;
    void(*insertKVP)(void* data, void* key, void* value) = nullptr;
 
-   void(*serialize)(SCFWriter* writer, void *obj) = nullptr;
-   bool(*deserialize)(SCFReader* reader, void **objPtr) = nullptr;
+   void(*serialize)(SCFWriter* writer, void* data) = nullptr;
+   void(*deserialize)(SCFReader* reader, void* target) = nullptr;
 };
 
 struct TypeMetadata {
@@ -58,6 +59,9 @@ struct TypeMetadata {
    TypeMetadataFunctions funcs;
 };
 
+void serialize(SCFWriter* writer, TypeMetadata const* type, void* data);
+void deserialize(SCFReader* reader, TypeMetadata const* type, void* target);
+
 template<typename T>
 struct Reflector {
    static TypeMetadata const* type() { return nullptr; }
@@ -71,26 +75,26 @@ extern TypeMetadata const* metaname; \
 template<> \
 struct Reflector<c_type> { \
    static TypeMetadata const* type() { return metaname; } \
-}
+};
 
-BASIC_TYPE_REFLECT(bool, meta_bool);
+BASIC_TYPE_REFLECT(bool, meta_bool)
 
-BASIC_TYPE_REFLECT(byte, meta_byte);
-BASIC_TYPE_REFLECT(char, meta_sbyte);
+BASIC_TYPE_REFLECT(byte, meta_byte)
+BASIC_TYPE_REFLECT(char, meta_sbyte)
 
-BASIC_TYPE_REFLECT(int16_t, meta_i16);
-BASIC_TYPE_REFLECT(int32_t, meta_i32);
-BASIC_TYPE_REFLECT(int64_t, meta_i64);
+BASIC_TYPE_REFLECT(int16_t, meta_i16)
+BASIC_TYPE_REFLECT(int32_t, meta_i32)
+BASIC_TYPE_REFLECT(int64_t, meta_i64)
 
-BASIC_TYPE_REFLECT(uint16_t, meta_u16);
-BASIC_TYPE_REFLECT(uint32_t, meta_u32);
-BASIC_TYPE_REFLECT(uint64_t, meta_u64);
+BASIC_TYPE_REFLECT(uint16_t, meta_u16)
+BASIC_TYPE_REFLECT(uint32_t, meta_u32)
+BASIC_TYPE_REFLECT(uint64_t, meta_u64)
 
-BASIC_TYPE_REFLECT(float, meta_f32);
-BASIC_TYPE_REFLECT(double, meta_f64);
+BASIC_TYPE_REFLECT(float, meta_f32)
+BASIC_TYPE_REFLECT(double, meta_f64)
 
-BASIC_TYPE_REFLECT(std::string, meta_string);
-BASIC_TYPE_REFLECT(Symbol*, meta_symbol);
+BASIC_TYPE_REFLECT(std::string, meta_string)
+BASIC_TYPE_REFLECT(Symbol*, meta_symbol)
 
 #undef BASIC_TYPE_REFLECT
 
@@ -110,10 +114,27 @@ private:
          out.value = innerType;
          out.size = sizeof(std::vector<T>);
 
-         out.funcs.create = [](void* data) { new(data) ThisType(); };
-         out.funcs.destroy = [](void* data) { ((ThisType*)data)->~ThisType(); };
-         out.funcs.clear = [](void* self) { ((ThisType*)self)->clear(); };
-         out.funcs.insert = [](void* self, void* obj) { ((ThisType*)self)->push_back(*(T*)obj); };
+         //out.funcs.create = [](void* data) { new(data) ThisType(); };
+         //out.funcs.destroy = [](void* data) { ((ThisType*)data)->~ThisType(); };
+         //out.funcs.clear = [](void* self) { ((ThisType*)self)->clear(); };
+         //out.funcs.insert = [](void* self, void* obj) { ((ThisType*)self)->push_back(*(T*)obj); };
+
+         out.funcs.serialize = [](SCFWriter* writer, void* data) {
+            scfWriteListBegin(writer);
+            for (auto&& member : *((ThisType*)data)) {
+               serialize(writer, reflect<T>(), &member);
+            }
+            scfWriteListEnd(writer);
+         };
+
+         out.funcs.deserialize = [](SCFReader* reader, void* target) {
+            auto arr = scfReadList(*reader);
+            while (!scfReaderAtEnd(arr)) {
+               T obj;
+               deserialize(&arr, reflect<T>(), &obj);
+               ((ThisType*)target)->push_back(std::move(obj));
+            }
+         };
 
          return new TypeMetadata(out);
       }
@@ -141,10 +162,34 @@ private:
             out.value = valType;
             out.size = sizeof(ThisType);
 
-            out.funcs.create = [](void* data) { new(data) ThisType(); };
-            out.funcs.destroy = [](void* data) { ((ThisType*)data)->~ThisType(); };
-            out.funcs.clear = [](void* self) { ((ThisType*)self)->clear(); };
-            out.funcs.insertKVP = [](void* self, void* key, void* value) { ((ThisType*)self)->insert({ *(K*)key, *(V*)value }); };
+            //out.funcs.create = [](void* data) { new(data) ThisType(); };
+            //out.funcs.destroy = [](void* data) { ((ThisType*)data)->~ThisType(); };
+            //out.funcs.clear = [](void* self) { ((ThisType*)self)->clear(); };
+            //out.funcs.insertKVP = [](void* self, void* key, void* value) { ((ThisType*)self)->insert({ *(K*)key, *(V*)value }); };
+
+            out.funcs.serialize = [](SCFWriter* writer, void* data) {
+               scfWriteListBegin(writer);
+               for (auto&& member : *((ThisType*)data)) {
+                  scfWriteListBegin(writer);
+                  serialize(writer, reflect<K>(), (void*)&member.first);
+                  serialize(writer, reflect<V>(), (void*)&member.second);
+                  scfWriteListEnd(writer);
+               }
+               scfWriteListEnd(writer);
+            };
+
+            out.funcs.deserialize = [](SCFReader* reader, void* target) {
+               auto arr = scfReadList(*reader);
+               while (!scfReaderAtEnd(arr)) {
+                  auto kvp = scfReadList(arr);
+
+                  K key;
+                  V value;
+                  deserialize(&kvp, reflect<K>(), &key);
+                  deserialize(&kvp, reflect<V>(), &value);
+                  ((ThisType*)target)->insert({ key,  value });
+               }
+            };
 
             return new TypeMetadata(out);
          }

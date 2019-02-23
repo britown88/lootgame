@@ -3,35 +3,36 @@
 #include <string>
 #include <vector>
 
-static const uint32_t SCF_MAGIC_NUMBER = 373285619;
+static const uint64_t SCF_MAGIC_NUMBER = 373285619;
 
 struct SCFHeader {
-   const uint32_t magic = SCF_MAGIC_NUMBER;
-   uint32_t binarySegmentOffset = 0;
+   const uint64_t magic = SCF_MAGIC_NUMBER;
+   uint64_t binarySegmentOffset = 0;
 };
 
 
-static uint32_t _roundUp(uint32_t in) {
+static uint64_t _roundUp(uint64_t in) {
    return (in + 3) & ~3;
 }
 
 //get the number of bytes past the typelist for the start of the data
 // stay 4-byte aligned so leave a little extra data
-static uint32_t _dataOffset(SCFType const* typeList) {
-   auto len = (uint32_t)strlen((StringView)typeList);
+static uint64_t _dataOffset(SCFType const* typeList) {
+   auto len = (uint64_t)strlen((StringView)typeList);
    return _roundUp(len + 1);
 
    //_roundUp(tlist.size + 1) - (tlist.size);
 }
 
-static uint32_t _currentTypeSize(SCFReader const& view) {
+static uint64_t _currentTypeSize(SCFReader const& view) {
    switch (*view.typeList) {
    case SCFType_NULL: return 0;
-   case SCFType_INT: return sizeof(uint32_t);
+   case SCFType_INT: return sizeof(int64_t);
    case SCFType_FLOAT: return sizeof(float);
-   case SCFType_STRING: return sizeof(uint32_t);
-   case SCFType_BYTES: return sizeof(uint32_t);
-   case SCFType_SUBLIST: return *(uint32_t*)view.pos;
+   case SCFType_DOUBLE: return sizeof(double);
+   case SCFType_STRING: return sizeof(uintptr_t);
+   case SCFType_BYTES: return sizeof(uintptr_t);
+   case SCFType_SUBLIST: return *(uint64_t*)view.pos;
    }
 
    return 0;
@@ -64,8 +65,8 @@ bool scfReaderAtEnd(SCFReader const& view) {
 SCFType scfReaderPeek(SCFReader const& view) {
    return *view.typeList;
 }
-uint32_t scfReaderRemaining(SCFReader const& view) {
-   return (uint32_t)strlen((StringView)view.typeList);
+uint64_t scfReaderRemaining(SCFReader const& view) {
+   return (uint64_t)strlen((StringView)view.typeList);
 }
 void scfReaderSkip(SCFReader& view) {   
    (byte*&)view.pos += _currentTypeSize(view);
@@ -75,21 +76,21 @@ void scfReaderSkip(SCFReader& view) {
 SCFReader scfReadList(SCFReader& view) {
    if (*view.typeList != SCFType_SUBLIST) { return {};  }
 
-   uint32_t listSize = *(uint32_t*)view.pos;
+   uint64_t listSize = *(uint64_t*)view.pos;
 
    SCFReader out;
    out.header = view.header;
-   out.typeList = (byte*)view.pos + sizeof(uint32_t);
+   out.typeList = (byte*)view.pos + sizeof(uint64_t);
    out.pos = (byte*)out.typeList + _dataOffset(out.typeList);
 
-   (byte*&)view.pos += sizeof(uint32_t) + listSize;
+   (byte*&)view.pos += sizeof(uint64_t) + listSize;
    ++view.typeList;
 
    return out;
 }
-int32_t const* scfReadInt(SCFReader& view) {
+int64_t const* scfReadInt(SCFReader& view) {
    if (*view.typeList != SCFType_INT) { return nullptr; }
-   auto out = (int32_t*)view.pos;
+   auto out = (int64_t*)view.pos;
    scfReaderSkip(view);
    return out;
 }
@@ -99,27 +100,33 @@ float const* scfReadFloat(SCFReader& view) {
    scfReaderSkip(view);
    return out;
 }
+double const* scfReadDouble(SCFReader& view) {
+   if (*view.typeList != SCFType_DOUBLE) { return nullptr; }
+   auto out = (double*)view.pos;
+   scfReaderSkip(view);
+   return out;
+}
 StringView scfReadString(SCFReader& view) {
    if (*view.typeList != SCFType_STRING) { return nullptr; }
-   auto offset = *(uint32_t*)view.pos;
+   auto offset = *(uint64_t*)view.pos;
    scfReaderSkip(view);
    return (StringView)((byte*)view.header + view.header->binarySegmentOffset + offset);
 }
-byte const* scfReadBytes(SCFReader& view, uint32_t* sizeOut) {
+byte const* scfReadBytes(SCFReader& view, uint64_t* sizeOut) {
    if (*view.typeList != SCFType_BYTES) { return nullptr; }
-   auto offset = *(uint32_t*)view.pos;
+   auto offset = *(uint64_t*)view.pos;
    scfReaderSkip(view);
 
    auto bin = (byte*)view.header + view.header->binarySegmentOffset + offset;
-   *sizeOut = *(uint32_t*)bin;
-   return bin + sizeof(uint32_t);
+   *sizeOut = *(uint64_t*)bin;
+   return bin + sizeof(uint64_t);
 }
 
 struct SCFBuffer {
    byte* data = nullptr;
-   uint32_t size = 0, capacity = 0;
+   uint64_t size = 0, capacity = 0;
 
-   void grow(uint32_t count) {
+   void grow(uint64_t count) {
       if (capacity < size + count) {
          capacity = (size+count) * 2;
          byte* newBuff = new byte[capacity];
@@ -133,7 +140,7 @@ struct SCFBuffer {
       grow(1);
       data[size++] = b;
    }
-   void push(byte*buff, uint32_t len) {
+   void push(byte*buff, uint64_t len) {
       grow(len);
       memcpy(data + size, buff, len);
       size += len;
@@ -153,6 +160,7 @@ static StringView _typeName(SCFType type) {
    case SCFType_NULL: return "Null";
    case SCFType_INT: return "Int";
    case SCFType_FLOAT: return "Float";
+   case SCFType_DOUBLE: return "Double";
    case SCFType_STRING: return "String";
    case SCFType_BYTES: return "Bytes";
    case SCFType_SUBLIST: return "Sublist";
@@ -165,7 +173,7 @@ void DEBUG_imShowWriterStats(SCFWriter *writer) {
 
    if (ImGui::TreeNode("Current Type List")) {
       auto &l = writer->currentTypeList.back();
-      for (uint32_t i = 0; i < l.size; ++i) {
+      for (uint64_t i = 0; i < l.size; ++i) {
          ImGui::Text(_typeName(l.data[i]));
       }
       ImGui::TreePop();
@@ -207,8 +215,8 @@ void scfWriteListEnd(SCFWriter* writer) {
    auto &tlist = writer->currentTypeList.back();
    auto &dSet = writer->currentDataSet.back();
 
-   int padding = _roundUp(tlist.size + 1) - (tlist.size);
-   uint32_t listSize = tlist.size + padding + dSet.size;
+   auto padding = _roundUp(tlist.size + 1) - (tlist.size);
+   uint64_t listSize = tlist.size + padding + dSet.size;
 
    //we push our data onto the parents dataset
    auto &parentSet = *(writer->currentDataSet.end() - 2);
@@ -224,7 +232,7 @@ void scfWriteListEnd(SCFWriter* writer) {
    writer->currentTypeList.erase(writer->currentTypeList.end() - 1);
    writer->currentDataSet.erase(writer->currentDataSet.end() - 1);
 }
-void scfWriteInt(SCFWriter* writer, int32_t i) {
+void scfWriteInt(SCFWriter* writer, int64_t i) {
    auto &tlist = writer->currentTypeList.back();
    auto &dSet = writer->currentDataSet.back();
 
@@ -238,9 +246,16 @@ void scfWriteFloat(SCFWriter* writer, float f) {
    tlist.push(SCFType_FLOAT);
    dSet.push((byte*)&f, sizeof(f));
 }
+void scfWriteDouble(SCFWriter* writer, double d) {
+   auto &tlist = writer->currentTypeList.back();
+   auto &dSet = writer->currentDataSet.back();
+
+   tlist.push(SCFType_DOUBLE);
+   dSet.push((byte*)&d, sizeof(d));
+}
 void scfWriteString(SCFWriter* writer, StringView string) {
-   uint32_t len = (uint32_t)strlen(string) + 1;
-   uint32_t offset = writer->binarySegment.size;
+   uint64_t len = (uint64_t)strlen(string) + 1;
+   uint64_t offset = writer->binarySegment.size;
 
    writer->binarySegment.push((byte*)string, len); //push to binary segment
 
@@ -249,8 +264,8 @@ void scfWriteString(SCFWriter* writer, StringView string) {
    tlist.push(SCFType_STRING);
    dSet.push((byte*)&offset, sizeof(offset)); // push binary offset into dataset
 }
-void scfWriteBytes(SCFWriter* writer, void const* data, uint32_t size) {
-   uint32_t offset = writer->binarySegment.size;
+void scfWriteBytes(SCFWriter* writer, void const* data, uint64_t size) {
+   uint64_t offset = writer->binarySegment.size;
 
    writer->binarySegment.push((byte*)&size, sizeof(size)); //push size value to binary
    writer->binarySegment.push((byte*)data, size); //push to binary segment
@@ -261,14 +276,14 @@ void scfWriteBytes(SCFWriter* writer, void const* data, uint32_t size) {
    dSet.push((byte*)&offset, sizeof(offset)); // push binary offset into dataset
 }
 
-void* scfWriteToBuffer(SCFWriter* writer, uint32_t* sizeOut) {
+void* scfWriteToBuffer(SCFWriter* writer, uint64_t* sizeOut) {
 
    //first copy current list to main set
    auto &tlist = writer->currentTypeList.back();
    auto &dSet = writer->currentDataSet.back();
    int padding = _roundUp(tlist.size + 1) - (tlist.size);
 
-   uint32_t listSize = tlist.size + padding + dSet.size;
+   uint64_t listSize = tlist.size + padding + dSet.size;
 
    writer->dataSegment.grow( listSize); // small optimization for a large growth
    writer->dataSegment.push((byte*)tlist.data, tlist.size); //push typelist
@@ -278,7 +293,7 @@ void* scfWriteToBuffer(SCFWriter* writer, uint32_t* sizeOut) {
    auto dataSize = writer->dataSegment.size;
    auto binarySize = writer->binarySegment.size;
 
-   uint32_t totalSize = sizeof(SCFHeader) + dataSize + binarySize;
+   uint64_t totalSize = sizeof(SCFHeader) + dataSize + binarySize;
 
    byte* out = new byte[totalSize];
    memset(out, 0, totalSize);
