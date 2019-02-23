@@ -21,5 +21,6 @@ byte *fileReadBinary(StringView path, uint64_t *fsize);
 std::string fileReadString(StringView path);
 
 int writeBinaryFile(StringView path, byte* buffer, uint64_t size);
+int writeStringFile(StringView path, const char* buffer);
 
 std::string pathGetFilename(StringView path);

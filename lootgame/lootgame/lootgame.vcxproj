@@ -194,6 +194,7 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     <ClInclude Include="parser.h" />
     <ClInclude Include="phy.h" />
     <ClInclude Include="reflection.h" />
+    <ClInclude Include="reflection_gen.h" />
     <ClInclude Include="ui.h" />
     <ClInclude Include="vex.h" />
     <ClInclude Include="win.h" />
@@ -207,6 +208,11 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
   <ItemGroup>
     <None Include="assets\fragment.glsl" />
     <None Include="assets\vertex.glsl" />
+    <None Include="reflection_gen.h.temp" />
+    <None Include="reflection_gen.inl" />
+    <None Include="reflection_gen.temp" />
+    <None Include="reflection_gen_file.temp" />
+    <None Include="ui_reflection_gen.inl" />
     <None Include="uniforms.x" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

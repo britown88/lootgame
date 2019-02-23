@@ -113,7 +113,15 @@ std::string fileReadString(StringView path) {
    return std::move(out);
 }
 
-
+int writeStringFile(StringView path, const char* buffer) {
+   auto fOut = fopen(path, "wt");
+   if (!fOut) {
+      return 0;
+   }
+   fputs(buffer, fOut);
+   fclose(fOut);
+   return 1;
+}
 
 
 int writeBinaryFile(StringView path, byte* buffer, uint64_t size) {

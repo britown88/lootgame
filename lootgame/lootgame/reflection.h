@@ -41,7 +41,7 @@ struct TypeMetadataFunctions {
    void(*insertKVP)(void* data, void* key, void* value) = nullptr;
 
    void(*serialize)(SCFWriter* writer, void* data) = nullptr;
-   void(*deserialize)(SCFReader* reader, void* target) = nullptr;
+   void(*deserialize)(SCFReader& reader, void* target) = nullptr;
 };
 
 struct TypeMetadata {
@@ -60,7 +60,7 @@ struct TypeMetadata {
 };
 
 void serialize(SCFWriter* writer, TypeMetadata const* type, void* data);
-void deserialize(SCFReader* reader, TypeMetadata const* type, void* target);
+void deserialize(SCFReader& reader, TypeMetadata const* type, void* target);
 
 template<typename T>
 struct Reflector {
@@ -127,11 +127,11 @@ private:
             scfWriteListEnd(writer);
          };
 
-         out.funcs.deserialize = [](SCFReader* reader, void* target) {
-            auto arr = scfReadList(*reader);
+         out.funcs.deserialize = [](SCFReader& reader, void* target) {
+            auto arr = scfReadList(reader);
             while (!scfReaderAtEnd(arr)) {
                T obj;
-               deserialize(&arr, reflect<T>(), &obj);
+               deserialize(arr, reflect<T>(), &obj);
                ((ThisType*)target)->push_back(std::move(obj));
             }
          };
@@ -178,15 +178,15 @@ private:
                scfWriteListEnd(writer);
             };
 
-            out.funcs.deserialize = [](SCFReader* reader, void* target) {
-               auto arr = scfReadList(*reader);
+            out.funcs.deserialize = [](SCFReader& reader, void* target) {
+               auto arr = scfReadList(reader);
                while (!scfReaderAtEnd(arr)) {
                   auto kvp = scfReadList(arr);
 
                   K key;
                   V value;
-                  deserialize(&kvp, reflect<K>(), &key);
-                  deserialize(&kvp, reflect<V>(), &value);
+                  deserialize(kvp, reflect<K>(), &key);
+                  deserialize(kvp, reflect<V>(), &value);
                   ((ThisType*)target)->insert({ key,  value });
                }
             };

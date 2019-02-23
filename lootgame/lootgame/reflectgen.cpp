@@ -201,6 +201,11 @@ static bool _acceptType(StringParser& p, ParsedType& output) {
          }
       }
       output.name.assign(typeStart, typeEnd);
+
+      for (int i = 0; i < output.pointers; ++i) {
+         output.name.append(1, '*');
+      }
+
       return true;
    }
 
@@ -420,9 +425,14 @@ bool _acceptEnum(StringParser& p, ParsedEnum& output) {
    p.pos = start;
    return false;
 }
+enum FileType {
+   FileType_Header = 0,
+   FileType_Cpp
+};
 
 struct ParsedFile {
    fsys::path path;
+   FileType type;
 
    std::vector<ParsedStruct> structs;
    std::vector<ParsedEnum> enums;
@@ -454,7 +464,19 @@ static ParsedFile _parseFile(fsys::path path) {
    ParsedFile file;
    auto ext = path.extension();
 
-   if (ext == ".h" || ext == ".hpp" || ext == ".c" || ext == ".cpp") {
+   bool valid = false;
+
+
+   if (ext == ".h" || ext == ".hpp") {
+      file.type = FileType_Header;
+      valid = true;
+   }
+   else if (ext == ".c" || ext == ".cpp") {
+      file.type = FileType_Cpp;
+      valid = true;
+   }
+
+   if(valid){
       file.path = path;
 
       auto content = fileReadString(path.string().c_str());
@@ -474,6 +496,149 @@ static ParsedFile _parseFile(fsys::path path) {
    return file;
 }
 
+static void _generateMainHeader(std::vector<ParsedFile> &files) {
+   auto templt = fileReadString("reflection_gen.h.temp");
+   auto t = vexTemplateCreate(templt.c_str());
+
+   for (auto&& file : files) {
+
+      if (file.type == FileType_Header) {
+         for (auto&& s : file.structs) {
+            vexTemplateBeginScope(t, "struct_metadata");
+            vexTemplateAddSubstitution(t, "struct_name", s.name.c_str());
+            vexTemplateEndScope(t);
+         }
+
+         for (auto&& e : file.enums) {
+            vexTemplateBeginScope(t, "enum_metadata");
+            vexTemplateAddSubstitution(t, "enum_name", e.name.c_str());
+            vexTemplateEndScope(t);
+         }
+      }
+   }
+
+   auto output = vexTemplateRender(t);
+   vexTemplateDestroy(t);
+
+   writeStringFile("reflection_gen.h", output.c_str());
+   printf("Generated reflection_gen.h\n");
+}
+
+static void _generateMainHeaderImpl(std::vector<ParsedFile> &files) {
+   auto templt = fileReadString("reflection_gen.temp");
+   auto t = vexTemplateCreate(templt.c_str());
+
+   for (auto&& file : files) {
+
+      if (file.type == FileType_Header) {
+         for (auto&& e : file.enums) {
+            vexTemplateBeginScope(t, "struct_metadata");
+            vexTemplateAddSubstitution(t, "struct_name", e.name.c_str());
+            vexTemplateEndScope(t);
+
+            vexTemplateBeginScope(t, "enum_metadata_entry_init");
+            vexTemplateAddSubstitution(t, "enum_name", e.name.c_str());
+
+            for (auto && m : e.members) {
+               vexTemplateBeginScope(t, "enum_metadata_entry_init");
+               vexTemplateAddSubstitution(t, "entry_name", m.name.c_str());
+               vexTemplateEndScope(t);
+            }
+
+            vexTemplateEndScope(t);
+
+            
+         }
+
+         for (auto&& s : file.structs) {
+            vexTemplateBeginScope(t, "struct_metadata");
+            vexTemplateAddSubstitution(t, "struct_name", s.name.c_str());
+            vexTemplateEndScope(t);
+
+            vexTemplateBeginScope(t, "struct_metadata_init");
+            vexTemplateAddSubstitution(t, "struct_name", s.name.c_str());
+
+            for (auto && m : s.members) {
+               vexTemplateBeginScope(t, "struct_metadata_member_init");
+               vexTemplateAddSubstitution(t, "member_name", m.name.c_str());
+               vexTemplateAddSubstitution(t, "member_type", m.type.name.c_str());
+               vexTemplateEndScope(t);
+            }
+
+            vexTemplateEndScope(t);
+         }
+         
+      }
+      else {
+         vexTemplateBeginScope(t, "initialize_file_reflection");
+         vexTemplateAddSubstitution(t, "file", file.path.stem().string().c_str());
+         vexTemplateEndScope(t);
+      }
+   }
+
+   auto output = vexTemplateRender(t);
+   vexTemplateDestroy(t);
+
+   writeStringFile("reflection_gen.inl", output.c_str());
+   printf("Generated reflection_gen.inl\n");
+}
+
+static void _generateFileInline(ParsedFile &file) {
+   auto templt = fileReadString("reflection_gen_file.temp");
+   auto t = vexTemplateCreate(templt.c_str());
+
+   std::string fname = file.path.stem().string().c_str();
+
+   vexTemplateAddSubstitution(t, "file", fname.c_str());
+
+   for (auto&& e : file.enums) {
+      vexTemplateBeginScope(t, "struct_metadata");
+      vexTemplateAddSubstitution(t, "struct_name", e.name.c_str());
+      vexTemplateEndScope(t);
+
+      vexTemplateBeginScope(t, "enum_metadata_entry_init");
+      vexTemplateAddSubstitution(t, "enum_name", e.name.c_str());
+
+      for (auto && m : e.members) {
+         vexTemplateBeginScope(t, "enum_metadata_entry_init");
+         vexTemplateAddSubstitution(t, "entry_name", m.name.c_str());
+         vexTemplateEndScope(t);
+      }
+
+      vexTemplateEndScope(t);
+
+
+   }
+
+   for (auto&& s : file.structs) {
+      vexTemplateBeginScope(t, "struct_metadata");
+      vexTemplateAddSubstitution(t, "struct_name", s.name.c_str());
+      vexTemplateEndScope(t);
+
+      vexTemplateBeginScope(t, "struct_metadata_init");
+      vexTemplateAddSubstitution(t, "struct_name", s.name.c_str());
+
+      for (auto && m : s.members) {
+         vexTemplateBeginScope(t, "struct_metadata_member_init");
+         vexTemplateAddSubstitution(t, "member_name", m.name.c_str());
+         vexTemplateAddSubstitution(t, "member_type", m.type.name.c_str());
+         vexTemplateEndScope(t);
+      }
+
+      vexTemplateEndScope(t);
+   }
+
+
+   auto output = vexTemplateRender(t);
+   vexTemplateDestroy(t);
+
+   auto outFile = format("%s_reflection_gen.inl", fname.c_str());
+
+   writeStringFile(outFile.c_str(), output.c_str());
+   printf("Generated %s\n", outFile.c_str());
+
+}
+
 
 void runReflectGen(AppConfig const& config) {
    std::vector<ParsedFile> files;
@@ -483,6 +648,15 @@ void runReflectGen(AppConfig const& config) {
          files.push_back(file);
       }
    });
+
+   _generateMainHeader(files);
+   _generateMainHeaderImpl(files);
+
+   for (auto&& file : files) {
+      if (file.type == FileType_Cpp) {
+         _generateFileInline(file);
+      }
+   }
 
    return;
 }

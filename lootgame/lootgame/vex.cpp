@@ -2,6 +2,7 @@
 #include "parser.h"
 
 #include <string.h>
+#include <vector>
 
 static bool _vexspancmp(VexSpan const& lhs, const char* rhs, int rhsSize) {
    if (rhsSize != lhs.end - lhs.begin) {
@@ -19,6 +20,7 @@ static bool _vexspancmp(VexSpan const& lhs, const char* rhs, int rhsSize) {
 
 bool VexSpan::operator==(VexSpan const& other) { return _vexspancmp(*this, other.begin, other.end - other.begin); }
 bool VexSpan::operator==(std::string const& other) { return _vexspancmp(*this, other.c_str(), other.size()); }
+bool VexSpan::operator==(const char* other) { return _vexspancmp(*this, other, strlen(other)); }
 
 static bool _acceptSigil(StringParser& p) {
    while (!p.atEnd()) {
@@ -192,7 +194,8 @@ static void _parseSpan(VexSpan span, VexNode* parent) {
          lastChild->next = newNode;
       }
       lastChild = newNode;
-      newNode->span.begin = p.pos;
+      newNode->span.begin = p.pos - 1; //include sigil into span
+
       _parseNode(newNode, p);
    }
 }
@@ -219,4 +222,91 @@ void vexDestroy(VexNode* node) {
       node->children = next;
    }
    delete node;
+}
+
+struct TemplateSub {
+   std::string tag, value;
+};
+
+struct TemplateScope {   
+   std::string tag;
+   std::vector<TemplateSub> subs;
+   std::vector<TemplateScope> scopes;
+
+   TemplateScope *previous = nullptr;
+};
+
+struct VexTemplate {
+   std::string templt;
+  
+   TemplateScope root;
+   TemplateScope* currentScope = &root;
+};
+
+
+VexTemplate* vexTemplateCreate(const char* templt) {
+   auto out = new VexTemplate();
+   out->templt = templt;
+   return out;
+}
+void vexTemplateDestroy(VexTemplate* self) {
+   delete self;
+}
+
+void vexTemplateAddSubstitution(VexTemplate* self, const char* tag, const char* value) {
+   self->currentScope->subs.push_back({tag, value});
+}
+void vexTemplateBeginScope(VexTemplate* self, const char* tag) {
+   TemplateScope newScope;
+   newScope.tag = tag;
+   newScope.previous = self->currentScope;
+   newScope.subs = self->currentScope->subs; // copy substitutions forward
+
+   self->currentScope->scopes.push_back(newScope);
+   self->currentScope = &self->currentScope->scopes.back();
+}
+void vexTemplateEndScope(VexTemplate* self) {
+   assert(self->currentScope->previous); // begin/end mismatch!
+   self->currentScope = self->currentScope->previous;
+}
+
+static void _renderTemplateScope(VexNode* node, TemplateScope* scope, std::string& output) {
+
+   const char* lastChildSpanEnd = node->body.begin;
+   auto child = node->children;
+   while (child) {
+      output.append(lastChildSpanEnd, child->span.begin);
+
+      bool subFound = false;
+      for (auto&& sub : scope->subs) {
+         if (child->tag == sub.tag) {
+            output.append(sub.value);
+            subFound = true;
+            break;
+         }
+      }
+
+      if (!subFound) {
+         for (auto&& scope : scope->scopes) {
+            if (child->tag == scope.tag) {
+               _renderTemplateScope(child, &scope, output);               
+            }
+         }
+      }
+
+      lastChildSpanEnd = child->span.end;
+      child = child->next;
+   }
+
+   output.append(lastChildSpanEnd, node->body.end);
+}
+
+std::string vexTemplateRender(VexTemplate* self) {
+   auto parsed = vexCreate(self->templt);
+   std::string out;
+
+   _renderTemplateScope(parsed, &self->root, out);
+
+   vexDestroy(parsed);
+   return out;
 }

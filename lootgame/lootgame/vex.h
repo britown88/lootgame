@@ -7,6 +7,7 @@ struct VexSpan {
 
    bool operator==(VexSpan const& other);
    bool operator==(std::string const& other);
+   bool operator==(const char* other);
 };
 
 
@@ -21,3 +22,19 @@ VexNode* vexCreate(const char* doc);
 VexNode* vexCreate(std::string const& doc);
 
 void vexDestroy(VexNode* node);
+
+
+typedef struct VexTemplate VexTemplate;
+
+VexTemplate* vexTemplateCreate(const char* tmplt);
+void vexTemplateDestroy(VexTemplate* self);
+
+void vexTemplateAddSubstitution(VexTemplate* self, const char* tag, const char* substitution);
+void vexTemplateBeginScope(VexTemplate* self, const char* tag);
+void vexTemplateEndScope(VexTemplate* self);
+
+std::string vexTemplateRender(VexTemplate* self);
+
+
+
+

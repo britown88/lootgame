@@ -31,6 +31,12 @@
     <Filter Include="Source Files\utility">
       <UniqueIdentifier>{14656380-3ac2-4f82-a5c7-30a1c1e7a7f9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\templates">
+      <UniqueIdentifier>{d02cefce-799e-4e42-b96c-351bcd48d0d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\generated">
+      <UniqueIdentifier>{bcdb1192-9b44-4244-8a77-abbb1119bd41}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -167,6 +173,9 @@
     <ClInclude Include="reflection.h">
       <Filter>Header Files\utility</Filter>
     </ClInclude>
+    <ClInclude Include="reflection_gen.h">
+      <Filter>Header Files\generated</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="uniforms.x">
@@ -177,6 +186,21 @@
     </None>
     <None Include="assets\vertex.glsl">
       <Filter>Resource Files</Filter>
+    </None>
+    <None Include="reflection_gen.h.temp">
+      <Filter>Source Files\templates</Filter>
+    </None>
+    <None Include="reflection_gen.temp">
+      <Filter>Source Files\templates</Filter>
+    </None>
+    <None Include="reflection_gen_file.temp">
+      <Filter>Source Files\templates</Filter>
+    </None>
+    <None Include="reflection_gen.inl">
+      <Filter>Header Files\generated</Filter>
+    </None>
+    <None Include="ui_reflection_gen.inl">
+      <Filter>Header Files\generated</Filter>
     </None>
   </ItemGroup>
 </Project>

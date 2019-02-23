@@ -2,6 +2,8 @@
 
 #include "scf.h"
 
+#define UNKNOWN_ENUM_ENTRY "__UNKNOWN_ENUM__"
+
 TypeMetadata const* meta_bool;
 TypeMetadata const* meta_byte;
 TypeMetadata const* meta_sbyte;
@@ -67,6 +69,27 @@ void reflectionStartup() {
    _createBasicTypes();
 }
 
+static bool _compareEnumValue(size_t enumSize, int64_t entryValue, void*data) {
+   switch (enumSize) {
+   case sizeof(int8_t)  : return *((int8_t*)data) == entryValue;
+   case sizeof(int16_t) : return *((int16_t*)data) == entryValue;
+   case sizeof(int32_t) : return *((int32_t*)data) == entryValue;
+   case sizeof(int64_t) : return *((int64_t*)data) == entryValue;
+   default: ASSERT(false);
+   }
+   return false;
+}
+
+static void _assignEnumValue(size_t enumSize, int64_t entryValue, void*target) {
+   switch (enumSize) {
+   case sizeof(int8_t) : *((int8_t*)target) =  (int8_t)entryValue;
+   case sizeof(int16_t): *((int16_t*)target) = (int16_t)entryValue;
+   case sizeof(int32_t): *((int32_t*)target) = (int32_t)entryValue;
+   case sizeof(int64_t): *((int64_t*)target) = (int64_t)entryValue;
+   default: ASSERT(false);
+   }
+}
+
 void serialize(SCFWriter* writer, TypeMetadata const* type, void* data) {
    switch (type->variety) {
    case TypeVariety_Basic:
@@ -94,8 +117,19 @@ void serialize(SCFWriter* writer, TypeMetadata const* type, void* data) {
       }
       scfWriteListEnd(writer);
       break;
-   case TypeVariety_Enum:
-      break;
+   case TypeVariety_Enum: {
+      bool found = false;
+      for (auto&&entry : type->enumEntries) {
+         if (_compareEnumValue(type->size, entry.value, data)) {
+            scfWriteString(writer, entry.name);
+            found = true;
+            break;
+         }
+      }
+      if (!found) {
+         scfWriteString(writer, UNKNOWN_ENUM_ENTRY);
+      }
+   }  break;
    case TypeVariety_Array:
    case TypeVariety_KVP:
       type->funcs.serialize(writer, data);
@@ -104,28 +138,46 @@ void serialize(SCFWriter* writer, TypeMetadata const* type, void* data) {
 
 }
 
-void deserialize(SCFReader* reader, TypeMetadata const* type, void* target) {
+void deserialize(SCFReader& reader, TypeMetadata const* type, void* target) {
 
    switch (type->variety) {
    case TypeVariety_Basic:
-      if      (type == meta_bool)   *(bool*)target = (bool)*scfReadInt(*reader);
-      else if (type == meta_byte)   *(byte*)target = (byte)*scfReadInt(*reader);
-      else if (type == meta_sbyte)  *(char*)target = (char)*scfReadInt(*reader);
-      else if (type == meta_i16)    *(int16_t*)target = (int16_t)*scfReadInt(*reader);
-      else if (type == meta_i32)    *(int32_t*)target = (int32_t)*scfReadInt(*reader);
-      else if (type == meta_i64)    *(int64_t*)target = (int64_t)*scfReadInt(*reader);
-      else if (type == meta_u16)    *(uint16_t*)target = (uint16_t)*scfReadInt(*reader);
-      else if (type == meta_u32)    *(uint32_t*)target = (uint32_t)*scfReadInt(*reader);
-      else if (type == meta_u64)    *(uint64_t*)target = (uint64_t)*scfReadInt(*reader);
-      else if (type == meta_f32)    *(float*)target = *scfReadFloat(*reader);
-      else if (type == meta_f64)    *(double*)target = *scfReadDouble(*reader);      
-      else if (type == meta_string) ((std::string*)target)->assign(scfReadString(*reader));
-      else if (type == meta_symbol) *(Symbol**)target = intern(scfReadString(*reader));
+      if      (type == meta_bool)   *(bool*)target = (bool)*scfReadInt(reader);
+      else if (type == meta_byte)   *(byte*)target = (byte)*scfReadInt(reader);
+      else if (type == meta_sbyte)  *(char*)target = (char)*scfReadInt(reader);
+      else if (type == meta_i16)    *(int16_t*)target = (int16_t)*scfReadInt(reader);
+      else if (type == meta_i32)    *(int32_t*)target = (int32_t)*scfReadInt(reader);
+      else if (type == meta_i64)    *(int64_t*)target = (int64_t)*scfReadInt(reader);
+      else if (type == meta_u16)    *(uint16_t*)target = (uint16_t)*scfReadInt(reader);
+      else if (type == meta_u32)    *(uint32_t*)target = (uint32_t)*scfReadInt(reader);
+      else if (type == meta_u64)    *(uint64_t*)target = (uint64_t)*scfReadInt(reader);
+      else if (type == meta_f32)    *(float*)target = *scfReadFloat(reader);
+      else if (type == meta_f64)    *(double*)target = *scfReadDouble(reader);      
+      else if (type == meta_string) ((std::string*)target)->assign(scfReadString(reader));
+      else if (type == meta_symbol) *(Symbol**)target = intern(scfReadString(reader));
       break;
-   case TypeVariety_Struct:
-      break;
-   case TypeVariety_Enum:
-      break;
+   case TypeVariety_Struct: {
+      auto list = scfReadList(reader);
+      while (!scfReaderAtEnd(list)) {
+         auto mlist = scfReadList(list);
+         auto name = intern(scfReadString(mlist));
+         for (auto&& m : type->structMembers) {
+            if (m.name == name) {
+               deserialize(mlist, m.type, (byte*)target + m.offset);
+               break;
+            }
+         }
+      }
+   }  break;
+   case TypeVariety_Enum: {
+      auto str = intern(scfReadString(reader));
+      for (auto&& entry : type->enumEntries) {
+         if (str == entry.name) {
+            _assignEnumValue(type->size, entry.value, target);
+            break;
+         }
+      }
+   }  break;
    case TypeVariety_Array:
    case TypeVariety_KVP:
       type->funcs.deserialize(reader, target);
