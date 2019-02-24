@@ -21,6 +21,9 @@
 #include "ui.h"
 #include "game.h"
 #include "lpp.h"
+#include "scf.h"
+
+#include "reflection_gen.h"
 
 struct GameInstance {
    GameState state;
@@ -29,7 +32,7 @@ struct GameInstance {
 
 
 struct App {
-   DynamicArray<GameInstance> instances;
+   std::vector<GameInstance> instances;
 
    bool running = false;
 
@@ -158,6 +161,18 @@ void appCreateWindow(App* app, WindowConfig const& info) {
    gameStartActionMode(app->instances[0].state);
 
    app->running = true;
+
+
+   EngineConstants c;
+   //auto writer = scfWriterCreate();
+   //serialize(writer, reflect<EngineConstants>(), &c);
+   //auto mem = scfWriteToBuffer(writer);
+
+   //auto view = scfView(mem);
+   //EngineConstants cpy;
+   //deserialize(view, reflect<EngineConstants>(), &cpy);
+
+   return;
 }
 
 bool appRunning(App* app) { return app->running; }

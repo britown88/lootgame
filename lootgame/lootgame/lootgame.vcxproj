@@ -73,7 +73,12 @@
     <Import Project="..\props.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -108,6 +113,9 @@ xcopy /y "$(sdl2)bin" "$(OutDir)"
 mkdir "$(OutDir)assets/"
 xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)codegen/lootgame.exe -reflectgen "$(ProjectDir)."</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -150,6 +158,9 @@ xcopy /y "$(sdl2)bin" "$(OutDir)"
 mkdir "$(OutDir)assets/"
 xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)codegen/lootgame.exe -reflectgen "$(ProjectDir)."</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\lgimgui\lgimgui.vcxproj">
@@ -187,7 +198,6 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     <ClInclude Include="app.h" />
     <ClInclude Include="assets.h" />
     <ClInclude Include="coords.h" />
-    <ClInclude Include="dynarray.h" />
     <ClInclude Include="fsys.h" />
     <ClInclude Include="lpp.h" />
     <ClInclude Include="map.h" />

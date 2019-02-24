@@ -160,7 +160,7 @@ static bool _acceptTemplateArguments(StringParser& p) {
 
 // skips member lines that begin wtih static, virtual, typedef, friend, or template
 static bool _acceptSkippableExpression(StringParser& p) {
-   if (p.accept("static") || p.accept("virtual") || p.accept("typedef") || p.accept("friend")) {
+   if (p.accept("static") || p.accept("virtual") || p.accept("typedef") || p.accept("friend") || p.accept("inline")) {
       _skipToExpressionEnd(p);
       return true;
    }
@@ -248,9 +248,19 @@ static bool _acceptConstructor(StringParser& p, std::string& output, char endCha
       auto outStart = p.pos;
       const char* szEnd = nullptr;
 
+      int bracketStack = 0;
       while (!p.atEnd()) {
          if (!_acceptStringLiteral(p)) {
-            if (p.accept(endChar)) {
+            if (endChar != ';' && p.accept(';')) {
+               break;
+            }
+            if (p.accept('{')) {
+               ++bracketStack;
+            }
+            else if (p.accept('}')) {
+               --bracketStack;
+            }
+            else if (p.accept(endChar) && !bracketStack) {
                output.assign(outStart, p.pos - 1);
                return true;
             }
@@ -263,9 +273,11 @@ static bool _acceptConstructor(StringParser& p, std::string& output, char endCha
 }
 
 // rewinds to start if failed
-static bool _acceptMember(StringParser& p, ParsedStructMember &output) {
+static bool _acceptMember(StringParser& p, ParsedStruct &output) {
    auto start = p.pos;
-   if (_acceptType(p, output.type)) {
+
+   ParsedStructMember newMember;
+   if (_acceptType(p, newMember.type)) {
 
       _acceptSkippable(p);
 
@@ -280,17 +292,42 @@ static bool _acceptMember(StringParser& p, ParsedStructMember &output) {
             return false;
          }
 
-         output.name.assign(nameStart, nameEnd);
+         newMember.name.assign(nameStart, nameEnd);
 
-         if (_acceptArrayDefinition(p, output.arraySize)) {
-            output.staticArray = true;
+         if (_acceptArrayDefinition(p, newMember.arraySize)) {
+            newMember.staticArray = true;
          }
 
          _acceptSkippable(p);
+
+         while (p.accept(',') || _acceptConstructor(p, newMember.constructor, ',')) {
+            output.members.push_back(newMember);
+            auto t = newMember.type;
+            newMember = {};
+            newMember.type = t;
+            _acceptSkippable(p);
+
+            const char* nameStart = p.pos;
+            if (_acceptIdentifier(p)) {
+               auto nameEnd = p.pos;
+               _acceptSkippable(p);
+               newMember.name.assign(nameStart, nameEnd);
+               if (_acceptArrayDefinition(p, newMember.arraySize)) {
+                  newMember.staticArray = true;
+               }
+               _acceptSkippable(p);
+            }
+
+            if (p.peek() == ';') {
+               break;
+            }
+         }
+
          
-         if (!_acceptConstructor(p, output.constructor)) {
+         if (!_acceptConstructor(p, newMember.constructor)) {
             _skipToExpressionEnd(p);
          }
+         output.members.push_back(newMember);
 
          return true;
       }
@@ -331,8 +368,8 @@ static bool _acceptStruct(StringParser& p, ParsedStruct &output) {
                if (_acceptStruct(p, child)) {
                   output.children.push_back(child);
                }
-               else if (_acceptMember(p, newMember)) {
-                  output.members.push_back(newMember);
+               else if (_acceptMember(p, output)) {
+                  //output.members.push_back(newMember);
                }
                else {
                   _acceptSkippable(p);

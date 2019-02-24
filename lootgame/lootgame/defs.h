@@ -41,7 +41,8 @@ typedef uint64_t Milliseconds;
 typedef uint32_t Seconds;
 
 #pragma pack(push, 1)
-typedef struct Time {
+//@reflect{
+struct Time {
    Microseconds t;
 
    Microseconds toMicroseconds() { return t; };
@@ -58,7 +59,7 @@ typedef struct Time {
    bool operator<(Time const&lhs) { return t < lhs.t; }
    bool operator>=(Time const&lhs) { return t >= lhs.t; }
    bool operator<=(Time const&lhs) { return t <= lhs.t; }
-} Time;
+};//}
 #pragma pack(pop)
 
 static Time timeMicros(Microseconds t) { return Time{ t }; }
@@ -71,25 +72,26 @@ static Seconds timeGetSecs(Time t) { return (Seconds)(t.t / 1000000); }
 
 //colors
 #pragma pack(push, 1)
-typedef struct {
+//@reflect{
+struct ColorRGB {
    byte r, g, b;
-} ColorRGB;
-
-typedef struct {
+};//}
+//@reflect{
+struct ColorRGBA {
    byte r, g, b, a;
-} ColorRGBA;
-
-typedef struct {
+};//}
+//@reflect{
+struct ColorRGBf {
    float r, g, b;
-} ColorRGBf;
-
-typedef struct {
+};//}
+//@reflect{
+struct ColorHSV {
    float h, s, v;
-} ColorHSV;
-
-typedef struct {
+};//}
+//@reflect{
+struct ColorRGBAf {
    float r, g, b, a;
-} ColorRGBAf;
+};//}
 #pragma pack(pop)
 
 extern const ColorRGBAf Cleared;

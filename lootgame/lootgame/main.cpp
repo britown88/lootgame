@@ -127,8 +127,6 @@ static void _testReflect() {
 
 int main(int argc, char** argv)
 {
-   lppStartup();
-
    AppConfig config;
    _parseArgs(argc, argv, config);
 
@@ -136,10 +134,13 @@ int main(int argc, char** argv)
       runReflectGen(config);
    }
    else {
+      lppStartup();
       reflectionStartup();
 
       //_testTemplates();
       //_testReflect();
+
+
       
       auto app = appCreate(config);
       appCreateWindow(app, WindowConfig{ 1280, 720, "Making Games is Fucking Hard" });

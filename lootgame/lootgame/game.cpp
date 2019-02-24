@@ -257,7 +257,7 @@ void dudeUpdateState(Dude& d) {
    ++d.stateClock;
 }
 
-void mainDudeCheckAttackCollisions(Dude& dude, DynamicArray<Dude> &targets) {
+void mainDudeCheckAttackCollisions(Dude& dude, std::vector<Dude> &targets) {
    if (dude.state != DudeState_ATTACKING) {
       return;
    }
@@ -517,7 +517,7 @@ void dudeUpdateBehavior(Dude& dude) {
 
 
 struct FrameData {
-   DynamicArray<PhyObject*> phyObjs;
+   std::vector<PhyObject*> phyObjs;
 };
 
 void buildFrameData(GameState&game, FrameData& fd) {

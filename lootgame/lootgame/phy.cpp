@@ -12,7 +12,7 @@ struct PhyCollision {
 };
 
 
-void getAllPhyCollisions(DynamicArray<PhyObject*>& objs, DynamicArray<PhyCollision>& collisions, float &timeRemaining) {
+void getAllPhyCollisions(std::vector<PhyObject*>& objs, std::vector<PhyCollision>& collisions, float &timeRemaining) {
 
    auto oe = objs.end();
    for (auto i = objs.begin(); i != oe; ++i) {
@@ -49,12 +49,12 @@ void getAllPhyCollisions(DynamicArray<PhyObject*>& objs, DynamicArray<PhyCollisi
 
 struct IslandPartition {
    int mailbox = 0;
-   DynamicArray<PhyObject*> objs;
+   std::vector<PhyObject*> objs;
 };
 
 struct IslandPartitionSet {
    int mailbox = 0;
-   DynamicArray<IslandPartition> islands;
+   std::vector<IslandPartition> islands;
 
    int next() {
       int i = 0;
@@ -125,7 +125,7 @@ void partitionSetAddObjs(IslandPartitionSet* pSet, PhyObject*a, PhyObject* b, bo
    }
 }
 
-void resolveOverlaps(DynamicArray<PhyObject*>& objs, IslandPartitionSet* pSet) {
+void resolveOverlaps(std::vector<PhyObject*>& objs, IslandPartitionSet* pSet) {
    bool overlap = false;
    int attemptsToResolve = 0;
 
@@ -195,10 +195,10 @@ void applyCollisionImpulse(Float2 pos1, Float2 pos2, Float2& vel1, Float2& vel2,
 }
 
 
-void updatePhyPositions(DynamicArray<PhyObject*>& objs) {
+void updatePhyPositions(std::vector<PhyObject*>& objs) {
 
    static IslandPartitionSet pSet;
-   DynamicArray<PhyCollision> collisions;
+   std::vector<PhyCollision> collisions;
 
    resolveOverlaps(objs, &pSet);
 

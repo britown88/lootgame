@@ -26,7 +26,7 @@ struct GraphicObjects {
    bool reloadShaders();
 };
 
-
+//@reflect{
 struct EngineConstants {
    Int2 resolution = { 1920, 1080 };
 
@@ -52,13 +52,14 @@ struct EngineConstants {
    Milliseconds cooldownOnDamagedStaminaEmpty = 1000;
    Milliseconds cooldownOnDamagedStamina = 250;
    Milliseconds cooldownOnDamagedHealth = 500;
-};
+};//}
 
+//@reflect{
 struct EngineState {   
    ColorRGBAf bgClearColor = { 0.45f, 0.55f, 0.60f, 1.0f };  // clear color behind all imgui windows
    bool fullScreen = false;
    bool reloadShaders = false;
-};
+};//}
 
 extern EngineConstants Const;
 extern EngineState Engine;
@@ -97,23 +98,26 @@ struct IO {
    bool buttonReleased[GameButton_COUNT];
 };
 
+//@reflect{
 struct GameCamera {
    Rectf viewport;
-};
+};//}
 
 
-
+//@reflect{
 struct Map {
    Float2 size;
-};
+};//}
 
+//@reflect{
 enum SwingPhase {
    SwingPhase_Windup = 0,
    SwingPhase_Lunge,
    SwingPhase_Swing,
    SwingPhase_Cooldown
-};
+};//}
 
+//@reflect{
 struct AttackSwing {
    float lungeDist; // character will luinge forward between windup and swing
    float lungeSpeed; // perms
@@ -124,20 +128,21 @@ struct AttackSwing {
    Milliseconds cooldownDur; // period before user is free again
    Rectf hitbox; // axis-aligned, The origin here is the bottom center of the attack while facing up
                  // attack will rotate around that origin
-};
+};//}
 
+//@reflect{
 struct MoveSet {
-   DynamicArray<AttackSwing> swings;
-};
+   std::vector<AttackSwing> swings;
+};//}
 
-
+//@reflect{
 struct Movement {
    float moveSpeedCap = 0.0f;       // updated per frame, interpolates toward moveSpeedCapTarget
    float moveSpeedCapTarget = 0.0f; // updated per frame, max speed based on length of move vector and velocity direction vs facing
    Float2 moveVector = { 0.0f, 0.0f };   // vector length 0-1 for movement amount/direction
    Float2 faceVector = { 0.0f, 0.0f };  // unit vector for target facing, facing will interpolate toward this angle
    Float2 facing = { 1, 0 };  // unit vector for character facing  
-};
+};//}
 
 struct Dude;
 
@@ -156,7 +161,7 @@ struct AttackState {
    int swingDir;
    int combo;
 
-   DynamicArray<Dude*> hits;
+   std::vector<Dude*> hits;
 };
 
 struct CooldownState {
@@ -247,7 +252,7 @@ struct GameState {
    } DEBUG;
 
    Dude maindude;
-   DynamicArray<Dude> baddudes;
+   std::vector<Dude> baddudes;
 
    Time lastMouseMove;
    Time lastUpdate;

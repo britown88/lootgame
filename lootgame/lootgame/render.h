@@ -2,7 +2,7 @@
 
 #include "defs.h"
 #include "math.h"
-#include "dynarray.h"
+#include <vector>
 
 typedef uint32_t ShaderHandle;
 typedef uint32_t TextureHandle;
@@ -40,7 +40,7 @@ struct Texture {
 struct FBO {
    Int2 sz;
    FBOHandle fbo = 0;
-   DynamicArray<Texture> out;
+   std::vector<Texture> out;
 };
 
 typedef enum {

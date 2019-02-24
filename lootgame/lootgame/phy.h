@@ -2,7 +2,8 @@
 
 #include "defs.h"
 #include "math.h"
-#include "dynarray.h"
+
+#include <vector>
 
 struct PhyObject {
    Float2 pos = { 0.0f, 0.0f };
@@ -23,4 +24,4 @@ struct PhyObject {
 };
 
 
-void updatePhyPositions(DynamicArray<PhyObject*>& objs);
+void updatePhyPositions(std::vector<PhyObject*>& objs);

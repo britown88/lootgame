@@ -5,14 +5,17 @@ static const float PI = 3.14159265359f;
 static const float RAD2DEG = 180.0f / PI;
 static const float DEG2RAD = PI / 180.0f;
 
-typedef struct {
+//@reflect{
+struct Int2 {
    int32_t x, y;
-} Int2;
+};//}
 
-typedef struct {
+//@reflect{
+struct Int3 {
    int32_t x, y, z;
-} Int3;
+};//}
 
+//@reflect{
 struct Float2 {
    float x = 0, y = 0;
 
@@ -27,11 +30,12 @@ struct Float2 {
    inline Float2& operator+=(Float2 lhs) { x += lhs.x; y += lhs.y; return *this; }
    inline Float2& operator/=(float s) { x /= s; y /= s; return *this; }
    inline Float2& operator*=(float s) { x *= s; y *= s; return *this; }
-};
+};//}
 
-typedef struct {
+//@reflect{
+struct Float3 {
    float x, y, z;
-} Float3;
+};//}
 
 Float3 vCross(Float3 a, Float3 b);
 float vDot(Float3 a, Float3 b);
@@ -63,14 +67,15 @@ Float2 v2CapLength(Float2 v, float max);
 Float2 v2RotateTowards(Float2 direction, Float2 target, Float2 perFrame);
 Float2 v2MoveTowards(Float2 position, Float2 target, float speed);
 
-
-typedef struct {
+//@reflect{
+struct Recti{
    int32_t x, y, w, h;
-} Recti;
+};//}
 
-typedef struct {
+//@reflect{
+struct Rectf{
    float x, y, w, h;
-} Rectf;
+};//}
 
 static void rectiOffset(Recti *r, int32_t x, int32_t y) {
    r->x += x;

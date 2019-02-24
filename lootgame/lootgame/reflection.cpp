@@ -67,6 +67,9 @@ static void _createBasicTypes() {
 
 void reflectionStartup() {
    _createBasicTypes();
+
+   void reflectionStartup_generated();
+   reflectionStartup_generated();
 }
 
 static bool _compareEnumValue(size_t enumSize, int64_t entryValue, void*data) {

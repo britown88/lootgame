@@ -137,9 +137,6 @@
     <ClInclude Include="lpp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="dynarray.h">
-      <Filter>Header Files\utility</Filter>
-    </ClInclude>
     <ClInclude Include="phy.h">
       <Filter>Header Files\game</Filter>
     </ClInclude>

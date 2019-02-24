@@ -51,6 +51,6 @@ void scfWriteDouble(SCFWriter* writer, double d);
 void scfWriteString(SCFWriter* writer, StringView string);
 void scfWriteBytes(SCFWriter* writer, void const* data, uint64_t size);
 
-void* scfWriteToBuffer(SCFWriter* writer, uint64_t* sizeOut);
+void* scfWriteToBuffer(SCFWriter* writer, uint64_t* sizeOut = nullptr);
 
 void DEBUG_imShowWriterStats(SCFWriter *writer);

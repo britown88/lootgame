@@ -305,6 +305,6 @@ void* scfWriteToBuffer(SCFWriter* writer, uint64_t* sizeOut) {
    memcpy(out + sizeof(header), writer->dataSegment.data, dataSize);
    memcpy(out + header.binarySegmentOffset, writer->binarySegment.data, binarySize);
 
-   *sizeOut = totalSize;
+   if(sizeOut) *sizeOut = totalSize;
    return out;
 }
