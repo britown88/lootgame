@@ -83,12 +83,23 @@ static bool _compareEnumValue(size_t enumSize, int64_t entryValue, void*data) {
    return false;
 }
 
+static bool _compareBitfieldValue(size_t enumSize, int64_t entryValue, void*data) {
+   switch (enumSize) {
+   case sizeof(int8_t) : return (*((int8_t*)data) & (int8_t)entryValue) == (int8_t)entryValue;
+   case sizeof(int16_t) : return (*((int16_t*)data) & (int16_t)entryValue) == (int16_t)entryValue;
+   case sizeof(int32_t) : return (*((int32_t*)data) & (int32_t)entryValue) == (int32_t)entryValue;
+   case sizeof(int64_t) : return (*((int64_t*)data) & (int64_t)entryValue) == (int64_t)entryValue;
+   default: ASSERT(false);
+   }
+   return false;
+}
+
 static void _assignEnumValue(size_t enumSize, int64_t entryValue, void*target) {
    switch (enumSize) {
-   case sizeof(int8_t) : *((int8_t*)target) =  (int8_t)entryValue;
-   case sizeof(int16_t): *((int16_t*)target) = (int16_t)entryValue;
-   case sizeof(int32_t): *((int32_t*)target) = (int32_t)entryValue;
-   case sizeof(int64_t): *((int64_t*)target) = (int64_t)entryValue;
+   case sizeof(int8_t) : *((int8_t*)target) =  (int8_t)entryValue; break;
+   case sizeof(int16_t): *((int16_t*)target) = (int16_t)entryValue; break;
+   case sizeof(int32_t): *((int32_t*)target) = (int32_t)entryValue; break;
+   case sizeof(int64_t): *((int64_t*)target) = (int64_t)entryValue; break;
    default: ASSERT(false);
    }
 }
@@ -121,17 +132,29 @@ void serialize(SCFWriter* writer, TypeMetadata const* type, void* data) {
       scfWriteListEnd(writer);
       break;
    case TypeVariety_Enum: {
-      bool found = false;
-      for (auto&&entry : type->enumEntries) {
-         if (_compareEnumValue(type->size, entry.value, data)) {
-            scfWriteString(writer, entry.name);
-            found = true;
-            break;
+      if (type->enumFlags&EnumFlags_Bitfield) {
+         scfWriteListBegin(writer);
+         for (auto&&entry : type->enumEntries) {
+            if (_compareBitfieldValue(type->size, entry.value, data)) {
+               scfWriteString(writer, entry.name);
+            }
+         }
+         scfWriteListEnd(writer);
+      }
+      else {
+         bool found = false;
+         for (auto&&entry : type->enumEntries) {
+            if (_compareEnumValue(type->size, entry.value, data)) {
+               scfWriteString(writer, entry.name);
+               found = true;
+               break;
+            }
+         }
+         if (!found) {
+            scfWriteString(writer, UNKNOWN_ENUM_ENTRY);
          }
       }
-      if (!found) {
-         scfWriteString(writer, UNKNOWN_ENUM_ENTRY);
-      }
+      
    }  break;
    case TypeVariety_Array:
    case TypeVariety_KVP:
@@ -173,13 +196,34 @@ void deserialize(SCFReader& reader, TypeMetadata const* type, void* target) {
       }
    }  break;
    case TypeVariety_Enum: {
-      auto str = intern(scfReadString(reader));
-      for (auto&& entry : type->enumEntries) {
-         if (str == entry.name) {
-            _assignEnumValue(type->size, entry.value, target);
-            break;
+      if (type->enumFlags&EnumFlags_Bitfield) {
+         auto symlist = scfReadList(reader);
+         int64_t compositeValue = 0;
+         while (!scfReaderAtEnd(symlist)) {
+            if (auto str = scfReadString(symlist)) {
+               str = intern(str);
+               for (auto&& entry : type->enumEntries) {
+                  if (str == entry.name) {
+                     compositeValue |= entry.value;
+                     break;
+                  }
+               }
+            }
+            else {
+               scfReaderSkip(symlist);
+            }
          }
+         _assignEnumValue(type->size, compositeValue, target);
       }
+      else {
+         auto str = intern(scfReadString(reader));
+         for (auto&& entry : type->enumEntries) {
+            if (str == entry.name) {
+               _assignEnumValue(type->size, entry.value, target);
+               break;
+            }
+         }
+      }      
    }  break;
    case TypeVariety_Array:
    case TypeVariety_KVP:

@@ -21,6 +21,8 @@ void @file{}_reflectionStartup_generated(){
       enumName->name = intern("@enum_name");
       enumName->size = sizeof(@enum_name);
       enumName->variety = TypeVariety_Enum;
+      @enum_flag{enumName->enumFlags |= @flag{};
+      }
 
       @enum_metadata_entry_init{
       {
@@ -50,6 +52,9 @@ void @file{}_reflectionStartup_generated(){
          member.name = intern("@member_name");
          member.offset = offsetof(@struct_name, @member_name);
          member.type = reflect<@member_type>();
+         @struct_flag{member.flags |= @flag{};
+         }
+
          structName->structMembers.push_back(member);
       }
 

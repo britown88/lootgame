@@ -17,6 +17,8 @@ struct ParsedEnumMember {
 struct ParsedEnum {
    std::string name;
    std::vector<ParsedEnumMember> members;
+
+   bool bitfield = false;
 };
 
 struct ParsedType {
@@ -31,6 +33,9 @@ struct ParsedStructMember {
    std::string arraySize;
 
    std::string constructor;
+
+   bool flags_file = false;
+   bool flags_image = false;
 };
 
 struct ParsedStruct {
@@ -254,17 +259,19 @@ static bool _acceptConstructor(StringParser& p, std::string& output, char endCha
             if (endChar != ';' && p.accept(';')) {
                break;
             }
-            if (p.accept('{')) {
+            if (endChar != '{' && p.accept('{')) {
                ++bracketStack;
             }
-            else if (p.accept('}')) {
+            else if (endChar != '}' && p.accept('}')) {
                --bracketStack;
             }
-            else if (p.accept(endChar) && !bracketStack) {
+            else if (p.accept(endChar) && bracketStack <= 0) {
                output.assign(outStart, p.pos - 1);
                return true;
             }
-            p.skip();
+            else if (!_acceptSkippable(p)) {
+               p.skip();
+            }
          }
       }
    }
@@ -273,11 +280,30 @@ static bool _acceptConstructor(StringParser& p, std::string& output, char endCha
 }
 
 // rewinds to start if failed
-static bool _acceptMember(StringParser& p, ParsedStruct &output) {
+static bool _acceptMember(StringParser& p, std::vector<VexNode*>& modifiers, ParsedStruct &output) {
    auto start = p.pos;
 
    ParsedStructMember newMember;
+   std::string type_override;
+
+   for (auto&& mod : modifiers) {
+      if (mod->tag == "file") {
+         newMember.flags_file = true;
+      }
+      else if (mod->tag == "image") {
+         newMember.flags_image = true;
+      }
+      else if (mod->tag == "type_override") {
+         type_override.assign(mod->body.begin, mod->body.end);
+      }
+   }
+
    if (_acceptType(p, newMember.type)) {
+
+      if (!type_override.empty()) {
+         newMember.type = {};
+         newMember.type.name = type_override;
+      }
 
       _acceptSkippable(p);
 
@@ -302,9 +328,11 @@ static bool _acceptMember(StringParser& p, ParsedStruct &output) {
 
          while (p.accept(',') || _acceptConstructor(p, newMember.constructor, ',')) {
             output.members.push_back(newMember);
-            auto t = newMember.type;
-            newMember = {};
-            newMember.type = t;
+            newMember.constructor.clear();
+            newMember.staticArray = false;
+            newMember.name.clear();
+            newMember.arraySize.clear();
+
             _acceptSkippable(p);
 
             const char* nameStart = p.pos;
@@ -337,13 +365,16 @@ static bool _acceptMember(StringParser& p, ParsedStruct &output) {
    return false;
 }
 
-static bool _acceptEnum(StringParser& p, ParsedEnum& output);
+static bool _acceptEnum(StringParser& p, VexNode* vexChild, ParsedEnum& output);
 
-static bool _acceptStruct(StringParser& p, ParsedStruct &output) {
+static bool _acceptStruct(StringParser& p, VexNode* vexChild, ParsedStruct &output) {
+
    auto start = p.pos;
-   if (p.accept("const")) {
+   while (p.accept("const") || p.accept("typedef")) {
       _acceptSkippable(p);
    }
+
+   std::vector<VexNode*> modifiers;
 
    if (p.accept("struct")) {
       _acceptSkippable(p);
@@ -362,14 +393,32 @@ static bool _acceptStruct(StringParser& p, ParsedStruct &output) {
                ParsedStruct child;
                ParsedEnum newEnum;
 
-               if (_acceptEnum(p, newEnum)) {
+               bool skipIgnore = false;
+               while (vexChild && p.pos > vexChild->span.begin) {
+                  if (vexChild->tag == "ignore") {
+                     p.pos = vexChild->span.end;  
+                     vexChild = vexChild->next;
+                     skipIgnore = true;
+                     break;
+                  }
+                  else {
+                     modifiers.push_back(vexChild);
+                     vexChild = vexChild->next;
+                  }
+               }
+               if (skipIgnore) {
+                  continue;
+               }
+
+
+               if (_acceptEnum(p, vexChild, newEnum)) {
                   output.enums.push_back(newEnum);
                }
-               if (_acceptStruct(p, child)) {
+               if (_acceptStruct(p, vexChild, child)) {
                   output.children.push_back(child);
                }
-               else if (_acceptMember(p, output)) {
-                  //output.members.push_back(newMember);
+               else if (_acceptMember(p, modifiers, output)) {
+                  
                }
                else {
                   _acceptSkippable(p);
@@ -385,6 +434,8 @@ static bool _acceptStruct(StringParser& p, ParsedStruct &output) {
                      _skipToExpressionEnd(p);
                   }
                }
+
+               modifiers.clear();
             }
 
             _acceptSkippable(p);
@@ -413,7 +464,7 @@ static bool _acceptEnumMember(StringParser& p, ParsedEnumMember& output, bool&fi
 }
 
 
-bool _acceptEnum(StringParser& p, ParsedEnum& output) {
+bool _acceptEnum(StringParser& p, VexNode* vexChild, ParsedEnum& output) {
    auto start = p.pos;
    if (p.accept("typedef")) {
       _acceptSkippable(p);
@@ -426,10 +477,47 @@ bool _acceptEnum(StringParser& p, ParsedEnum& output) {
          output.name.assign(idStart, p.pos);
       }
       _acceptSkippable(p);
+
+      if (p.accept(':')) {
+         while (!p.atEnd()) {
+            _acceptSkippable(p);
+            _acceptIdentifier(p);
+            _acceptSkippable(p);
+            if (p.peek() == '{') {
+               break;
+            }
+         }
+      }
+
       if (p.accept('{')) {
+         std::vector<VexNode*> modifiers;
+
          _acceptSkippable(p);
          while (!p.atEnd()) {
             ParsedEnumMember newMember;
+            bool skipIgnore = false;
+
+            while (vexChild && p.pos > vexChild->span.begin) {
+               if (vexChild->tag == "ignore") {
+                  p.pos = vexChild->span.end;
+                  vexChild = vexChild->next;
+                  skipIgnore = true;
+                  break;
+               }
+               else if (vexChild->tag == "bitfield") {
+                  output.bitfield = true;
+               }
+               else {
+                  modifiers.push_back(vexChild);
+               }
+               
+               vexChild = vexChild->next;
+            }
+
+            if (skipIgnore) {
+               continue;
+            }
+
             bool finalmember = false;
             if (_acceptEnumMember(p, newMember, finalmember)) {
                output.members.push_back(newMember);
@@ -455,6 +543,7 @@ bool _acceptEnum(StringParser& p, ParsedEnum& output) {
                return true;
             }
             _acceptSkippable(p);
+            modifiers.clear();
          }
       }
    }
@@ -485,11 +574,11 @@ static bool _parseNode(VexNode* node, ParsedFile& targetFile) {
    ParsedStruct newStruct;
    ParsedEnum newEnum;
 
-   if (_acceptStruct(p, newStruct)) {
+   if (_acceptStruct(p, node->children, newStruct)) {
       targetFile.structs.push_back(newStruct);
       return true;
    }
-   else if (_acceptEnum(p, newEnum)) {
+   else if (_acceptEnum(p, node->children, newEnum)) {
       targetFile.enums.push_back(newEnum);
       return true;
    }
@@ -573,8 +662,13 @@ static void _generateMainHeaderImpl(std::vector<ParsedFile> &files) {
             vexTemplateAddSubstitution(t, "struct_name", e.name.c_str());
             vexTemplateEndScope(t);
 
-            vexTemplateBeginScope(t, "enum_metadata_entry_init");
+            vexTemplateBeginScope(t, "enum_metadata_init");
             vexTemplateAddSubstitution(t, "enum_name", e.name.c_str());
+            if (e.bitfield) {
+               vexTemplateBeginScope(t, "enum_flag");
+               vexTemplateAddSubstitution(t, "flag", "EnumFlags_Bitfield");
+               vexTemplateEndScope(t);
+            }
 
             for (auto && m : e.members) {
                vexTemplateBeginScope(t, "enum_metadata_entry_init");
@@ -599,6 +693,17 @@ static void _generateMainHeaderImpl(std::vector<ParsedFile> &files) {
                vexTemplateBeginScope(t, "struct_metadata_member_init");
                vexTemplateAddSubstitution(t, "member_name", m.name.c_str());
                vexTemplateAddSubstitution(t, "member_type", m.type.name.c_str());
+
+               if (m.flags_file) {
+                  vexTemplateBeginScope(t, "struct_flag");
+                  vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_File");
+                  vexTemplateEndScope(t);
+               }
+               if (m.flags_image) {
+                  vexTemplateBeginScope(t, "struct_flag");
+                  vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_Image");
+                  vexTemplateEndScope(t);
+               }
                vexTemplateEndScope(t);
             }
 
@@ -635,6 +740,11 @@ static void _generateFileInline(ParsedFile &file) {
 
       vexTemplateBeginScope(t, "enum_metadata_entry_init");
       vexTemplateAddSubstitution(t, "enum_name", e.name.c_str());
+      if (e.bitfield) {
+         vexTemplateBeginScope(t, "enum_flag");
+         vexTemplateAddSubstitution(t, "flag", "EnumFlags_Bitfield");
+         vexTemplateEndScope(t);
+      }
 
       for (auto && m : e.members) {
          vexTemplateBeginScope(t, "enum_metadata_entry_init");
@@ -659,6 +769,17 @@ static void _generateFileInline(ParsedFile &file) {
          vexTemplateBeginScope(t, "struct_metadata_member_init");
          vexTemplateAddSubstitution(t, "member_name", m.name.c_str());
          vexTemplateAddSubstitution(t, "member_type", m.type.name.c_str());
+
+         if (m.flags_file) {
+            vexTemplateBeginScope(t, "struct_flag");
+            vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_File");
+            vexTemplateEndScope(t);
+         }
+         if (m.flags_image) {
+            vexTemplateBeginScope(t, "struct_flag");
+            vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_Image");
+            vexTemplateEndScope(t);
+         }
          vexTemplateEndScope(t);
       }
 

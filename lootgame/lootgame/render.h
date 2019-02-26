@@ -10,7 +10,9 @@ typedef uint32_t TextureSlot;
 typedef uint32_t VBOHandle;
 typedef uint32_t FBOHandle;
 
-enum TextureFlag_ {
+// @reflect{ 
+// @bitfield
+enum TextureFlag_ : uint16_t {
    TextureFlag_WrapRepeat = (1 << 0),
    TextureFlag_WrapClamp = (1 << 1),
    TextureFlag_FilterLinear = (1 << 2),
@@ -29,19 +31,31 @@ enum TextureFlag_ {
 
    TextureFlag_Defaults = TextureFlag_ClampedNearest | TextureFlag_Color_SRGBA,
    TextureFlag_FBODefaults = TextureFlag_ClampedNearest | TextureFlag_Color_RGBA16F
-};
+}; // }
 typedef uint16_t TextureFlag;
 
+// @reflect{
 struct Texture {
    Int2 sz;
-   TextureHandle handle = 0;
-};
 
+   // @type_override:TextureFlag_
+   TextureFlag flags;
+
+   // @image @file
+   std::string filepath;
+
+   // @ignore{
+   TextureHandle handle = 0; // }
+}; // }
+
+// @reflect{
 struct FBO {
    Int2 sz;
-   FBOHandle fbo = 0;
+
+   // @ignore{
    std::vector<Texture> out;
-};
+   FBOHandle fbo = 0; // }
+}; // }
 
 typedef enum {
    VAttrib_Pos2 = 0,

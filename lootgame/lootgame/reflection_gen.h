@@ -14,6 +14,15 @@ struct Reflector<SwingPhase>{
 };
 
 
+// TextureFlag_ ----------------------------
+extern TypeMetadata* meta_TextureFlag_;
+typedef enum TextureFlag_ TextureFlag_;
+template<>
+struct Reflector<TextureFlag_>{
+   static TypeMetadata const* type() { return meta_TextureFlag_; }
+};
+
+
 
 // Time ----------------------------
 typedef struct Time Time;
@@ -183,5 +192,23 @@ extern TypeMetadata* meta_Rectf;
 template<>
 struct Reflector<Rectf>{
    static TypeMetadata const* type() { return meta_Rectf; }
+};
+
+
+// Texture ----------------------------
+typedef struct Texture Texture;
+extern TypeMetadata* meta_Texture;
+template<>
+struct Reflector<Texture>{
+   static TypeMetadata const* type() { return meta_Texture; }
+};
+
+
+// FBO ----------------------------
+typedef struct FBO FBO;
+extern TypeMetadata* meta_FBO;
+template<>
+struct Reflector<FBO>{
+   static TypeMetadata const* type() { return meta_FBO; }
 };
 

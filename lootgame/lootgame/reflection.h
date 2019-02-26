@@ -16,12 +16,24 @@ enum TypeVariety {
    TypeVariety_KVP,
 };
 
+enum StructMemberFlags_ {
+   StructMemberFlags_File = (1 << 0),
+   StructMemberFlags_Image = (1 << 1)
+};
+typedef byte StructMemberFlags;
+
+enum EnumFlags_ {
+   EnumFlags_Bitfield = (1 << 0)
+};
+typedef byte EnumFlags;
+
 typedef struct TypeMetadata TypeMetadata;
 
 struct StructMemberMetadata {
    Symbol* name;
    size_t offset;
    TypeMetadata const* type;
+   StructMemberFlags flags = 0;
 };
 
 struct EnumEntryMetadata {
@@ -52,6 +64,7 @@ struct TypeMetadata {
 
    std::vector<StructMemberMetadata> structMembers;
    std::vector<EnumEntryMetadata> enumEntries;
+   EnumFlags enumFlags = 0;
 
    TypeMetadata const* key;
    TypeMetadata const* value;

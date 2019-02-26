@@ -2,7 +2,7 @@
 #include "app.h"
 #include "lpp.h"
 
-#include "reflection.h"
+#include "reflection_gen.h"
 #include "vex.h"
 
 static void _parseArgs(int argc, char** argv, AppConfig &config) {
@@ -97,17 +97,14 @@ void reflectionStartup_internal()
    vexTemplateDestroy(t);
 }
 
+#include "render.h"
+
 static void _testReflect() {
-   typedef std::unordered_map<Symbol*, std::vector<std::string>> TestType;
+   typedef Texture TestType;
 
    TestType test;
-   for (int j = 0; j < 100; ++j) {
-      std::vector<std::string> v;
-      for (int i = 0; i < 100; ++i) {
-         v.push_back(intern(format("Here's a number: %d", i).c_str()));
-      }
-      test.insert({ intern(format("%d", j).c_str()), v });
-   }
+   test.sz = { 1234, 5678 };
+   test.flags = TextureFlag_FBODefaults;
 
    auto type = reflect<TestType>();
 
@@ -138,7 +135,7 @@ int main(int argc, char** argv)
       reflectionStartup();
 
       //_testTemplates();
-      //_testReflect();
+      _testReflect();
 
 
       
