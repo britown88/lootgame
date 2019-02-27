@@ -36,6 +36,7 @@ typedef uint16_t TextureFlag;
 
 // @reflect{
 struct Texture {
+   // @readonly
    Int2 sz;
 
    // @type_override:TextureFlag_

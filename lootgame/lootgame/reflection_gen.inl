@@ -3,6 +3,7 @@
 
 #include "reflection_gen.h"
 
+TypeMetadata* meta_Coords = new TypeMetadata;
 TypeMetadata* meta_Time = new TypeMetadata;
 TypeMetadata* meta_ColorRGB = new TypeMetadata;
 TypeMetadata* meta_ColorRGBA = new TypeMetadata;
@@ -198,6 +199,29 @@ void reflectionStartup_generated() {
    }
 
    
+   
+   {
+      auto& structName = meta_Coords;
+      structName->name = intern("Coords");
+      structName->size = sizeof(Coords);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) Coords;};
+      structName->funcs.destroy = [](void* data) {((Coords*)data)->~Coords(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("world");
+         member.offset = offsetof(Coords, world);
+         member.type = reflect<WorldCoords>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
    
    {
       auto& structName = meta_Time;
@@ -1300,6 +1324,7 @@ void reflectionStartup_generated() {
          member.name = intern("sz");
          member.offset = offsetof(Texture, sz);
          member.type = reflect<Int2>();
+         member.flags |= StructMemberFlags_ReadOnly;
          
          structName->structMembers.push_back(member);
       }
@@ -1353,11 +1378,6 @@ void reflectionStartup_generated() {
    }
 
    
-
-   
-   //main --------------------------------------
-   void main_reflectionStartup_generated();
-   main_reflectionStartup_generated();
 
    
 }

@@ -149,6 +149,10 @@ static void _windowCreate(App* app, WindowConfig const& info) {
 
 }
 
+#include "reflection_gen.h"
+
+
+
 void appCreateWindow(App* app, WindowConfig const& info) {
    _windowCreate(app, info);
 
@@ -163,7 +167,18 @@ void appCreateWindow(App* app, WindowConfig const& info) {
    app->running = true;
 
 
-   EngineConstants c;
+   appAddGUI("Constants", [] {
+      bool p_open = true;
+      if (ImGui::Begin("Constants", &p_open, ImGuiWindowFlags_AlwaysAutoResize)) {
+         doTypeUI(&Const, "Engine Constants");
+      }
+      ImGui::End();
+      return p_open;
+   });
+
+   //EngineConstants c;
+
+
    //auto writer = scfWriterCreate();
    //serialize(writer, reflect<EngineConstants>(), &c);
    //auto mem = scfWriteToBuffer(writer);

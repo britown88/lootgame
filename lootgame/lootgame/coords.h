@@ -10,13 +10,9 @@ typedef Float2 ScreenCoords;
 
 // Coords is syntax sugar for keeping track of the 3 major coordinate systems of the game
 // Uses the camera in global Game struct for world coord conversions
+// @reflect{
 struct Coords {
-   union {
-      WorldCoords world;
-      struct {
-         float x, y;
-      };
-   };
+   WorldCoords world;
 
    ScreenCoords toScreen(GameState& g);
    VPCoords toViewport(GameState& g);
@@ -25,4 +21,4 @@ struct Coords {
    static Coords fromScreen(ScreenCoords const& c, GameState& g);
    static Coords fromViewport(VPCoords const& c, GameState& g);
    static Coords fromWorld(WorldCoords const& c);
-};
+}; //}

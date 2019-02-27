@@ -24,6 +24,15 @@ struct Reflector<TextureFlag_>{
 
 
 
+// Coords ----------------------------
+typedef struct Coords Coords;
+extern TypeMetadata* meta_Coords;
+template<>
+struct Reflector<Coords>{
+   static TypeMetadata const* type() { return meta_Coords; }
+};
+
+
 // Time ----------------------------
 typedef struct Time Time;
 extern TypeMetadata* meta_Time;

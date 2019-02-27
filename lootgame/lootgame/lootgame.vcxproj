@@ -179,6 +179,7 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     <ClCompile Include="phy.cpp" />
     <ClCompile Include="reflectgen.cpp" />
     <ClCompile Include="reflection.cpp" />
+    <ClCompile Include="reflection_ui.cpp" />
     <ClCompile Include="vex.cpp" />
     <ClCompile Include="win.cpp" />
     <ClCompile Include="colors.cpp" />

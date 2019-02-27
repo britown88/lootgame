@@ -36,6 +36,7 @@ struct ParsedStructMember {
 
    bool flags_file = false;
    bool flags_image = false;
+   bool flags_readOnly = false;
 };
 
 struct ParsedStruct {
@@ -292,6 +293,9 @@ static bool _acceptMember(StringParser& p, std::vector<VexNode*>& modifiers, Par
       }
       else if (mod->tag == "image") {
          newMember.flags_image = true;
+      }
+      else if (mod->tag == "readonly") {
+         newMember.flags_readOnly = true;
       }
       else if (mod->tag == "type_override") {
          type_override.assign(mod->body.begin, mod->body.end);
@@ -704,6 +708,11 @@ static void _generateMainHeaderImpl(std::vector<ParsedFile> &files) {
                   vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_Image");
                   vexTemplateEndScope(t);
                }
+               if (m.flags_readOnly) {
+                  vexTemplateBeginScope(t, "struct_flag");
+                  vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_ReadOnly");
+                  vexTemplateEndScope(t);
+               }
                if (m.staticArray) {
                   vexTemplateBeginScope(t, "struct_flag");
                   vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_StaticArray");
@@ -786,6 +795,11 @@ static void _generateFileInline(ParsedFile &file) {
          if (m.flags_image) {
             vexTemplateBeginScope(t, "struct_flag");
             vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_Image");
+            vexTemplateEndScope(t);
+         }
+         if (m.flags_readOnly) {
+            vexTemplateBeginScope(t, "struct_flag");
+            vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_ReadOnly");
             vexTemplateEndScope(t);
          }
          if (m.staticArray) {

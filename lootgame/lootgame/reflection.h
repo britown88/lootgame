@@ -2,6 +2,9 @@
 
 #include "defs.h"
 #include "scf.h"
+
+
+
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -17,9 +20,10 @@ enum TypeVariety {
 };
 
 enum StructMemberFlags_ {
-   StructMemberFlags_File = (1 << 0),
-   StructMemberFlags_Image = (1 << 1),
-   StructMemberFlags_StaticArray = (1 << 2),
+   StructMemberFlags_File =         (1 << 0),
+   StructMemberFlags_Image =        (1 << 1),
+   StructMemberFlags_StaticArray =  (1 << 2),
+   StructMemberFlags_ReadOnly =     (1 << 3),
 };
 typedef byte StructMemberFlags;
 
@@ -77,6 +81,10 @@ struct TypeMetadata {
 void serialize(SCFWriter* writer, TypeMetadata const* type, void* data);
 void deserialize(SCFReader& reader, TypeMetadata const* type, void* target);
 
+bool doTypeUIEX(TypeMetadata const* type, void* data, const char* displayName);
+
+
+
 template<typename T>
 struct Reflector {
    static TypeMetadata const* type() { return nullptr; }
@@ -84,6 +92,11 @@ struct Reflector {
 
 template<typename T>
 TypeMetadata const*reflect() { return Reflector<T>::type(); }
+
+template<typename T>
+bool doTypeUI(T*data, const char* displayName) {
+   return doTypeUIEX(reflect<T>(), data, displayName);
+}
 
 #define BASIC_TYPE_REFLECT(c_type, metaname) \
 extern TypeMetadata const* metaname; \
