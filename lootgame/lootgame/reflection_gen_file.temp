@@ -52,7 +52,8 @@ void @file{}_reflectionStartup_generated(){
          member.name = intern("@member_name");
          member.offset = offsetof(@struct_name, @member_name);
          member.type = reflect<@member_type>();
-         @struct_flag{member.flags |= @flag{};
+         @struct_flag{member.flags |= @flag;
+         }@struct_static{member.staticArraySize = @size;
          }
 
          structName->structMembers.push_back(member);

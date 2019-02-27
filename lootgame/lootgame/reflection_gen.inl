@@ -12,6 +12,7 @@ TypeMetadata* meta_ColorRGBAf = new TypeMetadata;
 TypeMetadata* meta_SwingPhase = new TypeMetadata;
 TypeMetadata* meta_EngineConstants = new TypeMetadata;
 TypeMetadata* meta_EngineState = new TypeMetadata;
+TypeMetadata* meta_IO = new TypeMetadata;
 TypeMetadata* meta_GameCamera = new TypeMetadata;
 TypeMetadata* meta_Map = new TypeMetadata;
 TypeMetadata* meta_AttackSwing = new TypeMetadata;
@@ -214,7 +215,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Time, t);
          member.type = reflect<Microseconds>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -238,7 +238,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGB, r);
          member.type = reflect<byte>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -249,7 +248,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGB, g);
          member.type = reflect<byte>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -260,7 +258,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGB, b);
          member.type = reflect<byte>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -284,7 +281,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGBA, r);
          member.type = reflect<byte>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -295,7 +291,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGBA, g);
          member.type = reflect<byte>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -306,7 +301,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGBA, b);
          member.type = reflect<byte>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -317,7 +311,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGBA, a);
          member.type = reflect<byte>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -341,7 +334,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGBf, r);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -352,7 +344,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGBf, g);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -363,7 +354,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGBf, b);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -387,7 +377,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorHSV, h);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -398,7 +387,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorHSV, s);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -409,7 +397,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorHSV, v);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -433,7 +420,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGBAf, r);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -444,7 +430,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGBAf, g);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -455,7 +440,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGBAf, b);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -466,7 +450,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGBAf, a);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -490,7 +473,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, resolution);
          member.type = reflect<Int2>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -501,7 +483,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, floorHeight);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -512,7 +493,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, dudeHeight);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -523,7 +503,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, lightHeight);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -534,7 +513,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, lightLinearPortion);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -545,7 +523,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, lightSmoothingFactor);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -556,7 +533,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, lightIntensity);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -567,7 +543,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, dudeAcceleration);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -578,7 +553,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, dudeRotationSpeed);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -589,7 +563,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, dudeMoveSpeed);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -600,7 +573,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, dudeDashSpeed);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -611,7 +583,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, dudeSpeedCapEasing);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -622,7 +593,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, dudeBackwardsPenalty);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -633,7 +603,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, dudeDashDistance);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -644,7 +613,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, dudeKnockbackDistance);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -655,7 +623,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, dudePostDashCooldown);
          member.type = reflect<Milliseconds>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -666,7 +633,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, dudeBaseStaminaTickRecoveryTime);
          member.type = reflect<Milliseconds>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -677,7 +643,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, cooldownOnDamagedStaminaEmpty);
          member.type = reflect<Milliseconds>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -688,7 +653,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, cooldownOnDamagedStamina);
          member.type = reflect<Milliseconds>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -699,7 +663,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineConstants, cooldownOnDamagedHealth);
          member.type = reflect<Milliseconds>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -723,7 +686,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineState, bgClearColor);
          member.type = reflect<ColorRGBAf>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -734,7 +696,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineState, fullScreen);
          member.type = reflect<bool>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -745,7 +706,105 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineState, reloadShaders);
          member.type = reflect<bool>();
          
+         structName->structMembers.push_back(member);
+      }
 
+      
+   }
+
+   
+   {
+      auto& structName = meta_IO;
+      structName->name = intern("IO");
+      structName->size = sizeof(IO);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) IO;};
+      structName->funcs.destroy = [](void* data) {((IO*)data)->~IO(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("mousePos");
+         member.offset = offsetof(IO, mousePos);
+         member.type = reflect<Coords>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("leftStick");
+         member.offset = offsetof(IO, leftStick);
+         member.type = reflect<Float2>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("rightStick");
+         member.offset = offsetof(IO, rightStick);
+         member.type = reflect<Float2>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("leftTrigger");
+         member.offset = offsetof(IO, leftTrigger);
+         member.type = reflect<float>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("rightTrigger");
+         member.offset = offsetof(IO, rightTrigger);
+         member.type = reflect<float>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("buttonDown");
+         member.offset = offsetof(IO, buttonDown);
+         member.type = reflect<bool>();
+         member.flags |= StructMemberFlags_StaticArray;
+         member.staticArraySize = GameButton_COUNT;
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("buttonPressed");
+         member.offset = offsetof(IO, buttonPressed);
+         member.type = reflect<bool>();
+         member.flags |= StructMemberFlags_StaticArray;
+         member.staticArraySize = GameButton_COUNT;
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("buttonReleased");
+         member.offset = offsetof(IO, buttonReleased);
+         member.type = reflect<bool>();
+         member.flags |= StructMemberFlags_StaticArray;
+         member.staticArraySize = GameButton_COUNT;
+         
          structName->structMembers.push_back(member);
       }
 
@@ -769,7 +828,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(GameCamera, viewport);
          member.type = reflect<Rectf>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -793,7 +851,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Map, size);
          member.type = reflect<Float2>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -817,7 +874,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(AttackSwing, lungeDist);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -828,7 +884,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(AttackSwing, lungeSpeed);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -839,7 +894,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(AttackSwing, swipeAngle);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -850,7 +904,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(AttackSwing, swingDur);
          member.type = reflect<Milliseconds>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -861,7 +914,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(AttackSwing, windupDur);
          member.type = reflect<Milliseconds>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -872,7 +924,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(AttackSwing, cooldownDur);
          member.type = reflect<Milliseconds>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -883,7 +934,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(AttackSwing, hitbox);
          member.type = reflect<Rectf>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -907,7 +957,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(MoveSet, swings);
          member.type = reflect<std::vector<AttackSwing>>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -931,7 +980,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Movement, moveSpeedCap);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -942,7 +990,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Movement, moveSpeedCapTarget);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -953,7 +1000,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Movement, moveVector);
          member.type = reflect<Float2>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -964,7 +1010,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Movement, faceVector);
          member.type = reflect<Float2>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -975,7 +1020,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Movement, facing);
          member.type = reflect<Float2>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -999,7 +1043,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Int2, x);
          member.type = reflect<int32_t>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1010,7 +1053,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Int2, y);
          member.type = reflect<int32_t>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1034,7 +1076,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Int3, x);
          member.type = reflect<int32_t>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1045,7 +1086,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Int3, y);
          member.type = reflect<int32_t>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1056,7 +1096,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Int3, z);
          member.type = reflect<int32_t>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1080,7 +1119,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Float2, x);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1091,7 +1129,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Float2, y);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1115,7 +1152,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Float3, x);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1126,7 +1162,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Float3, y);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1137,7 +1172,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Float3, z);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1161,7 +1195,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Recti, x);
          member.type = reflect<int32_t>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1172,7 +1205,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Recti, y);
          member.type = reflect<int32_t>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1183,7 +1215,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Recti, w);
          member.type = reflect<int32_t>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1194,7 +1225,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Recti, h);
          member.type = reflect<int32_t>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1218,7 +1248,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Rectf, x);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1229,7 +1258,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Rectf, y);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1240,7 +1268,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Rectf, w);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1251,7 +1278,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Rectf, h);
          member.type = reflect<float>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1275,7 +1301,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Texture, sz);
          member.type = reflect<Int2>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1286,7 +1311,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Texture, flags);
          member.type = reflect<TextureFlag_>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1299,7 +1323,6 @@ void reflectionStartup_generated() {
          member.flags |= StructMemberFlags_File;
          member.flags |= StructMemberFlags_Image;
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1323,7 +1346,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(FBO, sz);
          member.type = reflect<Int2>();
          
-
          structName->structMembers.push_back(member);
       }
 
@@ -1331,6 +1353,11 @@ void reflectionStartup_generated() {
    }
 
    
+
+   
+   //main --------------------------------------
+   void main_reflectionStartup_generated();
+   main_reflectionStartup_generated();
 
    
 }

@@ -222,7 +222,6 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     <None Include="reflection_gen.inl" />
     <None Include="reflection_gen.temp" />
     <None Include="reflection_gen_file.temp" />
-    <None Include="ui_reflection_gen.inl" />
     <None Include="uniforms.x" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

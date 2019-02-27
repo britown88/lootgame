@@ -196,8 +196,5 @@
     <None Include="reflection_gen.inl">
       <Filter>Header Files\generated</Filter>
     </None>
-    <None Include="ui_reflection_gen.inl">
-      <Filter>Header Files\generated</Filter>
-    </None>
   </ItemGroup>
 </Project>

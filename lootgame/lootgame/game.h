@@ -84,6 +84,7 @@ enum GameButton_ {
 } ;
 typedef byte GameButton;
 
+//@reflect{
 struct IO {
    Coords mousePos = { 0,0 };
 
@@ -96,7 +97,7 @@ struct IO {
    bool buttonDown[GameButton_COUNT];
    bool buttonPressed[GameButton_COUNT];
    bool buttonReleased[GameButton_COUNT];
-};
+};//}
 
 //@reflect{
 struct GameCamera {

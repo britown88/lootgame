@@ -704,6 +704,14 @@ static void _generateMainHeaderImpl(std::vector<ParsedFile> &files) {
                   vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_Image");
                   vexTemplateEndScope(t);
                }
+               if (m.staticArray) {
+                  vexTemplateBeginScope(t, "struct_flag");
+                  vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_StaticArray");
+                  vexTemplateEndScope(t);
+                  vexTemplateBeginScope(t, "struct_static");
+                  vexTemplateAddSubstitution(t, "size", m.arraySize.c_str());
+                  vexTemplateEndScope(t);
+               }
                vexTemplateEndScope(t);
             }
 
@@ -778,6 +786,14 @@ static void _generateFileInline(ParsedFile &file) {
          if (m.flags_image) {
             vexTemplateBeginScope(t, "struct_flag");
             vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_Image");
+            vexTemplateEndScope(t);
+         }
+         if (m.staticArray) {
+            vexTemplateBeginScope(t, "struct_flag");
+            vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_StaticArray");
+            vexTemplateEndScope(t);
+            vexTemplateBeginScope(t, "struct_static");
+            vexTemplateAddSubstitution(t, "size", m.arraySize.c_str());
             vexTemplateEndScope(t);
          }
          vexTemplateEndScope(t);

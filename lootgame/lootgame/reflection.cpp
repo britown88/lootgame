@@ -105,6 +105,7 @@ static void _assignEnumValue(size_t enumSize, int64_t entryValue, void*target) {
 }
 
 void serialize(SCFWriter* writer, TypeMetadata const* type, void* data) {
+
    switch (type->variety) {
    case TypeVariety_Basic:
       if      (type == meta_bool)   scfWriteInt(writer, *(bool*)data);
@@ -126,7 +127,19 @@ void serialize(SCFWriter* writer, TypeMetadata const* type, void* data) {
       for (auto&& member : type->structMembers) {
          scfWriteListBegin(writer);
          scfWriteString(writer, member.name);
-         serialize(writer, member.type, (byte*)data + member.offset);
+
+         if (member.flags&StructMemberFlags_StaticArray) {
+            scfWriteListBegin(writer);
+            scfWriteInt(writer, member.staticArraySize);
+            for (int i = 0; i < member.staticArraySize; ++i) {
+               serialize(writer, member.type, (byte*)data + member.offset + (member.type->size * i));
+            }
+            scfWriteListEnd(writer);
+         }
+         else {
+            serialize(writer, member.type, (byte*)data + member.offset);
+         }
+         
          scfWriteListEnd(writer);
       }
       scfWriteListEnd(writer);
@@ -189,7 +202,18 @@ void deserialize(SCFReader& reader, TypeMetadata const* type, void* target) {
          auto name = intern(scfReadString(mlist));
          for (auto&& m : type->structMembers) {
             if (m.name == name) {
-               deserialize(mlist, m.type, (byte*)target + m.offset);
+               if (m.flags&StructMemberFlags_StaticArray) {
+                  auto staticList = scfReadList(mlist);
+                  auto szInFile = scfReadInt(staticList);
+                  auto sz = MIN(*szInFile, m.staticArraySize);
+
+                  for (int i = 0; i < sz; ++i) {
+                     deserialize(staticList, m.type, (byte*)target + m.offset + (m.type->size * i));
+                  }
+               }
+               else {
+                  deserialize(mlist, m.type, (byte*)target + m.offset);
+               }
                break;
             }
          }

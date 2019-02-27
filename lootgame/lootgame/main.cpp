@@ -99,12 +99,20 @@ void reflectionStartup_internal()
 
 #include "render.h"
 
+//@reflect{
+struct ReflectTest3 {
+   int staticArr[100] = { 0 };
+};//}
+
+#include "main_reflection_gen.inl"
+
 static void _testReflect() {
-   typedef Texture TestType;
+   typedef ReflectTest3 TestType;
 
    TestType test;
-   test.sz = { 1234, 5678 };
-   test.flags = TextureFlag_FBODefaults;
+   for (int i = 0; i < 100; ++i) {
+      test.staticArr[i] = i;
+   }
 
    auto type = reflect<TestType>();
 
@@ -117,6 +125,7 @@ static void _testReflect() {
    auto reader = scfView(mem);
    TestType test2;
    deserialize(reader, type, &test2);
+
 
    auto testtype = reflect<std::unordered_map<Symbol*, std::vector<std::string>>>();
 

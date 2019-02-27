@@ -18,7 +18,8 @@ enum TypeVariety {
 
 enum StructMemberFlags_ {
    StructMemberFlags_File = (1 << 0),
-   StructMemberFlags_Image = (1 << 1)
+   StructMemberFlags_Image = (1 << 1),
+   StructMemberFlags_StaticArray = (1 << 2),
 };
 typedef byte StructMemberFlags;
 
@@ -34,6 +35,7 @@ struct StructMemberMetadata {
    size_t offset;
    TypeMetadata const* type;
    StructMemberFlags flags = 0;
+   size_t staticArraySize = 0;
 };
 
 struct EnumEntryMetadata {

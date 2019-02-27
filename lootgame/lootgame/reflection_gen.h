@@ -96,6 +96,15 @@ struct Reflector<EngineState>{
 };
 
 
+// IO ----------------------------
+typedef struct IO IO;
+extern TypeMetadata* meta_IO;
+template<>
+struct Reflector<IO>{
+   static TypeMetadata const* type() { return meta_IO; }
+};
+
+
 // GameCamera ----------------------------
 typedef struct GameCamera GameCamera;
 extern TypeMetadata* meta_GameCamera;
