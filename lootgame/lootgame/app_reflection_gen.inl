@@ -143,6 +143,7 @@ void app_reflectionStartup_generated(){
          member.name = intern("enumTest");
          member.offset = offsetof(MyStruct, enumTest);
          member.type = reflect<MyEnum>();
+         member.customUI = customUIRenderer<MyEnum>();
          
          structName->structMembers.push_back(member);
       }
@@ -153,6 +154,7 @@ void app_reflectionStartup_generated(){
          member.name = intern("ints");
          member.offset = offsetof(MyStruct, ints);
          member.type = reflect<std::vector<int>>();
+         member.customUI = customUIRenderer<std::vector<int>>();
          
          structName->structMembers.push_back(member);
       }
@@ -163,6 +165,7 @@ void app_reflectionStartup_generated(){
          member.name = intern("staticStrings");
          member.offset = offsetof(MyStruct, staticStrings);
          member.type = reflect<std::string>();
+         member.customUI = customUIRenderer<std::string>();
          member.flags |= StructMemberFlags_StaticArray;
          member.staticArraySize = 10;
          
@@ -175,6 +178,7 @@ void app_reflectionStartup_generated(){
          member.name = intern("bitfield");
          member.offset = offsetof(MyStruct, bitfield);
          member.type = reflect<MyBitfield_>();
+         member.customUI = customUIRenderer<MyBitfield_>();
          
          structName->structMembers.push_back(member);
       }
@@ -185,6 +189,7 @@ void app_reflectionStartup_generated(){
          member.name = intern("intRange");
          member.offset = offsetof(MyStruct, intRange);
          member.type = reflect<int>();
+         member.customUI = customUIRenderer<int>();
          member.ui.min = (float)0;
          member.ui.max = (float)100;
          
@@ -197,6 +202,7 @@ void app_reflectionStartup_generated(){
          member.name = intern("dragTest");
          member.offset = offsetof(MyStruct, dragTest);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          member.ui.min = (float)0;
          member.ui.max = (float)1;
          member.ui.step = (float)0.001;
@@ -210,6 +216,7 @@ void app_reflectionStartup_generated(){
          member.name = intern("readonly");
          member.offset = offsetof(MyStruct, readonly);
          member.type = reflect<std::string>();
+         member.customUI = customUIRenderer<std::string>();
          member.flags |= StructMemberFlags_ReadOnly;
          
          structName->structMembers.push_back(member);
@@ -221,6 +228,30 @@ void app_reflectionStartup_generated(){
          member.name = intern("map");
          member.offset = offsetof(MyStruct, map);
          member.type = reflect<std::unordered_map<Symbol*, MyBitfield_>>();
+         member.customUI = customUIRenderer<std::unordered_map<Symbol*, MyBitfield_>>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("color");
+         member.offset = offsetof(MyStruct, color);
+         member.type = reflect<ColorRGBAf>();
+         member.customUI = customUIRenderer<ColorRGBAf>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("path");
+         member.offset = offsetof(MyStruct, path);
+         member.type = reflect<std::string>();
+         member.customUI = customUIRenderer<std::string>();
+         member.flags |= StructMemberFlags_File;
          
          structName->structMembers.push_back(member);
       }

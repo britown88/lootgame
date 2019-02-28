@@ -4,6 +4,10 @@
 #include <imgui_internal.h>
 #include <misc/cpp/imgui_stdlib.h>
 
+#include "custom_ui_renders.h"
+#include "IconsFontAwesome.h"
+#include "win.h"
+
 template<typename T>
 static bool _doIntegerType(void* data, StructMemberMetadata const* member, const char* label) {
    int i = (int)*(T*)data;
@@ -88,6 +92,10 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
       return false;
    }
 
+   if (parent && parent->customUI) {
+      return parent->customUI(type, data, parent, label);
+   }
+
    auto str_label = "";
    if (parent) {
       str_label = parent->name;
@@ -112,6 +120,24 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
       }
       ImGui::PopID(); 
    };
+
+   if (parent && parent->flags&StructMemberFlags_File) {
+      if (type == meta_string) {
+         if (ImGui::Button(ICON_FA_FOLDER)) {
+            OpenFileConfig cfg;
+            cfg.filterNames = "All Files (*.*)";
+            cfg.filterExtensions = "*.*";
+            cfg.initialDir = cwd();
+
+            auto file = openFile(cfg);
+            if (!file.empty()) {
+               *(std::string*)data = file;
+               return true;
+            }
+         }
+         ImGui::SameLine();
+      }
+   }
 
    switch (type->variety) {
    case TypeVariety_Basic: {

@@ -111,6 +111,9 @@
     <ClCompile Include="reflection_ui.cpp">
       <Filter>Source Files\utility</Filter>
     </ClCompile>
+    <ClCompile Include="custom_ui_renders.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h">
@@ -175,6 +178,9 @@
     </ClInclude>
     <ClInclude Include="reflection_gen.h">
       <Filter>Header Files\generated</Filter>
+    </ClInclude>
+    <ClInclude Include="custom_ui_renders.h">
+      <Filter>Header Files\utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

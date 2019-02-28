@@ -52,6 +52,7 @@ void @file{}_reflectionStartup_generated(){
          member.name = intern("@member_name");
          member.offset = offsetof(@struct_name, @member_name);
          member.type = reflect<@member_type>();
+         member.customUI = customUIRenderer<@member_type>();
          @struct_flag{member.flags |= @flag;
          }@struct_static{member.staticArraySize = @size;
          }@struct_ui{member.ui.@key = (float)@value;

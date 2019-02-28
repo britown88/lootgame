@@ -119,9 +119,11 @@ static void _windowCreate(App* app, WindowConfig const& info) {
    SDL_GL_SetSwapInterval(1); // Enable vsync
    glewInit();
 
+   _initFontAtlas(app);
+
    // Setup Dear ImGui binding
    IMGUI_CHECKVERSION();
-   auto imCtx = ImGui::CreateContext();
+   auto imCtx = ImGui::CreateContext(app->fontAtlas);
    ImGuiIO& io = ImGui::GetIO(); (void)io;
 
    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -190,6 +192,11 @@ struct MyStruct {
 
    //@type_override:std::unordered_map<Symbol*, MyBitfield_>
    std::unordered_map<Symbol*, MyBitfield> map;
+
+   ColorRGBAf color;
+
+   //@file
+   std::string path;
 };//}
 
 #include  "app_reflection_gen.inl"

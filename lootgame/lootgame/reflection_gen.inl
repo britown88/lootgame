@@ -216,6 +216,7 @@ void reflectionStartup_generated() {
          member.name = intern("world");
          member.offset = offsetof(Coords, world);
          member.type = reflect<WorldCoords>();
+         member.customUI = customUIRenderer<WorldCoords>();
          
          structName->structMembers.push_back(member);
       }
@@ -239,6 +240,7 @@ void reflectionStartup_generated() {
          member.name = intern("t");
          member.offset = offsetof(Time, t);
          member.type = reflect<Microseconds>();
+         member.customUI = customUIRenderer<Microseconds>();
          
          structName->structMembers.push_back(member);
       }
@@ -262,6 +264,7 @@ void reflectionStartup_generated() {
          member.name = intern("r");
          member.offset = offsetof(ColorRGB, r);
          member.type = reflect<byte>();
+         member.customUI = customUIRenderer<byte>();
          
          structName->structMembers.push_back(member);
       }
@@ -272,6 +275,7 @@ void reflectionStartup_generated() {
          member.name = intern("g");
          member.offset = offsetof(ColorRGB, g);
          member.type = reflect<byte>();
+         member.customUI = customUIRenderer<byte>();
          
          structName->structMembers.push_back(member);
       }
@@ -282,6 +286,7 @@ void reflectionStartup_generated() {
          member.name = intern("b");
          member.offset = offsetof(ColorRGB, b);
          member.type = reflect<byte>();
+         member.customUI = customUIRenderer<byte>();
          
          structName->structMembers.push_back(member);
       }
@@ -305,6 +310,7 @@ void reflectionStartup_generated() {
          member.name = intern("r");
          member.offset = offsetof(ColorRGBA, r);
          member.type = reflect<byte>();
+         member.customUI = customUIRenderer<byte>();
          
          structName->structMembers.push_back(member);
       }
@@ -315,6 +321,7 @@ void reflectionStartup_generated() {
          member.name = intern("g");
          member.offset = offsetof(ColorRGBA, g);
          member.type = reflect<byte>();
+         member.customUI = customUIRenderer<byte>();
          
          structName->structMembers.push_back(member);
       }
@@ -325,6 +332,7 @@ void reflectionStartup_generated() {
          member.name = intern("b");
          member.offset = offsetof(ColorRGBA, b);
          member.type = reflect<byte>();
+         member.customUI = customUIRenderer<byte>();
          
          structName->structMembers.push_back(member);
       }
@@ -335,6 +343,7 @@ void reflectionStartup_generated() {
          member.name = intern("a");
          member.offset = offsetof(ColorRGBA, a);
          member.type = reflect<byte>();
+         member.customUI = customUIRenderer<byte>();
          
          structName->structMembers.push_back(member);
       }
@@ -358,6 +367,7 @@ void reflectionStartup_generated() {
          member.name = intern("r");
          member.offset = offsetof(ColorRGBf, r);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -368,6 +378,7 @@ void reflectionStartup_generated() {
          member.name = intern("g");
          member.offset = offsetof(ColorRGBf, g);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -378,6 +389,7 @@ void reflectionStartup_generated() {
          member.name = intern("b");
          member.offset = offsetof(ColorRGBf, b);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -401,6 +413,7 @@ void reflectionStartup_generated() {
          member.name = intern("h");
          member.offset = offsetof(ColorHSV, h);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -411,6 +424,7 @@ void reflectionStartup_generated() {
          member.name = intern("s");
          member.offset = offsetof(ColorHSV, s);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -421,6 +435,7 @@ void reflectionStartup_generated() {
          member.name = intern("v");
          member.offset = offsetof(ColorHSV, v);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -444,6 +459,7 @@ void reflectionStartup_generated() {
          member.name = intern("r");
          member.offset = offsetof(ColorRGBAf, r);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -454,6 +470,7 @@ void reflectionStartup_generated() {
          member.name = intern("g");
          member.offset = offsetof(ColorRGBAf, g);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -464,6 +481,7 @@ void reflectionStartup_generated() {
          member.name = intern("b");
          member.offset = offsetof(ColorRGBAf, b);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -474,6 +492,7 @@ void reflectionStartup_generated() {
          member.name = intern("a");
          member.offset = offsetof(ColorRGBAf, a);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -497,6 +516,7 @@ void reflectionStartup_generated() {
          member.name = intern("resolution");
          member.offset = offsetof(EngineConstants, resolution);
          member.type = reflect<Int2>();
+         member.customUI = customUIRenderer<Int2>();
          member.flags |= StructMemberFlags_ReadOnly;
          
          structName->structMembers.push_back(member);
@@ -508,6 +528,7 @@ void reflectionStartup_generated() {
          member.name = intern("floorHeight");
          member.offset = offsetof(EngineConstants, floorHeight);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -518,6 +539,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeHeight");
          member.offset = offsetof(EngineConstants, dudeHeight);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -528,6 +550,7 @@ void reflectionStartup_generated() {
          member.name = intern("lightHeight");
          member.offset = offsetof(EngineConstants, lightHeight);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -538,6 +561,7 @@ void reflectionStartup_generated() {
          member.name = intern("lightLinearPortion");
          member.offset = offsetof(EngineConstants, lightLinearPortion);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -548,6 +572,7 @@ void reflectionStartup_generated() {
          member.name = intern("lightSmoothingFactor");
          member.offset = offsetof(EngineConstants, lightSmoothingFactor);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -558,6 +583,7 @@ void reflectionStartup_generated() {
          member.name = intern("lightIntensity");
          member.offset = offsetof(EngineConstants, lightIntensity);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -568,6 +594,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeAcceleration");
          member.offset = offsetof(EngineConstants, dudeAcceleration);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -578,6 +605,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeRotationSpeed");
          member.offset = offsetof(EngineConstants, dudeRotationSpeed);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -588,6 +616,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeMoveSpeed");
          member.offset = offsetof(EngineConstants, dudeMoveSpeed);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -598,6 +627,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeDashSpeed");
          member.offset = offsetof(EngineConstants, dudeDashSpeed);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -608,6 +638,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeSpeedCapEasing");
          member.offset = offsetof(EngineConstants, dudeSpeedCapEasing);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -618,6 +649,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeBackwardsPenalty");
          member.offset = offsetof(EngineConstants, dudeBackwardsPenalty);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -628,6 +660,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeDashDistance");
          member.offset = offsetof(EngineConstants, dudeDashDistance);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -638,6 +671,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeKnockbackDistance");
          member.offset = offsetof(EngineConstants, dudeKnockbackDistance);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -648,6 +682,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudePostDashCooldown");
          member.offset = offsetof(EngineConstants, dudePostDashCooldown);
          member.type = reflect<Milliseconds>();
+         member.customUI = customUIRenderer<Milliseconds>();
          
          structName->structMembers.push_back(member);
       }
@@ -658,6 +693,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeBaseStaminaTickRecoveryTime");
          member.offset = offsetof(EngineConstants, dudeBaseStaminaTickRecoveryTime);
          member.type = reflect<Milliseconds>();
+         member.customUI = customUIRenderer<Milliseconds>();
          
          structName->structMembers.push_back(member);
       }
@@ -668,6 +704,7 @@ void reflectionStartup_generated() {
          member.name = intern("cooldownOnDamagedStaminaEmpty");
          member.offset = offsetof(EngineConstants, cooldownOnDamagedStaminaEmpty);
          member.type = reflect<Milliseconds>();
+         member.customUI = customUIRenderer<Milliseconds>();
          
          structName->structMembers.push_back(member);
       }
@@ -678,6 +715,7 @@ void reflectionStartup_generated() {
          member.name = intern("cooldownOnDamagedStamina");
          member.offset = offsetof(EngineConstants, cooldownOnDamagedStamina);
          member.type = reflect<Milliseconds>();
+         member.customUI = customUIRenderer<Milliseconds>();
          
          structName->structMembers.push_back(member);
       }
@@ -688,6 +726,7 @@ void reflectionStartup_generated() {
          member.name = intern("cooldownOnDamagedHealth");
          member.offset = offsetof(EngineConstants, cooldownOnDamagedHealth);
          member.type = reflect<Milliseconds>();
+         member.customUI = customUIRenderer<Milliseconds>();
          
          structName->structMembers.push_back(member);
       }
@@ -711,6 +750,7 @@ void reflectionStartup_generated() {
          member.name = intern("bgClearColor");
          member.offset = offsetof(EngineState, bgClearColor);
          member.type = reflect<ColorRGBAf>();
+         member.customUI = customUIRenderer<ColorRGBAf>();
          
          structName->structMembers.push_back(member);
       }
@@ -721,6 +761,7 @@ void reflectionStartup_generated() {
          member.name = intern("fullScreen");
          member.offset = offsetof(EngineState, fullScreen);
          member.type = reflect<bool>();
+         member.customUI = customUIRenderer<bool>();
          
          structName->structMembers.push_back(member);
       }
@@ -731,6 +772,7 @@ void reflectionStartup_generated() {
          member.name = intern("reloadShaders");
          member.offset = offsetof(EngineState, reloadShaders);
          member.type = reflect<bool>();
+         member.customUI = customUIRenderer<bool>();
          
          structName->structMembers.push_back(member);
       }
@@ -754,6 +796,7 @@ void reflectionStartup_generated() {
          member.name = intern("mousePos");
          member.offset = offsetof(IO, mousePos);
          member.type = reflect<Coords>();
+         member.customUI = customUIRenderer<Coords>();
          
          structName->structMembers.push_back(member);
       }
@@ -764,6 +807,7 @@ void reflectionStartup_generated() {
          member.name = intern("leftStick");
          member.offset = offsetof(IO, leftStick);
          member.type = reflect<Float2>();
+         member.customUI = customUIRenderer<Float2>();
          
          structName->structMembers.push_back(member);
       }
@@ -774,6 +818,7 @@ void reflectionStartup_generated() {
          member.name = intern("rightStick");
          member.offset = offsetof(IO, rightStick);
          member.type = reflect<Float2>();
+         member.customUI = customUIRenderer<Float2>();
          
          structName->structMembers.push_back(member);
       }
@@ -784,6 +829,7 @@ void reflectionStartup_generated() {
          member.name = intern("leftTrigger");
          member.offset = offsetof(IO, leftTrigger);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -794,6 +840,7 @@ void reflectionStartup_generated() {
          member.name = intern("rightTrigger");
          member.offset = offsetof(IO, rightTrigger);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -804,6 +851,7 @@ void reflectionStartup_generated() {
          member.name = intern("buttonDown");
          member.offset = offsetof(IO, buttonDown);
          member.type = reflect<bool>();
+         member.customUI = customUIRenderer<bool>();
          member.flags |= StructMemberFlags_StaticArray;
          member.staticArraySize = GameButton_COUNT;
          
@@ -816,6 +864,7 @@ void reflectionStartup_generated() {
          member.name = intern("buttonPressed");
          member.offset = offsetof(IO, buttonPressed);
          member.type = reflect<bool>();
+         member.customUI = customUIRenderer<bool>();
          member.flags |= StructMemberFlags_StaticArray;
          member.staticArraySize = GameButton_COUNT;
          
@@ -828,6 +877,7 @@ void reflectionStartup_generated() {
          member.name = intern("buttonReleased");
          member.offset = offsetof(IO, buttonReleased);
          member.type = reflect<bool>();
+         member.customUI = customUIRenderer<bool>();
          member.flags |= StructMemberFlags_StaticArray;
          member.staticArraySize = GameButton_COUNT;
          
@@ -853,6 +903,7 @@ void reflectionStartup_generated() {
          member.name = intern("viewport");
          member.offset = offsetof(GameCamera, viewport);
          member.type = reflect<Rectf>();
+         member.customUI = customUIRenderer<Rectf>();
          
          structName->structMembers.push_back(member);
       }
@@ -876,6 +927,7 @@ void reflectionStartup_generated() {
          member.name = intern("size");
          member.offset = offsetof(Map, size);
          member.type = reflect<Float2>();
+         member.customUI = customUIRenderer<Float2>();
          
          structName->structMembers.push_back(member);
       }
@@ -899,6 +951,7 @@ void reflectionStartup_generated() {
          member.name = intern("lungeDist");
          member.offset = offsetof(AttackSwing, lungeDist);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -909,6 +962,7 @@ void reflectionStartup_generated() {
          member.name = intern("lungeSpeed");
          member.offset = offsetof(AttackSwing, lungeSpeed);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -919,6 +973,7 @@ void reflectionStartup_generated() {
          member.name = intern("swipeAngle");
          member.offset = offsetof(AttackSwing, swipeAngle);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -929,6 +984,7 @@ void reflectionStartup_generated() {
          member.name = intern("swingDur");
          member.offset = offsetof(AttackSwing, swingDur);
          member.type = reflect<Milliseconds>();
+         member.customUI = customUIRenderer<Milliseconds>();
          
          structName->structMembers.push_back(member);
       }
@@ -939,6 +995,7 @@ void reflectionStartup_generated() {
          member.name = intern("windupDur");
          member.offset = offsetof(AttackSwing, windupDur);
          member.type = reflect<Milliseconds>();
+         member.customUI = customUIRenderer<Milliseconds>();
          
          structName->structMembers.push_back(member);
       }
@@ -949,6 +1006,7 @@ void reflectionStartup_generated() {
          member.name = intern("cooldownDur");
          member.offset = offsetof(AttackSwing, cooldownDur);
          member.type = reflect<Milliseconds>();
+         member.customUI = customUIRenderer<Milliseconds>();
          
          structName->structMembers.push_back(member);
       }
@@ -959,6 +1017,7 @@ void reflectionStartup_generated() {
          member.name = intern("hitbox");
          member.offset = offsetof(AttackSwing, hitbox);
          member.type = reflect<Rectf>();
+         member.customUI = customUIRenderer<Rectf>();
          
          structName->structMembers.push_back(member);
       }
@@ -982,6 +1041,7 @@ void reflectionStartup_generated() {
          member.name = intern("swings");
          member.offset = offsetof(MoveSet, swings);
          member.type = reflect<std::vector<AttackSwing>>();
+         member.customUI = customUIRenderer<std::vector<AttackSwing>>();
          
          structName->structMembers.push_back(member);
       }
@@ -1005,6 +1065,7 @@ void reflectionStartup_generated() {
          member.name = intern("moveSpeedCap");
          member.offset = offsetof(Movement, moveSpeedCap);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -1015,6 +1076,7 @@ void reflectionStartup_generated() {
          member.name = intern("moveSpeedCapTarget");
          member.offset = offsetof(Movement, moveSpeedCapTarget);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -1025,6 +1087,7 @@ void reflectionStartup_generated() {
          member.name = intern("moveVector");
          member.offset = offsetof(Movement, moveVector);
          member.type = reflect<Float2>();
+         member.customUI = customUIRenderer<Float2>();
          
          structName->structMembers.push_back(member);
       }
@@ -1035,6 +1098,7 @@ void reflectionStartup_generated() {
          member.name = intern("faceVector");
          member.offset = offsetof(Movement, faceVector);
          member.type = reflect<Float2>();
+         member.customUI = customUIRenderer<Float2>();
          
          structName->structMembers.push_back(member);
       }
@@ -1045,6 +1109,7 @@ void reflectionStartup_generated() {
          member.name = intern("facing");
          member.offset = offsetof(Movement, facing);
          member.type = reflect<Float2>();
+         member.customUI = customUIRenderer<Float2>();
          
          structName->structMembers.push_back(member);
       }
@@ -1068,6 +1133,7 @@ void reflectionStartup_generated() {
          member.name = intern("showMovementDebugging");
          member.offset = offsetof(GameStateDebug, showMovementDebugging);
          member.type = reflect<bool>();
+         member.customUI = customUIRenderer<bool>();
          
          structName->structMembers.push_back(member);
       }
@@ -1078,6 +1144,7 @@ void reflectionStartup_generated() {
          member.name = intern("showCollisionDebugging");
          member.offset = offsetof(GameStateDebug, showCollisionDebugging);
          member.type = reflect<bool>();
+         member.customUI = customUIRenderer<bool>();
          
          structName->structMembers.push_back(member);
       }
@@ -1088,6 +1155,7 @@ void reflectionStartup_generated() {
          member.name = intern("ambientLight");
          member.offset = offsetof(GameStateDebug, ambientLight);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          member.ui.min = (float)0;
          member.ui.max = (float)1;
          
@@ -1113,6 +1181,7 @@ void reflectionStartup_generated() {
          member.name = intern("x");
          member.offset = offsetof(Int2, x);
          member.type = reflect<int32_t>();
+         member.customUI = customUIRenderer<int32_t>();
          
          structName->structMembers.push_back(member);
       }
@@ -1123,6 +1192,7 @@ void reflectionStartup_generated() {
          member.name = intern("y");
          member.offset = offsetof(Int2, y);
          member.type = reflect<int32_t>();
+         member.customUI = customUIRenderer<int32_t>();
          
          structName->structMembers.push_back(member);
       }
@@ -1146,6 +1216,7 @@ void reflectionStartup_generated() {
          member.name = intern("x");
          member.offset = offsetof(Int3, x);
          member.type = reflect<int32_t>();
+         member.customUI = customUIRenderer<int32_t>();
          
          structName->structMembers.push_back(member);
       }
@@ -1156,6 +1227,7 @@ void reflectionStartup_generated() {
          member.name = intern("y");
          member.offset = offsetof(Int3, y);
          member.type = reflect<int32_t>();
+         member.customUI = customUIRenderer<int32_t>();
          
          structName->structMembers.push_back(member);
       }
@@ -1166,6 +1238,7 @@ void reflectionStartup_generated() {
          member.name = intern("z");
          member.offset = offsetof(Int3, z);
          member.type = reflect<int32_t>();
+         member.customUI = customUIRenderer<int32_t>();
          
          structName->structMembers.push_back(member);
       }
@@ -1189,6 +1262,7 @@ void reflectionStartup_generated() {
          member.name = intern("x");
          member.offset = offsetof(Float2, x);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -1199,6 +1273,7 @@ void reflectionStartup_generated() {
          member.name = intern("y");
          member.offset = offsetof(Float2, y);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -1222,6 +1297,7 @@ void reflectionStartup_generated() {
          member.name = intern("x");
          member.offset = offsetof(Float3, x);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -1232,6 +1308,7 @@ void reflectionStartup_generated() {
          member.name = intern("y");
          member.offset = offsetof(Float3, y);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -1242,6 +1319,7 @@ void reflectionStartup_generated() {
          member.name = intern("z");
          member.offset = offsetof(Float3, z);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -1265,6 +1343,7 @@ void reflectionStartup_generated() {
          member.name = intern("x");
          member.offset = offsetof(Recti, x);
          member.type = reflect<int32_t>();
+         member.customUI = customUIRenderer<int32_t>();
          
          structName->structMembers.push_back(member);
       }
@@ -1275,6 +1354,7 @@ void reflectionStartup_generated() {
          member.name = intern("y");
          member.offset = offsetof(Recti, y);
          member.type = reflect<int32_t>();
+         member.customUI = customUIRenderer<int32_t>();
          
          structName->structMembers.push_back(member);
       }
@@ -1285,6 +1365,7 @@ void reflectionStartup_generated() {
          member.name = intern("w");
          member.offset = offsetof(Recti, w);
          member.type = reflect<int32_t>();
+         member.customUI = customUIRenderer<int32_t>();
          
          structName->structMembers.push_back(member);
       }
@@ -1295,6 +1376,7 @@ void reflectionStartup_generated() {
          member.name = intern("h");
          member.offset = offsetof(Recti, h);
          member.type = reflect<int32_t>();
+         member.customUI = customUIRenderer<int32_t>();
          
          structName->structMembers.push_back(member);
       }
@@ -1318,6 +1400,7 @@ void reflectionStartup_generated() {
          member.name = intern("x");
          member.offset = offsetof(Rectf, x);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -1328,6 +1411,7 @@ void reflectionStartup_generated() {
          member.name = intern("y");
          member.offset = offsetof(Rectf, y);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -1338,6 +1422,7 @@ void reflectionStartup_generated() {
          member.name = intern("w");
          member.offset = offsetof(Rectf, w);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -1348,6 +1433,7 @@ void reflectionStartup_generated() {
          member.name = intern("h");
          member.offset = offsetof(Rectf, h);
          member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }
@@ -1371,6 +1457,7 @@ void reflectionStartup_generated() {
          member.name = intern("sz");
          member.offset = offsetof(Texture, sz);
          member.type = reflect<Int2>();
+         member.customUI = customUIRenderer<Int2>();
          member.flags |= StructMemberFlags_ReadOnly;
          
          structName->structMembers.push_back(member);
@@ -1382,6 +1469,7 @@ void reflectionStartup_generated() {
          member.name = intern("flags");
          member.offset = offsetof(Texture, flags);
          member.type = reflect<TextureFlag_>();
+         member.customUI = customUIRenderer<TextureFlag_>();
          
          structName->structMembers.push_back(member);
       }
@@ -1392,6 +1480,7 @@ void reflectionStartup_generated() {
          member.name = intern("filepath");
          member.offset = offsetof(Texture, filepath);
          member.type = reflect<std::string>();
+         member.customUI = customUIRenderer<std::string>();
          member.flags |= StructMemberFlags_File;
          member.flags |= StructMemberFlags_Image;
          
@@ -1417,6 +1506,7 @@ void reflectionStartup_generated() {
          member.name = intern("sz");
          member.offset = offsetof(FBO, sz);
          member.type = reflect<Int2>();
+         member.customUI = customUIRenderer<Int2>();
          
          structName->structMembers.push_back(member);
       }

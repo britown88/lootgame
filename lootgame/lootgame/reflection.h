@@ -2,6 +2,7 @@
 
 #include "defs.h"
 #include "scf.h"
+#include "custom_ui_renders.h"
 
 #include <vector>
 #include <string>
@@ -43,6 +44,7 @@ struct StructMemberMetadata {
    Symbol* name;
    size_t offset;
    TypeMetadata const* type;
+   UIRenderFunc customUI = nullptr;
    StructMemberFlags flags = 0;
    size_t staticArraySize = 0;
    StructMemberUIOptions ui;
