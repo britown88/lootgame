@@ -38,8 +38,9 @@ struct ParsedStructMember {
    bool flags_image = false;
    bool flags_readOnly = false;
 
-   bool flags_uiStepSpeed = false;
-   std::string uiStepSpeed;
+   struct {
+      std::string min, max, step;
+   } ui;
 };
 
 struct ParsedStruct {
@@ -303,9 +304,14 @@ static bool _acceptMember(StringParser& p, std::vector<VexNode*>& modifiers, Par
       else if (mod->tag == "type_override") {
          type_override.assign(mod->body.begin, mod->body.end);
       }
-      else if (mod->tag == "ui_stepspeed") {
-         newMember.flags_uiStepSpeed = true;
-         newMember.uiStepSpeed.assign(mod->body.begin, mod->body.end);
+      else if (mod->tag == "ui") {
+         auto child = mod->children;
+         while (child) {
+            if (child->tag == "min") { newMember.ui.min = std::string(child->body.begin, child->body.end); }
+            else if (child->tag == "max") { newMember.ui.max = std::string(child->body.begin, child->body.end); }
+            else if (child->tag == "step") { newMember.ui.step = std::string(child->body.begin, child->body.end); }
+            child = child->next;
+         }
       }
    }
 
@@ -720,9 +726,22 @@ static void _generateMainHeaderImpl(std::vector<ParsedFile> &files) {
                   vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_ReadOnly");
                   vexTemplateEndScope(t);
                }
-               if (m.flags_uiStepSpeed) {
-                  vexTemplateBeginScope(t, "struct_ui_step");
-                  vexTemplateAddSubstitution(t, "speed", m.uiStepSpeed.c_str());
+               if (!m.ui.min.empty()) {
+                  vexTemplateBeginScope(t, "struct_ui");
+                  vexTemplateAddSubstitution(t, "key", "min");
+                  vexTemplateAddSubstitution(t, "value", m.ui.min.c_str());
+                  vexTemplateEndScope(t);
+               }
+               if (!m.ui.max.empty()) {
+                  vexTemplateBeginScope(t, "struct_ui");
+                  vexTemplateAddSubstitution(t, "key", "max");
+                  vexTemplateAddSubstitution(t, "value", m.ui.max.c_str());
+                  vexTemplateEndScope(t);
+               }
+               if (!m.ui.step.empty()) {
+                  vexTemplateBeginScope(t, "struct_ui");
+                  vexTemplateAddSubstitution(t, "key", "step");
+                  vexTemplateAddSubstitution(t, "value", m.ui.step.c_str());
                   vexTemplateEndScope(t);
                }
                if (m.staticArray) {
@@ -814,9 +833,22 @@ static void _generateFileInline(ParsedFile &file) {
             vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_ReadOnly");
             vexTemplateEndScope(t);
          }
-         if (m.flags_uiStepSpeed) {
-            vexTemplateBeginScope(t, "struct_ui_step");
-            vexTemplateAddSubstitution(t, "speed", m.uiStepSpeed.c_str());
+         if (!m.ui.min.empty()) {
+            vexTemplateBeginScope(t, "struct_ui");
+            vexTemplateAddSubstitution(t, "key", "min");
+            vexTemplateAddSubstitution(t, "value", m.ui.min.c_str());
+            vexTemplateEndScope(t);
+         }
+         if (!m.ui.max.empty()) {
+            vexTemplateBeginScope(t, "struct_ui");
+            vexTemplateAddSubstitution(t, "key", "max");
+            vexTemplateAddSubstitution(t, "value", m.ui.max.c_str());
+            vexTemplateEndScope(t);
+         }
+         if (!m.ui.step.empty()) {
+            vexTemplateBeginScope(t, "struct_ui");
+            vexTemplateAddSubstitution(t, "key", "step");
+            vexTemplateAddSubstitution(t, "value", m.ui.step.c_str());
             vexTemplateEndScope(t);
          }
          if (m.staticArray) {

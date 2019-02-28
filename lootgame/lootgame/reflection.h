@@ -3,11 +3,11 @@
 #include "defs.h"
 #include "scf.h"
 
-
-
 #include <vector>
 #include <string>
 #include <unordered_map>
+
+#include <imgui.h>
 
 void reflectionStartup();
 
@@ -34,13 +34,18 @@ typedef byte EnumFlags;
 
 typedef struct TypeMetadata TypeMetadata;
 
+
+struct StructMemberUIOptions {
+   float min = 0, max = 0, step = 0;
+};
+
 struct StructMemberMetadata {
    Symbol* name;
    size_t offset;
    TypeMetadata const* type;
    StructMemberFlags flags = 0;
    size_t staticArraySize = 0;
-   float uiStepSpeed = 1.0f;
+   StructMemberUIOptions ui;
 };
 
 struct EnumEntryMetadata {
@@ -61,6 +66,8 @@ struct TypeMetadataFunctions {
 
    void(*serialize)(SCFWriter* writer, void* data) = nullptr;
    void(*deserialize)(SCFReader& reader, void* target) = nullptr;
+
+   bool(*doUI)(void* data, StructMemberMetadata const* parent);
 };
 
 struct TypeMetadata {
@@ -82,7 +89,7 @@ struct TypeMetadata {
 void serialize(SCFWriter* writer, TypeMetadata const* type, void* data);
 void deserialize(SCFReader& reader, TypeMetadata const* type, void* target);
 
-bool doTypeUIEX(TypeMetadata const* type, void* data);
+bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const* parent = nullptr);
 
 
 
@@ -163,6 +170,17 @@ private:
                deserialize(arr, reflect<T>(), &obj);
                ((ThisType*)target)->push_back(std::move(obj));
             }
+         };
+
+         out.funcs.doUI = [](void* data, StructMemberMetadata const* parent) {
+            if (ImGui::CollapsingHeader(parent->name)) {
+               ImGui::Indent();
+               for (auto&&item : *((ThisType*)data)) {
+                  doTypeUIEX(reflect<T>(), &item, parent);
+               }
+               ImGui::Unindent();
+            }
+            return false;
          };
 
          return new TypeMetadata(out);

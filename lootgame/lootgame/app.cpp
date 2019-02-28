@@ -164,6 +164,7 @@ enum MyEnum {
 //@reflect{
 struct MyStruct {
    MyEnum enumTest = MyEnum_E;
+   std::vector<int> ints;
 };//}
 
 #include  "app_reflection_gen.inl"
@@ -187,8 +188,14 @@ void appCreateWindow(App* app, WindowConfig const& info) {
    appAddGUI("Constants", [] {
       bool p_open = true;
       if (ImGui::Begin("Constants", &p_open, ImGuiWindowFlags_AlwaysAutoResize)) {
-         //static MyStruct myStruct;
-         doTypeUI(&Const);
+         static MyStruct s;
+         static bool init = false;
+         if (!init) {
+            for (int i = 0; i < 100; ++i) s.ints.push_back(i);
+            init = true;
+         }
+
+         doTypeUI(&s);
       }
       ImGui::End();
       return p_open;

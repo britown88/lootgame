@@ -104,6 +104,16 @@ void app_reflectionStartup_generated(){
       }
 
       
+      {
+         StructMemberMetadata member;
+         member.name = intern("ints");
+         member.offset = offsetof(MyStruct, ints);
+         member.type = reflect<std::vector<int>>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
    }
 
       

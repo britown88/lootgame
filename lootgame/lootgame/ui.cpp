@@ -11,6 +11,8 @@
 #include "scf.h"
 #include "vex.h"
 
+#include "reflection_gen.h"
+
 
 static ImGuiWindowFlags BorderlessFlags =
       ImGuiWindowFlags_NoMove |
@@ -398,16 +400,18 @@ static void _doUIDebugger(GameState& g) {
          ImGui::Text("Released: %s", io.buttonReleased[GameButton_LT] ? "true" : "false");
       }
 
-      ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
-      if (ImGui::CollapsingHeader("Fiddling")) {
-         auto& c = Const;
+      doTypeUI(&g.DEBUG);
 
-         ImGui::Checkbox("Show Movement UI", &g.DEBUG.showMovementDebugging);
-         ImGui::Checkbox("Show Collision Checks", &g.DEBUG.showCollisionDebugging);
+      //ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
+      //if (ImGui::CollapsingHeader("Fiddling")) {
+      //   auto& c = Const;
+
+      //   ImGui::Checkbox("Show Movement UI", &g.DEBUG.showMovementDebugging);
+      //   ImGui::Checkbox("Show Collision Checks", &g.DEBUG.showCollisionDebugging);
 
 
-         ImGui::SliderFloat("Ambient Light", &g.DEBUG.ambientLight, 0.0f, 1.0f);
-      }
+      //   ImGui::SliderFloat("Ambient Light", &g.DEBUG.ambientLight, 0.0f, 1.0f);
+      //}
 
    }
    ImGui::End();

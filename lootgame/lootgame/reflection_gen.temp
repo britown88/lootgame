@@ -46,7 +46,7 @@ void reflectionStartup_generated() {
          member.type = reflect<@member_type>();
          @struct_flag{member.flags |= @flag;
          }@struct_static{member.staticArraySize = @size;
-         }@struct_ui_step{member.uiStepSpeed = (float)@speed;
+         }@struct_ui{member.ui.@key = (float)@value;
          }
          structName->structMembers.push_back(member);
       }

@@ -159,6 +159,15 @@ struct Reflector<Movement>{
 };
 
 
+// GameStateDebug ----------------------------
+typedef struct GameStateDebug GameStateDebug;
+extern TypeMetadata* meta_GameStateDebug;
+template<>
+struct Reflector<GameStateDebug>{
+   static TypeMetadata const* type() { return meta_GameStateDebug; }
+};
+
+
 // Int2 ----------------------------
 typedef struct Int2 Int2;
 extern TypeMetadata* meta_Int2;

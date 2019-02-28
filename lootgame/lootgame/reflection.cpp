@@ -94,6 +94,26 @@ bool compareBitfieldValue(size_t enumSize, int64_t entryValue, void*data) {
    return false;
 }
 
+void addBitfieldValue(size_t enumSize, int64_t entryValue, void*data) {
+   switch (enumSize) {
+   case sizeof(int8_t) : (*((int8_t*)data) |= (int8_t)entryValue); break;
+   case sizeof(int16_t) : (*((int16_t*)data) |= (int16_t)entryValue); break;
+   case sizeof(int32_t) : (*((int32_t*)data) |= (int32_t)entryValue); break;
+   case sizeof(int64_t) : (*((int64_t*)data) |= (int64_t)entryValue); break;
+   default: ASSERT(false);
+   }
+}
+
+void removeBitfieldValue(size_t enumSize, int64_t entryValue, void*data) {
+   switch (enumSize) {
+   case sizeof(int8_t) : (*((int8_t*)data) &= ~(int8_t)entryValue); break;
+   case sizeof(int16_t) : (*((int16_t*)data) &= ~(int16_t)entryValue); break;
+   case sizeof(int32_t) : (*((int32_t*)data) &= ~(int32_t)entryValue); break;
+   case sizeof(int64_t) : (*((int64_t*)data) &= ~(int64_t)entryValue); break;
+   default: ASSERT(false);
+   }
+}
+
 void assignEnumValue(size_t enumSize, int64_t entryValue, void*target) {
    switch (enumSize) {
    case sizeof(int8_t) : *((int8_t*)target) =  (int8_t)entryValue; break;

@@ -4,7 +4,74 @@
 #include <imgui_internal.h>
 #include <misc/cpp/imgui_stdlib.h>
 
-static bool _doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const* parent) {
+template<typename T>
+static bool _doIntegerType(void* data, StructMemberMetadata const* member) {
+   int i = (int)*(T*)data;
+   
+   bool hasStep = member->ui.step > 0.0f;
+   bool hasRange = member->ui.min < member->ui.max;
+
+   bool changed = false;
+
+   if (hasStep && hasRange) {
+      changed = ImGui::DragInt(member->name, &i, member->ui.step, (int)member->ui.min, (int)member->ui.max);
+   }
+   else if (hasRange) {
+      changed = ImGui::SliderInt(member->name, &i, (int)member->ui.min, (int)member->ui.max);
+      
+   }
+   else  {
+      int step = 1;
+      if (hasStep) {
+         step = (int)member->ui.step;
+      }
+      changed = ImGui::InputInt(member->name, &i, step, step*10);
+   }
+
+   if (changed) {
+      *(T*)data = (T)i;
+   }
+
+   return changed;
+}
+
+template<typename T>
+static bool _doFloatType(void* data, StructMemberMetadata const* member) {
+   float f = (float)*(T*)data;
+
+   bool hasStep = member->ui.step > 0.0f;
+   bool hasRange = member->ui.min < member->ui.max;
+
+   bool changed = false;
+
+   if (hasStep && hasRange) {
+      changed = ImGui::DragFloat(member->name, &f, member->ui.step, member->ui.min, member->ui.max);
+   }
+   else if (hasRange) {
+      changed = ImGui::SliderFloat(member->name, &f, member->ui.min, member->ui.max);
+
+   }
+   else {
+      float step = 1;
+      if (hasStep) {
+         step = member->ui.step;
+      }
+      changed = ImGui::InputFloat(member->name, &f, step, step * 10, 3);
+   }
+
+   if (changed) {
+      *(T*)data = (T)f;
+   }
+
+   return changed;
+}
+
+
+bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const* parent) {
+   if (!type) {
+      return false;
+   }
+
    ImGui::PushID(data);
 
    bool readOnly = parent && parent->flags&StructMemberFlags_ReadOnly;
@@ -24,20 +91,17 @@ static bool _doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetada
 
    switch (type->variety) {
    case TypeVariety_Basic: {
-      int64_t i64;
-      uint64_t u64;
-
-      if (type == meta_bool)        return ImGui::Checkbox(parent->name, (bool*)data);
-      if (type == meta_byte) { u64 = *(byte*)data; if (ImGui::DragScalar(parent->name, ImGuiDataType_U64, &u64, parent->uiStepSpeed)) { *(byte*)data = (byte)u64; return true; } return false; }
-      if (type == meta_sbyte) { i64 = *(char*)data; if (ImGui::DragScalar(parent->name, ImGuiDataType_S64, &i64, parent->uiStepSpeed)) { *(char*)data = (char)i64; return true; } return false; }
-      if (type == meta_i16) { i64 = *(int16_t*)data; if (ImGui::DragScalar(parent->name, ImGuiDataType_S64, &i64, parent->uiStepSpeed)) { *(int16_t*)data = (int16_t)i64; return true; } return false; }
-      if (type == meta_i32) { i64 = *(int32_t*)data; if (ImGui::DragScalar(parent->name, ImGuiDataType_S64, &i64, parent->uiStepSpeed)) { *(int32_t*)data = (int32_t)i64; return true; } return false; }
-      if (type == meta_i64) { i64 = *(int64_t*)data; if (ImGui::DragScalar(parent->name, ImGuiDataType_S64, &i64, parent->uiStepSpeed)) { *(int64_t*)data = (int64_t)i64; return true; } return false; }
-      if (type == meta_u16) { u64 = *(uint16_t*)data; if (ImGui::DragScalar(parent->name, ImGuiDataType_U64, &u64, parent->uiStepSpeed)) { *(uint16_t*)data = (uint16_t)u64; return true; } return false; }
-      if (type == meta_u32) { u64 = *(uint32_t*)data; if (ImGui::DragScalar(parent->name, ImGuiDataType_U64, &u64, parent->uiStepSpeed)) { *(uint32_t*)data = (uint32_t)u64; return true; } return false; }
-      if (type == meta_u64) { u64 = *(uint64_t*)data; if (ImGui::DragScalar(parent->name, ImGuiDataType_U64, &u64, parent->uiStepSpeed)) { *(uint64_t*)data = (uint64_t)u64; return true; } return false; }
-      if (type == meta_f32) { return ImGui::DragScalar(parent->name, ImGuiDataType_Float, (float*)data, parent->uiStepSpeed); }
-      if (type == meta_f64) { return ImGui::DragScalar(parent->name, ImGuiDataType_Double, (double*)data, parent->uiStepSpeed); }
+      if (type == meta_bool)  return ImGui::Checkbox(parent->name, (bool*)data);
+      if (type == meta_byte)  return _doIntegerType<byte>(data, parent);
+      if (type == meta_sbyte) return _doIntegerType<char>(data, parent);
+      if (type == meta_i16)   return _doIntegerType<int16_t>(data, parent);
+      if (type == meta_i32)   return _doIntegerType<int32_t>(data, parent);
+      if (type == meta_i64)   return _doIntegerType<int64_t>(data, parent);
+      if (type == meta_u16)   return _doIntegerType<uint16_t>(data, parent);
+      if (type == meta_u32)   return _doIntegerType<uint32_t>(data, parent);
+      if (type == meta_u64)   return _doIntegerType<uint64_t>(data, parent);
+      if (type == meta_f32)   return _doFloatType<float>(data, parent);
+      if (type == meta_f64)   return _doFloatType<double>(data, parent);
       if (type == meta_string) { return ImGui::InputText(parent->name, (std::string*)data); }
       if (type == meta_symbol) { ImGui::AlignTextToFramePadding(); ImGui::TextUnformatted(*(StringView*)data); return false; }
    }  break;
@@ -51,16 +115,18 @@ static bool _doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetada
          if (parent) ImGui::Indent();
          for (auto&& member : type->structMembers) {
             if (member.flags&StructMemberFlags_StaticArray) {
-               ImGui::NewLine();
-               ImGui::Indent();
-               for (int i = 0; i < member.staticArraySize; ++i) {
-                  ImGui::AlignTextToFramePadding(); ImGui::Text("%d:", i); ImGui::SameLine();
-                  _doTypeUIEX(member.type, (byte*)data + member.offset + (member.type->size * i), &member);
+               if (ImGui::CollapsingHeader(member.name)) {
+                  ImGui::Indent();
+
+                  for (int i = 0; i < member.staticArraySize; ++i) {
+                     doTypeUIEX(member.type, (byte*)data + member.offset + (member.type->size * i), &member);
+                  }
+
+                  ImGui::Unindent();
                }
-               ImGui::Unindent();
             }
             else {
-               _doTypeUIEX(member.type, (byte*)data + member.offset, &member);
+               doTypeUIEX(member.type, (byte*)data + member.offset, &member);
             }
          }
       
@@ -71,11 +137,25 @@ static bool _doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetada
    case TypeVariety_Enum: {
       if (type->enumFlags&EnumFlags_Bitfield) {
 
-         for (auto&&entry : type->enumEntries) {
-            bool compareBitfieldValue(size_t enumSize, int64_t entryValue, void*data);
-            if (compareBitfieldValue(type->size, entry.value, data)) {
+         if (ImGui::CollapsingHeader(parent->name)) {
+            ImGui::Indent();
+            for (auto&&entry : type->enumEntries) {
+               bool compareBitfieldValue(size_t enumSize, int64_t entryValue, void*data);
+               bool selected = compareBitfieldValue(type->size, entry.value, data);
 
+               if (ImGui::Selectable(entry.name, selected)) {
+                  void addBitfieldValue(size_t enumSize, int64_t entryValue, void*data);
+                  void removeBitfieldValue(size_t enumSize, int64_t entryValue, void*data);
+
+                  if (selected) {
+                     removeBitfieldValue(type->size, entry.value, data);
+                  }
+                  else {
+                     addBitfieldValue(type->size, entry.value, data);
+                  }
+               }
             }
+            ImGui::Unindent();
          }
       }
       else {
@@ -97,35 +177,14 @@ static bool _doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetada
             }
             ImGui::EndCombo();
          }
-
-         //   bool found = false;
-         //   for (auto&&entry : type->enumEntries) {
-         //      if (_compareEnumValue(type->size, entry.value, data)) {
-         //         scfWriteString(writer, entry.name);
-         //         found = true;
-         //         break;
-         //      }
-         //   }
-         //   if (!found) {
-         //      scfWriteString(writer, UNKNOWN_ENUM_ENTRY);
-         //   }
       }
 
    }  break;
    case TypeVariety_Array:
    case TypeVariety_KVP:
-      //type->funcs.serialize(writer, data);
+      type->funcs.doUI(data, parent);
       break;
    }
 
    return false;
-}
-
-
-
-bool doTypeUIEX(TypeMetadata const* type, void* data) {
-   if (!type) {
-      return false;
-   }
-   return _doTypeUIEX(type, data, nullptr);
 }

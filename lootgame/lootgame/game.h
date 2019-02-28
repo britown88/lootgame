@@ -31,61 +31,24 @@ struct EngineConstants {
    //@readonly
    Int2 resolution = { 1920, 1080 };
 
-   //@ui_stepspeed:0.1f
    float floorHeight = 0.0f;
-
-   //@ui_stepspeed:0.1f
    float dudeHeight = 0.1f;
-
-   //@ui_stepspeed:0.1f
    float lightHeight = 0.2f;
-
-   //@ui_stepspeed:0.1f
    float lightLinearPortion = 0.0f;
-
-   //@ui_stepspeed:0.1f
    float lightSmoothingFactor = 0.4f;
-
-   //@ui_stepspeed:10.0f
    float lightIntensity = 100.0f;
-
-   //@ui_stepspeed:0.001f
    float dudeAcceleration = 0.005f;
-
-   //@ui_stepspeed:0.01f
    float dudeRotationSpeed = 0.010f;
-
-   //@ui_stepspeed:0.1f
    float dudeMoveSpeed = 0.100f;
-
-   //@ui_stepspeed:0.1f
    float dudeDashSpeed = 0.300f;
-
-   //@ui_stepspeed:0.0001f
    float dudeSpeedCapEasing = 0.0003f;
-
-   //@ui_stepspeed:0.1f
    float dudeBackwardsPenalty = 0.250f;
-
-   //@ui_stepspeed:1.0f
    float dudeDashDistance = 50.0f;
-
-   //@ui_stepspeed:1.0f
    float dudeKnockbackDistance = 0.0f;
-
-   //@ui_stepspeed:25
    Milliseconds dudePostDashCooldown = 100;
-
-   //@ui_stepspeed:25
    Milliseconds dudeBaseStaminaTickRecoveryTime = 500;
-
-   //@ui_stepspeed:25
    Milliseconds cooldownOnDamagedStaminaEmpty = 1000;
-
-   //@ui_stepspeed:25
    Milliseconds cooldownOnDamagedStamina = 250;
-
-   //@ui_stepspeed:25
    Milliseconds cooldownOnDamagedHealth = 500;
 };//}
 
@@ -270,6 +233,15 @@ struct GameMode {
    Milliseconds clock;
 };
 
+//@reflect{
+struct GameStateDebug {
+   bool showMovementDebugging = false;
+   bool showCollisionDebugging = false;
+
+   //@ui(min=0 max=1)
+   float ambientLight = 0.0f;
+} ;
+//}
 
 struct GameState {
 
@@ -281,11 +253,7 @@ struct GameState {
    Rectf vpScreenArea = { 0, 0, 1, 1 }; // screen coordinates or the viewer image within the UI
    GameMode mode;
 
-   struct {
-      bool showMovementDebugging = false;
-      bool showCollisionDebugging = false;
-      float ambientLight = 0.0f;
-   } DEBUG;
+   GameStateDebug DEBUG;
 
    Dude maindude;
    std::vector<Dude> baddudes;
