@@ -31,7 +31,7 @@ static bool _acceptSigil(StringParser& p) {
 }
 
 static bool _acceptTagCharacter(StringParser& p) {
-   return p.acceptInRanges({ { 'a', 'z' },{ 'A', 'Z' },{ '0', '9' },{ '_' } });
+   return p.acceptInRanges({ { 'a', 'z' },{ 'A', 'Z' },{ '0', '9' },{ '_' },{'.'} });
 }
 
 static bool _acceptTag(StringParser& p) {

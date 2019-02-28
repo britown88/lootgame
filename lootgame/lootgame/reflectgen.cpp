@@ -37,6 +37,9 @@ struct ParsedStructMember {
    bool flags_file = false;
    bool flags_image = false;
    bool flags_readOnly = false;
+
+   bool flags_uiStepSpeed = false;
+   std::string uiStepSpeed;
 };
 
 struct ParsedStruct {
@@ -299,6 +302,10 @@ static bool _acceptMember(StringParser& p, std::vector<VexNode*>& modifiers, Par
       }
       else if (mod->tag == "type_override") {
          type_override.assign(mod->body.begin, mod->body.end);
+      }
+      else if (mod->tag == "ui_stepspeed") {
+         newMember.flags_uiStepSpeed = true;
+         newMember.uiStepSpeed.assign(mod->body.begin, mod->body.end);
       }
    }
 
@@ -713,6 +720,11 @@ static void _generateMainHeaderImpl(std::vector<ParsedFile> &files) {
                   vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_ReadOnly");
                   vexTemplateEndScope(t);
                }
+               if (m.flags_uiStepSpeed) {
+                  vexTemplateBeginScope(t, "struct_ui_step");
+                  vexTemplateAddSubstitution(t, "speed", m.uiStepSpeed.c_str());
+                  vexTemplateEndScope(t);
+               }
                if (m.staticArray) {
                   vexTemplateBeginScope(t, "struct_flag");
                   vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_StaticArray");
@@ -755,7 +767,7 @@ static void _generateFileInline(ParsedFile &file) {
       vexTemplateAddSubstitution(t, "struct_name", e.name.c_str());
       vexTemplateEndScope(t);
 
-      vexTemplateBeginScope(t, "enum_metadata_entry_init");
+      vexTemplateBeginScope(t, "enum_metadata_init");
       vexTemplateAddSubstitution(t, "enum_name", e.name.c_str());
       if (e.bitfield) {
          vexTemplateBeginScope(t, "enum_flag");
@@ -800,6 +812,11 @@ static void _generateFileInline(ParsedFile &file) {
          if (m.flags_readOnly) {
             vexTemplateBeginScope(t, "struct_flag");
             vexTemplateAddSubstitution(t, "flag", "StructMemberFlags_ReadOnly");
+            vexTemplateEndScope(t);
+         }
+         if (m.flags_uiStepSpeed) {
+            vexTemplateBeginScope(t, "struct_ui_step");
+            vexTemplateAddSubstitution(t, "speed", m.uiStepSpeed.c_str());
             vexTemplateEndScope(t);
          }
          if (m.staticArray) {

@@ -151,6 +151,23 @@ static void _windowCreate(App* app, WindowConfig const& info) {
 
 #include "reflection_gen.h"
 
+//@reflect{
+enum MyEnum {
+   MyEnum_A = 0,
+   MyEnum_B,
+   MyEnum_C,
+   MyEnum_D,
+   MyEnum_E,
+   MyEnum_F,
+};//}
+
+//@reflect{
+struct MyStruct {
+   MyEnum enumTest = MyEnum_E;
+};//}
+
+#include  "app_reflection_gen.inl"
+
 
 
 void appCreateWindow(App* app, WindowConfig const& info) {
@@ -170,7 +187,8 @@ void appCreateWindow(App* app, WindowConfig const& info) {
    appAddGUI("Constants", [] {
       bool p_open = true;
       if (ImGui::Begin("Constants", &p_open, ImGuiWindowFlags_AlwaysAutoResize)) {
-         doTypeUI(&Const, "Engine Constants");
+         //static MyStruct myStruct;
+         doTypeUI(&Const);
       }
       ImGui::End();
       return p_open;

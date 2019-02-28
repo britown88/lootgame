@@ -72,7 +72,7 @@ void reflectionStartup() {
    reflectionStartup_generated();
 }
 
-static bool _compareEnumValue(size_t enumSize, int64_t entryValue, void*data) {
+bool compareEnumValue(size_t enumSize, int64_t entryValue, void*data) {
    switch (enumSize) {
    case sizeof(int8_t)  : return *((int8_t*)data) == entryValue;
    case sizeof(int16_t) : return *((int16_t*)data) == entryValue;
@@ -83,7 +83,7 @@ static bool _compareEnumValue(size_t enumSize, int64_t entryValue, void*data) {
    return false;
 }
 
-static bool _compareBitfieldValue(size_t enumSize, int64_t entryValue, void*data) {
+bool compareBitfieldValue(size_t enumSize, int64_t entryValue, void*data) {
    switch (enumSize) {
    case sizeof(int8_t) : return (*((int8_t*)data) & (int8_t)entryValue) == (int8_t)entryValue;
    case sizeof(int16_t) : return (*((int16_t*)data) & (int16_t)entryValue) == (int16_t)entryValue;
@@ -94,7 +94,7 @@ static bool _compareBitfieldValue(size_t enumSize, int64_t entryValue, void*data
    return false;
 }
 
-static void _assignEnumValue(size_t enumSize, int64_t entryValue, void*target) {
+void assignEnumValue(size_t enumSize, int64_t entryValue, void*target) {
    switch (enumSize) {
    case sizeof(int8_t) : *((int8_t*)target) =  (int8_t)entryValue; break;
    case sizeof(int16_t): *((int16_t*)target) = (int16_t)entryValue; break;
@@ -148,7 +148,7 @@ void serialize(SCFWriter* writer, TypeMetadata const* type, void* data) {
       if (type->enumFlags&EnumFlags_Bitfield) {
          scfWriteListBegin(writer);
          for (auto&&entry : type->enumEntries) {
-            if (_compareBitfieldValue(type->size, entry.value, data)) {
+            if (compareBitfieldValue(type->size, entry.value, data)) {
                scfWriteString(writer, entry.name);
             }
          }
@@ -157,7 +157,7 @@ void serialize(SCFWriter* writer, TypeMetadata const* type, void* data) {
       else {
          bool found = false;
          for (auto&&entry : type->enumEntries) {
-            if (_compareEnumValue(type->size, entry.value, data)) {
+            if (compareEnumValue(type->size, entry.value, data)) {
                scfWriteString(writer, entry.name);
                found = true;
                break;
@@ -237,13 +237,13 @@ void deserialize(SCFReader& reader, TypeMetadata const* type, void* target) {
                scfReaderSkip(symlist);
             }
          }
-         _assignEnumValue(type->size, compositeValue, target);
+         assignEnumValue(type->size, compositeValue, target);
       }
       else {
          auto str = intern(scfReadString(reader));
          for (auto&& entry : type->enumEntries) {
             if (str == entry.name) {
-               _assignEnumValue(type->size, entry.value, target);
+               assignEnumValue(type->size, entry.value, target);
                break;
             }
          }

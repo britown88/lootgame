@@ -496,6 +496,7 @@ void reflectionStartup_generated() {
          member.name = intern("resolution");
          member.offset = offsetof(EngineConstants, resolution);
          member.type = reflect<Int2>();
+         member.flags |= StructMemberFlags_ReadOnly;
          
          structName->structMembers.push_back(member);
       }
@@ -506,6 +507,7 @@ void reflectionStartup_generated() {
          member.name = intern("floorHeight");
          member.offset = offsetof(EngineConstants, floorHeight);
          member.type = reflect<float>();
+         member.uiStepSpeed = (float)0.1f;
          
          structName->structMembers.push_back(member);
       }
@@ -516,6 +518,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeHeight");
          member.offset = offsetof(EngineConstants, dudeHeight);
          member.type = reflect<float>();
+         member.uiStepSpeed = (float)0.1f;
          
          structName->structMembers.push_back(member);
       }
@@ -526,6 +529,7 @@ void reflectionStartup_generated() {
          member.name = intern("lightHeight");
          member.offset = offsetof(EngineConstants, lightHeight);
          member.type = reflect<float>();
+         member.uiStepSpeed = (float)0.1f;
          
          structName->structMembers.push_back(member);
       }
@@ -536,6 +540,7 @@ void reflectionStartup_generated() {
          member.name = intern("lightLinearPortion");
          member.offset = offsetof(EngineConstants, lightLinearPortion);
          member.type = reflect<float>();
+         member.uiStepSpeed = (float)0.1f;
          
          structName->structMembers.push_back(member);
       }
@@ -546,6 +551,7 @@ void reflectionStartup_generated() {
          member.name = intern("lightSmoothingFactor");
          member.offset = offsetof(EngineConstants, lightSmoothingFactor);
          member.type = reflect<float>();
+         member.uiStepSpeed = (float)0.1f;
          
          structName->structMembers.push_back(member);
       }
@@ -556,6 +562,7 @@ void reflectionStartup_generated() {
          member.name = intern("lightIntensity");
          member.offset = offsetof(EngineConstants, lightIntensity);
          member.type = reflect<float>();
+         member.uiStepSpeed = (float)10.0f;
          
          structName->structMembers.push_back(member);
       }
@@ -566,6 +573,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeAcceleration");
          member.offset = offsetof(EngineConstants, dudeAcceleration);
          member.type = reflect<float>();
+         member.uiStepSpeed = (float)0.001f;
          
          structName->structMembers.push_back(member);
       }
@@ -576,6 +584,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeRotationSpeed");
          member.offset = offsetof(EngineConstants, dudeRotationSpeed);
          member.type = reflect<float>();
+         member.uiStepSpeed = (float)0.01f;
          
          structName->structMembers.push_back(member);
       }
@@ -586,6 +595,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeMoveSpeed");
          member.offset = offsetof(EngineConstants, dudeMoveSpeed);
          member.type = reflect<float>();
+         member.uiStepSpeed = (float)0.1f;
          
          structName->structMembers.push_back(member);
       }
@@ -596,6 +606,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeDashSpeed");
          member.offset = offsetof(EngineConstants, dudeDashSpeed);
          member.type = reflect<float>();
+         member.uiStepSpeed = (float)0.1f;
          
          structName->structMembers.push_back(member);
       }
@@ -606,6 +617,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeSpeedCapEasing");
          member.offset = offsetof(EngineConstants, dudeSpeedCapEasing);
          member.type = reflect<float>();
+         member.uiStepSpeed = (float)0.0001f;
          
          structName->structMembers.push_back(member);
       }
@@ -616,6 +628,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeBackwardsPenalty");
          member.offset = offsetof(EngineConstants, dudeBackwardsPenalty);
          member.type = reflect<float>();
+         member.uiStepSpeed = (float)0.1f;
          
          structName->structMembers.push_back(member);
       }
@@ -626,6 +639,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeDashDistance");
          member.offset = offsetof(EngineConstants, dudeDashDistance);
          member.type = reflect<float>();
+         member.uiStepSpeed = (float)1.0f;
          
          structName->structMembers.push_back(member);
       }
@@ -636,6 +650,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeKnockbackDistance");
          member.offset = offsetof(EngineConstants, dudeKnockbackDistance);
          member.type = reflect<float>();
+         member.uiStepSpeed = (float)1.0f;
          
          structName->structMembers.push_back(member);
       }
@@ -646,6 +661,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudePostDashCooldown");
          member.offset = offsetof(EngineConstants, dudePostDashCooldown);
          member.type = reflect<Milliseconds>();
+         member.uiStepSpeed = (float)25;
          
          structName->structMembers.push_back(member);
       }
@@ -656,6 +672,7 @@ void reflectionStartup_generated() {
          member.name = intern("dudeBaseStaminaTickRecoveryTime");
          member.offset = offsetof(EngineConstants, dudeBaseStaminaTickRecoveryTime);
          member.type = reflect<Milliseconds>();
+         member.uiStepSpeed = (float)25;
          
          structName->structMembers.push_back(member);
       }
@@ -666,6 +683,7 @@ void reflectionStartup_generated() {
          member.name = intern("cooldownOnDamagedStaminaEmpty");
          member.offset = offsetof(EngineConstants, cooldownOnDamagedStaminaEmpty);
          member.type = reflect<Milliseconds>();
+         member.uiStepSpeed = (float)25;
          
          structName->structMembers.push_back(member);
       }
@@ -676,6 +694,7 @@ void reflectionStartup_generated() {
          member.name = intern("cooldownOnDamagedStamina");
          member.offset = offsetof(EngineConstants, cooldownOnDamagedStamina);
          member.type = reflect<Milliseconds>();
+         member.uiStepSpeed = (float)25;
          
          structName->structMembers.push_back(member);
       }
@@ -686,6 +705,7 @@ void reflectionStartup_generated() {
          member.name = intern("cooldownOnDamagedHealth");
          member.offset = offsetof(EngineConstants, cooldownOnDamagedHealth);
          member.type = reflect<Milliseconds>();
+         member.uiStepSpeed = (float)25;
          
          structName->structMembers.push_back(member);
       }
@@ -1378,6 +1398,11 @@ void reflectionStartup_generated() {
    }
 
    
+
+   
+   //app --------------------------------------
+   void app_reflectionStartup_generated();
+   app_reflectionStartup_generated();
 
    
 }

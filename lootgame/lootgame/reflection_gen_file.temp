@@ -21,7 +21,7 @@ void @file{}_reflectionStartup_generated(){
       enumName->name = intern("@enum_name");
       enumName->size = sizeof(@enum_name);
       enumName->variety = TypeVariety_Enum;
-      @enum_flag{enumName->enumFlags |= @flag{};
+      @enum_flag{enumName->enumFlags |= @flag;
       }
 
       @enum_metadata_entry_init{
@@ -54,8 +54,8 @@ void @file{}_reflectionStartup_generated(){
          member.type = reflect<@member_type>();
          @struct_flag{member.flags |= @flag;
          }@struct_static{member.staticArraySize = @size;
+         }@struct_ui_step{member.uiStepSpeed = (float)@speed;
          }
-
          structName->structMembers.push_back(member);
       }
 

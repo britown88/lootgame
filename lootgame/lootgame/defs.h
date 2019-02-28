@@ -109,3 +109,42 @@ extern const ColorRGBAf DkBlue;
 extern const ColorRGBAf Cyan;
 extern const ColorRGBAf Yellow;
 extern const ColorRGBAf Magenta;
+
+//defer macro.
+#define __DEFER( line ) defer__ ## line
+#define _DEFER( line ) __DEFER( line )
+
+//usage: DEFER {/* this will get executed at scope end. */};
+#define DEFER auto _DEFER( __LINE__ ) = _def_deferDummy{} * [ & ]
+
+namespace _defs {
+   template< class T > struct remove_reference { typedef T type; };
+   template< class T > struct remove_reference<T&> { typedef T type; };
+   template< class T > struct remove_reference<T&&> { typedef T type; };
+
+   template< class T >
+   constexpr T&& forward(typename remove_reference<T>::type& t) noexcept { return (T&&)t; }
+
+   template< class T >
+   constexpr T&& forward(typename remove_reference<T>::type&& t) noexcept { return (T&&)t; }
+}
+
+
+template <typename F>
+struct _def_Defer_Impl {
+   _def_Defer_Impl(F f) : f(f) {}
+   ~_def_Defer_Impl() { f(); }
+   F f;
+};
+
+template <typename F>
+_def_Defer_Impl<F> _def_makeDefer(F f) {
+   return _def_Defer_Impl<F>(f);
+};
+
+struct _def_deferDummy { };
+template<typename F>
+_def_Defer_Impl<F> operator*(_def_deferDummy, F&& f)
+{
+   return _def_makeDefer<F>(_defs::forward<F>(f));
+}

@@ -40,6 +40,7 @@ struct StructMemberMetadata {
    TypeMetadata const* type;
    StructMemberFlags flags = 0;
    size_t staticArraySize = 0;
+   float uiStepSpeed = 1.0f;
 };
 
 struct EnumEntryMetadata {
@@ -81,7 +82,7 @@ struct TypeMetadata {
 void serialize(SCFWriter* writer, TypeMetadata const* type, void* data);
 void deserialize(SCFReader& reader, TypeMetadata const* type, void* target);
 
-bool doTypeUIEX(TypeMetadata const* type, void* data, const char* displayName);
+bool doTypeUIEX(TypeMetadata const* type, void* data);
 
 
 
@@ -94,8 +95,8 @@ template<typename T>
 TypeMetadata const*reflect() { return Reflector<T>::type(); }
 
 template<typename T>
-bool doTypeUI(T*data, const char* displayName) {
-   return doTypeUIEX(reflect<T>(), data, displayName);
+bool doTypeUI(T*data) {
+   return doTypeUIEX(reflect<T>(), data);
 }
 
 #define BASIC_TYPE_REFLECT(c_type, metaname) \
