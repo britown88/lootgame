@@ -67,7 +67,7 @@ struct TypeMetadataFunctions {
    void(*serialize)(SCFWriter* writer, void* data) = nullptr;
    void(*deserialize)(SCFReader& reader, void* target) = nullptr;
 
-   bool(*doUI)(void* data, StructMemberMetadata const* parent);
+   bool(*doUI)(void* data, StructMemberMetadata const* parent, const char* label);
 };
 
 struct TypeMetadata {
@@ -89,7 +89,7 @@ struct TypeMetadata {
 void serialize(SCFWriter* writer, TypeMetadata const* type, void* data);
 void deserialize(SCFReader& reader, TypeMetadata const* type, void* target);
 
-bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const* parent = nullptr);
+bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const* parent = nullptr, const char* label = nullptr);
 
 
 
@@ -102,8 +102,8 @@ template<typename T>
 TypeMetadata const*reflect() { return Reflector<T>::type(); }
 
 template<typename T>
-bool doTypeUI(T*data) {
-   return doTypeUIEX(reflect<T>(), data);
+bool doTypeUI(T*data, const char* label = nullptr) {
+   return doTypeUIEX(reflect<T>(), data, nullptr, label);
 }
 
 #define BASIC_TYPE_REFLECT(c_type, metaname) \
@@ -172,15 +172,17 @@ private:
             }
          };
 
-         out.funcs.doUI = [](void* data, StructMemberMetadata const* parent) {
-            if (ImGui::CollapsingHeader(parent->name)) {
+         out.funcs.doUI = [](void* data, StructMemberMetadata const* parent, const char* label) {
+            bool changed = false;
+            if (ImGui::CollapsingHeader(label ? label : parent->name)) {
                ImGui::Indent();
+               int idx = 0;
                for (auto&&item : *((ThisType*)data)) {
-                  doTypeUIEX(reflect<T>(), &item, parent);
+                  if (doTypeUIEX(reflect<T>(), &item, parent, std::to_string(idx++).c_str())) changed = true;
                }
                ImGui::Unindent();
             }
-            return false;
+            return changed;
          };
 
          return new TypeMetadata(out);
@@ -236,6 +238,21 @@ private:
                   deserialize(kvp, reflect<V>(), &value);
                   ((ThisType*)target)->insert({ key,  value });
                }
+            };
+
+            out.funcs.doUI = [](void* data, StructMemberMetadata const* parent, const char* label) {
+               bool changed = false;
+               if (ImGui::CollapsingHeader(label ? label : parent->name)) {
+                  ImGui::Indent();
+                  auto &thisObj = *(ThisType*)data;
+                  for (auto&&kvp : thisObj) {
+                     if (reflect<K>() == reflect<Symbol*>()) {
+                        if (doTypeUIEX(reflect<V>(), &kvp.second, parent, (StringView)kvp.first)) changed = true;
+                     }
+                  }
+                  ImGui::Unindent();
+               }
+               return changed;
             };
 
             return new TypeMetadata(out);

@@ -161,10 +161,35 @@ enum MyEnum {
    MyEnum_F,
 };//}
 
+//@reflect{ 
+//@bitfield
+enum MyBitfield_ : int {
+   MyBitfield_A = (1 << 0),
+   MyBitfield_B = (1 << 1),
+   MyBitfield_C = (1 << 2),
+};//}
+typedef int MyBitfield;
+
 //@reflect{
 struct MyStruct {
    MyEnum enumTest = MyEnum_E;
    std::vector<int> ints;
+   std::string staticStrings[10];
+
+   //@type_override:MyBitfield_
+   MyBitfield bitfield;
+
+   //@ui(min=0 max=100)
+   int intRange = 50;
+
+   //@ui(min=0 max=1 step=0.001)
+   float dragTest = 0.0f;
+
+   //@readonly
+   std::string readonly = "Read Only";
+
+   //@type_override:std::unordered_map<Symbol*, MyBitfield_>
+   std::unordered_map<Symbol*, MyBitfield> map;
 };//}
 
 #include  "app_reflection_gen.inl"
@@ -185,13 +210,21 @@ void appCreateWindow(App* app, WindowConfig const& info) {
    app->running = true;
 
 
-   appAddGUI("Constants", [] {
+   appAddGUI("ReflectedUiTest", [] {
       bool p_open = true;
-      if (ImGui::Begin("Constants", &p_open, ImGuiWindowFlags_AlwaysAutoResize)) {
+      if (ImGui::Begin("Reflected UI Test", &p_open, ImGuiWindowFlags_AlwaysAutoResize)) {
          static MyStruct s;
          static bool init = false;
          if (!init) {
             for (int i = 0; i < 100; ++i) s.ints.push_back(i);
+
+            s.map.insert({ intern("Sym1"), MyBitfield_A });
+            s.map.insert({ intern("Sym2"), MyBitfield_A | MyBitfield_C });
+            s.map.insert({ intern("Sym3"), MyBitfield_B });
+            s.map.insert({ intern("Sym4"), 0 });
+            s.map.insert({ intern("Sym5"), MyBitfield_C });
+
+
             init = true;
          }
 

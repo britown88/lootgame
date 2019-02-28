@@ -12,6 +12,14 @@ struct Reflector<MyEnum>{
 };
 
 
+// MyBitfield_ ----------------------------
+TypeMetadata* meta_MyBitfield_ = new TypeMetadata();
+template<>
+struct Reflector<MyBitfield_>{
+   static TypeMetadata const* type() { return meta_MyBitfield_; }
+};
+
+
 // MyStruct ----------------------------
 TypeMetadata* meta_MyStruct = new TypeMetadata();
 template<>
@@ -83,6 +91,42 @@ void app_reflectionStartup_generated(){
    }
 
    
+   {
+      auto& enumName = meta_MyBitfield_;
+      enumName->name = intern("MyBitfield_");
+      enumName->size = sizeof(MyBitfield_);
+      enumName->variety = TypeVariety_Enum;
+      enumName->enumFlags |= EnumFlags_Bitfield;
+      
+
+      
+      {
+         EnumEntryMetadata entry;
+         entry.name = intern("MyBitfield_A");
+         entry.value = MyBitfield_A;
+         enumName->enumEntries.push_back(entry);
+      }
+
+      
+      {
+         EnumEntryMetadata entry;
+         entry.name = intern("MyBitfield_B");
+         entry.value = MyBitfield_B;
+         enumName->enumEntries.push_back(entry);
+      }
+
+      
+      {
+         EnumEntryMetadata entry;
+         entry.name = intern("MyBitfield_C");
+         entry.value = MyBitfield_C;
+         enumName->enumEntries.push_back(entry);
+      }
+
+      
+   }
+
+   
    
    {
       auto& structName = meta_MyStruct;
@@ -109,6 +153,74 @@ void app_reflectionStartup_generated(){
          member.name = intern("ints");
          member.offset = offsetof(MyStruct, ints);
          member.type = reflect<std::vector<int>>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("staticStrings");
+         member.offset = offsetof(MyStruct, staticStrings);
+         member.type = reflect<std::string>();
+         member.flags |= StructMemberFlags_StaticArray;
+         member.staticArraySize = 10;
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("bitfield");
+         member.offset = offsetof(MyStruct, bitfield);
+         member.type = reflect<MyBitfield_>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("intRange");
+         member.offset = offsetof(MyStruct, intRange);
+         member.type = reflect<int>();
+         member.ui.min = (float)0;
+         member.ui.max = (float)100;
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("dragTest");
+         member.offset = offsetof(MyStruct, dragTest);
+         member.type = reflect<float>();
+         member.ui.min = (float)0;
+         member.ui.max = (float)1;
+         member.ui.step = (float)0.001;
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("readonly");
+         member.offset = offsetof(MyStruct, readonly);
+         member.type = reflect<std::string>();
+         member.flags |= StructMemberFlags_ReadOnly;
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("map");
+         member.offset = offsetof(MyStruct, map);
+         member.type = reflect<std::unordered_map<Symbol*, MyBitfield_>>();
          
          structName->structMembers.push_back(member);
       }

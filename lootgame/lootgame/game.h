@@ -240,7 +240,7 @@ struct GameStateDebug {
 
    //@ui(min=0 max=1)
    float ambientLight = 0.0f;
-} ;
+};
 //}
 
 struct GameState {

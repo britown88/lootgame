@@ -5,8 +5,16 @@
 #include <misc/cpp/imgui_stdlib.h>
 
 template<typename T>
-static bool _doIntegerType(void* data, StructMemberMetadata const* member) {
+static bool _doIntegerType(void* data, StructMemberMetadata const* member, const char* label) {
    int i = (int)*(T*)data;
+
+   auto str_label = "";
+   if (member) {
+      str_label = member->name;
+   }
+   if (label) {
+      str_label = label;
+   }
    
    bool hasStep = member->ui.step > 0.0f;
    bool hasRange = member->ui.min < member->ui.max;
@@ -14,10 +22,10 @@ static bool _doIntegerType(void* data, StructMemberMetadata const* member) {
    bool changed = false;
 
    if (hasStep && hasRange) {
-      changed = ImGui::DragInt(member->name, &i, member->ui.step, (int)member->ui.min, (int)member->ui.max);
+      changed = ImGui::DragInt(str_label, &i, member->ui.step, (int)member->ui.min, (int)member->ui.max);
    }
    else if (hasRange) {
-      changed = ImGui::SliderInt(member->name, &i, (int)member->ui.min, (int)member->ui.max);
+      changed = ImGui::SliderInt(str_label, &i, (int)member->ui.min, (int)member->ui.max);
       
    }
    else  {
@@ -25,7 +33,7 @@ static bool _doIntegerType(void* data, StructMemberMetadata const* member) {
       if (hasStep) {
          step = (int)member->ui.step;
       }
-      changed = ImGui::InputInt(member->name, &i, step, step*10);
+      changed = ImGui::InputInt(str_label, &i, step, step*10);
    }
 
    if (changed) {
@@ -36,8 +44,16 @@ static bool _doIntegerType(void* data, StructMemberMetadata const* member) {
 }
 
 template<typename T>
-static bool _doFloatType(void* data, StructMemberMetadata const* member) {
+static bool _doFloatType(void* data, StructMemberMetadata const* member, const char* label) {
    float f = (float)*(T*)data;
+
+   auto str_label = "";
+   if (member) {
+      str_label = member->name;
+   }
+   if (label) {
+      str_label = label;
+   }
 
    bool hasStep = member->ui.step > 0.0f;
    bool hasRange = member->ui.min < member->ui.max;
@@ -45,10 +61,10 @@ static bool _doFloatType(void* data, StructMemberMetadata const* member) {
    bool changed = false;
 
    if (hasStep && hasRange) {
-      changed = ImGui::DragFloat(member->name, &f, member->ui.step, member->ui.min, member->ui.max);
+      changed = ImGui::DragFloat(str_label, &f, member->ui.step, member->ui.min, member->ui.max);
    }
    else if (hasRange) {
-      changed = ImGui::SliderFloat(member->name, &f, member->ui.min, member->ui.max);
+      changed = ImGui::SliderFloat(str_label, &f, member->ui.min, member->ui.max);
 
    }
    else {
@@ -56,7 +72,7 @@ static bool _doFloatType(void* data, StructMemberMetadata const* member) {
       if (hasStep) {
          step = member->ui.step;
       }
-      changed = ImGui::InputFloat(member->name, &f, step, step * 10, 3);
+      changed = ImGui::InputFloat(str_label, &f, step, step * 10, 3);
    }
 
    if (changed) {
@@ -67,9 +83,17 @@ static bool _doFloatType(void* data, StructMemberMetadata const* member) {
 }
 
 
-bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const* parent) {
+bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const* parent, const char* label) {
    if (!type) {
       return false;
+   }
+
+   auto str_label = "";
+   if (parent) {
+      str_label = parent->name;
+   }
+   if (label) {
+      str_label = label;
    }
 
    ImGui::PushID(data);
@@ -91,24 +115,24 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
 
    switch (type->variety) {
    case TypeVariety_Basic: {
-      if (type == meta_bool)  return ImGui::Checkbox(parent->name, (bool*)data);
-      if (type == meta_byte)  return _doIntegerType<byte>(data, parent);
-      if (type == meta_sbyte) return _doIntegerType<char>(data, parent);
-      if (type == meta_i16)   return _doIntegerType<int16_t>(data, parent);
-      if (type == meta_i32)   return _doIntegerType<int32_t>(data, parent);
-      if (type == meta_i64)   return _doIntegerType<int64_t>(data, parent);
-      if (type == meta_u16)   return _doIntegerType<uint16_t>(data, parent);
-      if (type == meta_u32)   return _doIntegerType<uint32_t>(data, parent);
-      if (type == meta_u64)   return _doIntegerType<uint64_t>(data, parent);
-      if (type == meta_f32)   return _doFloatType<float>(data, parent);
-      if (type == meta_f64)   return _doFloatType<double>(data, parent);
-      if (type == meta_string) { return ImGui::InputText(parent->name, (std::string*)data); }
+      if (type == meta_bool)  return ImGui::Checkbox(str_label, (bool*)data);
+      if (type == meta_byte)  return _doIntegerType<byte>(data, parent, label);
+      if (type == meta_sbyte) return _doIntegerType<char>(data, parent, label);
+      if (type == meta_i16)   return _doIntegerType<int16_t>(data, parent, label);
+      if (type == meta_i32)   return _doIntegerType<int32_t>(data, parent, label);
+      if (type == meta_i64)   return _doIntegerType<int64_t>(data, parent, label);
+      if (type == meta_u16)   return _doIntegerType<uint16_t>(data, parent, label);
+      if (type == meta_u32)   return _doIntegerType<uint32_t>(data, parent, label);
+      if (type == meta_u64)   return _doIntegerType<uint64_t>(data, parent, label);
+      if (type == meta_f32)   return _doFloatType<float>(data, parent, label);
+      if (type == meta_f64)   return _doFloatType<double>(data, parent, label);
+      if (type == meta_string) { return ImGui::InputText(str_label, (std::string*)data); }
       if (type == meta_symbol) { ImGui::AlignTextToFramePadding(); ImGui::TextUnformatted(*(StringView*)data); return false; }
    }  break;
    case TypeVariety_Struct: {
       bool shown = true;
       if (parent) {
-         shown = ImGui::CollapsingHeader(parent->name, ImGuiTreeNodeFlags_DefaultOpen);
+         shown = ImGui::CollapsingHeader(str_label, ImGuiTreeNodeFlags_DefaultOpen);
       }
 
       if (shown) {
@@ -119,7 +143,7 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
                   ImGui::Indent();
 
                   for (int i = 0; i < member.staticArraySize; ++i) {
-                     doTypeUIEX(member.type, (byte*)data + member.offset + (member.type->size * i), &member);
+                     doTypeUIEX(member.type, (byte*)data + member.offset + (member.type->size * i), &member, std::to_string(i).c_str());
                   }
 
                   ImGui::Unindent();
@@ -137,7 +161,7 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
    case TypeVariety_Enum: {
       if (type->enumFlags&EnumFlags_Bitfield) {
 
-         if (ImGui::CollapsingHeader(parent->name)) {
+         if (ImGui::CollapsingHeader(str_label)) {
             ImGui::Indent();
             for (auto&&entry : type->enumEntries) {
                bool compareBitfieldValue(size_t enumSize, int64_t entryValue, void*data);
@@ -168,7 +192,7 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
             }
          }
 
-         if (ImGui::BeginCombo(parent->name, entry ? entry->name : "")) {
+         if (ImGui::BeginCombo(str_label, entry ? entry->name : "")) {
             for (auto&&e : type->enumEntries) {
                if (ImGui::MenuItem(e.name)) {
                   void assignEnumValue(size_t enumSize, int64_t entryValue, void*target);
@@ -182,7 +206,7 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
    }  break;
    case TypeVariety_Array:
    case TypeVariety_KVP:
-      type->funcs.doUI(data, parent);
+      type->funcs.doUI(data, parent, label);
       break;
    }
 
