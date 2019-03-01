@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "reflection.h"
 
 #include "scf.h"
@@ -233,7 +235,7 @@ void deserialize(SCFReader& reader, TypeMetadata const* type, void* target) {
                if (m.flags&StructMemberFlags_StaticArray) {
                   auto staticList = scfReadList(mlist);
                   auto szInFile = scfReadInt(staticList);
-                  auto sz = MIN(*szInFile, m.staticArraySize);
+                  auto sz = MIN((size_t)*szInFile, m.staticArraySize);
 
                   for (int i = 0; i < sz; ++i) {
                      deserialize(staticList, m.type, (byte*)target + m.offset + (m.type->size * i));

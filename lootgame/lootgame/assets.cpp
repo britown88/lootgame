@@ -1,9 +1,11 @@
+#include "stdafx.h"
+
 #include "assets.h"
 
 #include "win.h"
 #include "game.h"
 #include <stb/stb_image.h>
-#include <assert.h>
+
 
 
 

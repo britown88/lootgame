@@ -1,8 +1,10 @@
+#include "stdafx.h"
+
 #include "app.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 #include <GL/glew.h> 
-#include <imgui.h>
+
 #include <stb/stb_image.h>
 
 #include "imgui_impl_sdl.h"
@@ -10,11 +12,11 @@
 
 #include "math.h"
 
-#include <unordered_map>
-#include <string>
-#include <functional>
 
-#include "IconsFontAwesome.h"
+
+
+
+
 #include "fa_merged.cpp"
 
 #include "render.h"

@@ -1,10 +1,12 @@
+#include "stdafx.h"
+
 #include "vex.h"
 #include "parser.h"
 
-#include <string.h>
-#include <vector>
 
-static bool _vexspancmp(VexSpan const& lhs, const char* rhs, int rhsSize) {
+
+
+static bool _vexspancmp(VexSpan const& lhs, const char* rhs, int64_t rhsSize) {
    if (rhsSize != lhs.end - lhs.begin) {
       return false;
    }

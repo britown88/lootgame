@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "defs.h"
 #include "math.h"
 

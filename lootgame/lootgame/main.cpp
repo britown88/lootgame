@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 
 #include "app.h"
 #include "lpp.h"

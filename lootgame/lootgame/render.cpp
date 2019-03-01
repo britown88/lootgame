@@ -1,9 +1,11 @@
+#include "stdafx.h"
+
 #include "render.h"
 
 #include <GL/glew.h>
-#include <vector>
-#include <string>
-#include <assert.h>
+
+
+
 
 using namespace render;
 

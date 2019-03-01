@@ -1,9 +1,6 @@
-#pragma once
+#include "stdafx.h"
 
 #include "phy.h"
-
-
-
 
 struct PhyCollision {
    PhyObject* a = nullptr;

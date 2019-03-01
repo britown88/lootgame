@@ -2,7 +2,7 @@
 
 #include "defs.h"
 #include "math.h"
-#include <vector>
+
 
 typedef uint32_t ShaderHandle;
 typedef uint32_t TextureHandle;

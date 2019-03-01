@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "app.h"
 #include "vex.h"
 #include "win.h"
@@ -7,7 +9,7 @@
 #include "parser.h"
 
 
-#include <vector>
+
 
 struct ParsedEnumMember {
    std::string name;
@@ -574,7 +576,7 @@ enum FileType {
 };
 
 struct ParsedFile {
-   fsys::path path;
+   std::filesystem::path path;
    FileType type;
 
    std::vector<ParsedStruct> structs;
@@ -603,7 +605,7 @@ static bool _parseNode(VexNode* node, ParsedFile& targetFile) {
    return false;;
 }
 
-static ParsedFile _parseFile(fsys::path path) {
+static ParsedFile _parseFile(std::filesystem::path path) {
    ParsedFile file;
    auto ext = path.extension();
 
@@ -880,7 +882,7 @@ static void _generateFileInline(ParsedFile &file) {
 void runReflectGen(AppConfig const& config) {
    std::vector<ParsedFile> files;
 
-   forEachFileInFolder(config.reflectTarget, [&](fsys::path const& path) {
+   forEachFileInFolder(config.reflectTarget, [&](std::filesystem::path const& path) {
       if (auto file = _parseFile(path)) {
          files.push_back(file);
       }

@@ -1,5 +1,7 @@
-#include <string>
-#include <stdarg.h>
+#include "stdafx.h"
+
+
+
 
 #include "defs.h"
 

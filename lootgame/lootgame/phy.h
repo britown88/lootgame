@@ -3,7 +3,7 @@
 #include "defs.h"
 #include "math.h"
 
-#include <vector>
+
 
 struct PhyObject {
    Float2 pos = { 0.0f, 0.0f };

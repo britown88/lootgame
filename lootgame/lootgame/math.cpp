@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "math.h"
 
 Float3 vCross(Float3 v1, Float3 v2) {

@@ -1,11 +1,13 @@
+#include "stdafx.h"
+
 #include "game.h"
 #include "app.h"
 #include "win.h"
 #include "render.h"
-#include "imgui.h"
+
 #include "phy.h"
 
-#include <vector>
+
 
 #include <GL/glew.h>
 #include <SDL2/SDL.h>

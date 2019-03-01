@@ -1,13 +1,15 @@
+#include "stdafx.h"
+
 #include "app.h"
 #include "game.h"
 
-#include <imgui.h>
+
 #include <misc/cpp/imgui_stdlib.h>
 #include <SDL2/SDL.h>
 
-#include <functional>
 
-#include "IconsFontAwesome.h"
+
+
 #include "scf.h"
 #include "vex.h"
 

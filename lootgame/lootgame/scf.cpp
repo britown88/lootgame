@@ -1,7 +1,9 @@
+#include "stdafx.h"
+
 #include "scf.h"
 
-#include <string>
-#include <vector>
+
+
 
 static const uint64_t SCF_MAGIC_NUMBER = 373285619;
 
@@ -167,7 +169,7 @@ static StringView _typeName(SCFType type) {
    }
    return "Unknown";
 }
-#include <imgui.h>
+
 void DEBUG_imShowWriterStats(SCFWriter *writer) {
    ImGui::Text("List stack size: %d", writer->currentTypeList.size());
 
@@ -281,7 +283,7 @@ void* scfWriteToBuffer(SCFWriter* writer, uint64_t* sizeOut) {
    //first copy current list to main set
    auto &tlist = writer->currentTypeList.back();
    auto &dSet = writer->currentDataSet.back();
-   int padding = _roundUp(tlist.size + 1) - (tlist.size);
+   auto padding = _roundUp(tlist.size + 1) - (tlist.size);
 
    uint64_t listSize = tlist.size + padding + dSet.size;
 

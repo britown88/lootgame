@@ -1,8 +1,10 @@
+#include "stdafx.h"
+
 #include "win.h"
 #include <nowide/convert.hpp>
 #include <Windows.h>
 
-#include <filesystem>
+
 
 std::string openFile(OpenFileConfig const& config) {
 

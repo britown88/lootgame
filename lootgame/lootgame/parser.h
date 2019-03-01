@@ -1,8 +1,8 @@
 #pragma once
 
 #include "defs.h"
-#include <initializer_list>
-#include <assert.h>
+
+
 
 struct StringParser {
    const char *pos, *end;

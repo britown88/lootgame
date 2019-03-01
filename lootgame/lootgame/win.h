@@ -2,7 +2,7 @@
 
 //insert all windows shit here
 
-#include <string>
+
 #include "defs.h"
 
 struct OpenFileConfig {

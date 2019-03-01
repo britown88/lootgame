@@ -5,8 +5,8 @@
 #include "assets.h"
 #include "phy.h"
 #include "coords.h"
-#include <vector>
-#include <string>
+
+
 
 typedef struct GameState GameState;
 

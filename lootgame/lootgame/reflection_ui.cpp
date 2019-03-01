@@ -1,11 +1,13 @@
+#include "stdafx.h"
+
 #include "reflection.h"
 
-#include <imgui.h>
+
 #include <imgui_internal.h>
 #include <misc/cpp/imgui_stdlib.h>
 
 #include "custom_ui_renders.h"
-#include "IconsFontAwesome.h"
+
 #include "win.h"
 
 template<typename T>

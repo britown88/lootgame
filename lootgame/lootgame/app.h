@@ -3,7 +3,7 @@
 #include "defs.h"
 #include "math.h"
 
-#include <functional>
+
 
 //fuck it we'll put all our app stuff here!
 
