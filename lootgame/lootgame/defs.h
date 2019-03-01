@@ -19,6 +19,14 @@ typedef const char Symbol;
 Symbol* intern(StringView str);
 std::string format(StringView fmt, ...);
 
+/**
+* standard C natural string compare
+* @param s1 left string
+* @param s2 right string
+* @return -1 when s1 < s2, 0 when s1 == s2, 1 when s1 > s2
+*/
+int natstrcmp(const char* s1, const char* s2);
+
 #ifndef __cplusplus
 typedef byte      bool;
 #define true 1

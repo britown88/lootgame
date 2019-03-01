@@ -665,8 +665,15 @@ static void _generateMainHeader(std::vector<ParsedFile> &files) {
    auto output = vexTemplateRender(t);
    vexTemplateDestroy(t);
 
-   writeStringFile("reflection_gen.h", output.c_str());
-   printf("Generated reflection_gen.h\n");
+   auto outFile = "reflection_gen.h";
+
+   if (fileReadString(outFile) == output) {
+      printf("File %s unchanged.\n", outFile);
+   }
+   else {
+      writeStringFile(outFile, output.c_str());
+      printf("Generated %s.\n", outFile);
+   }
 }
 
 static void _generateMainHeaderImpl(std::vector<ParsedFile> &files) {
@@ -771,8 +778,15 @@ static void _generateMainHeaderImpl(std::vector<ParsedFile> &files) {
    auto output = vexTemplateRender(t);
    vexTemplateDestroy(t);
 
-   writeStringFile("reflection_gen.inl", output.c_str());
-   printf("Generated reflection_gen.inl\n");
+   auto outFile = "reflection_gen.inl";
+
+   if (fileReadString(outFile) == output) {
+      printf("File %s unchanged.\n", outFile);
+   }
+   else {
+      writeStringFile(outFile, output.c_str());
+      printf("Generated %s.\n", outFile);
+   }
 }
 
 static void _generateFileInline(ParsedFile &file) {
@@ -873,9 +887,13 @@ static void _generateFileInline(ParsedFile &file) {
 
    auto outFile = format("%s_reflection_gen.inl", fname.c_str());
 
-   writeStringFile(outFile.c_str(), output.c_str());
-   printf("Generated %s\n", outFile.c_str());
-
+   if (fileReadString(outFile.c_str()) == output) {
+      printf("File %s unchanged.\n", outFile.c_str());
+   }
+   else {
+      writeStringFile(outFile.c_str(), output.c_str());
+      printf("Generated %s.\n", outFile.c_str());
+   }
 }
 
 

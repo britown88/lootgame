@@ -185,19 +185,21 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     <ClCompile Include="game_draw.cpp" />
     <ClCompile Include="lpp.cpp" />
     <ClCompile Include="mode_action.cpp" />
+    <ClCompile Include="natsort.cpp" />
     <ClCompile Include="phy.cpp" />
     <ClCompile Include="reflectgen.cpp" />
     <ClCompile Include="reflection.cpp" />
     <ClCompile Include="reflection_ui.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="vex.cpp" />
     <ClCompile Include="win.cpp" />
     <ClCompile Include="colors.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="implementations.cpp" />
-    <ClCompile Include="main.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="math.cpp" />
     <ClCompile Include="render.cpp" />
     <ClCompile Include="scf.cpp" />

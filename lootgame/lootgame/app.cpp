@@ -32,7 +32,6 @@ struct GameInstance {
    FBO outputFbo;
 };
 
-
 struct App {
    std::vector<GameInstance> instances;
 

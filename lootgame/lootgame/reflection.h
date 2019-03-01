@@ -5,12 +5,6 @@
 #include "custom_ui_renders.h"
 
 
-
-
-
-
-
-
 void reflectionStartup();
 
 enum TypeVariety {
@@ -271,10 +265,18 @@ private:
                      ImGui::EndPopup();
                   }
                   ImGui::Indent();
-                  
+
+                  std::vector<K*> keyList;
                   for (auto&&kvp : thisObj) {
+                     keyList.push_back((K*)&kvp.first);
+                  }
+                  if (reflect<K>() == reflect<Symbol*>()) {
+                     std::sort(keyList.begin(), keyList.end(), []( K*a, K*b) {return natstrcmp(*a, *b) < 0; });
+                  }
+                  
+                  for (auto&&k : keyList) {
                      if (reflect<K>() == reflect<Symbol*>()) {
-                        if (doTypeUIEX(reflect<V>(), &kvp.second, parent, (StringView)kvp.first)) changed = true;
+                        if (doTypeUIEX(reflect<V>(), &thisObj[*k], parent, (StringView)*k)) changed = true;
                      }
                   }
                   ImGui::Unindent();
