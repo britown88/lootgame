@@ -11,6 +11,7 @@ TypeMetadata* meta_ColorRGBf = new TypeMetadata;
 TypeMetadata* meta_ColorHSV = new TypeMetadata;
 TypeMetadata* meta_ColorRGBAf = new TypeMetadata;
 TypeMetadata* meta_SwingPhase = new TypeMetadata;
+TypeMetadata* meta__TextureMap = new TypeMetadata;
 TypeMetadata* meta_EngineConstants = new TypeMetadata;
 TypeMetadata* meta_EngineState = new TypeMetadata;
 TypeMetadata* meta_IO = new TypeMetadata;
@@ -493,6 +494,30 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGBAf, a);
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
+      auto& structName = meta__TextureMap;
+      structName->name = intern("_TextureMap");
+      structName->size = sizeof(_TextureMap);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) _TextureMap;};
+      structName->funcs.destroy = [](void* data) {((_TextureMap*)data)->~_TextureMap(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("map");
+         member.offset = offsetof(_TextureMap, map);
+         member.type = reflect<std::unordered_map<Symbol*, Texture>>();
+         member.customUI = customUIRenderer<std::unordered_map<Symbol*, Texture>>();
          
          structName->structMembers.push_back(member);
       }
@@ -1454,6 +1479,19 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
+         member.name = intern("filepath");
+         member.offset = offsetof(Texture, filepath);
+         member.type = reflect<std::string>();
+         member.customUI = customUIRenderer<std::string>();
+         member.flags |= StructMemberFlags_File;
+         member.flags |= StructMemberFlags_Image;
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
          member.name = intern("sz");
          member.offset = offsetof(Texture, sz);
          member.type = reflect<Int2>();
@@ -1477,12 +1515,10 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
-         member.name = intern("filepath");
-         member.offset = offsetof(Texture, filepath);
-         member.type = reflect<std::string>();
-         member.customUI = customUIRenderer<std::string>();
-         member.flags |= StructMemberFlags_File;
-         member.flags |= StructMemberFlags_Image;
+         member.name = intern("storedImageData");
+         member.offset = offsetof(Texture, storedImageData);
+         member.type = reflect<Blob>();
+         member.customUI = customUIRenderer<Blob>();
          
          structName->structMembers.push_back(member);
       }

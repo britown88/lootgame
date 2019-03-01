@@ -13,10 +13,6 @@
 #include "math.h"
 
 
-
-
-
-
 #include "fa_merged.cpp"
 
 #include "render.h"
@@ -26,6 +22,8 @@
 #include "scf.h"
 
 #include "reflection_gen.h"
+
+_AppConfig AppConfig;
 
 struct GameInstance {
    GameState state;
@@ -57,7 +55,7 @@ struct App {
 
 static App* g_app = nullptr;
 
-App* appCreate(AppConfig const& config) {
+App* appCreate() {
    auto out = new App();
    g_app = out;   
    return out;
@@ -200,26 +198,13 @@ struct MyStruct {
    std::string path;
 
    Blob dataTest;
+   Int2 int2;
+   Float2 float2;
 };//}
 
 #include  "app_reflection_gen.inl"
 
-
-
-void appCreateWindow(App* app, WindowConfig const& info) {
-   _windowCreate(app, info);
-
-   Graphics.build();
-
-   GameInstance mainInstance;
-   mainInstance.outputFbo = render::fboBuild(Const.resolution);
-
-   app->instances.push_back(mainInstance);
-   gameStartActionMode(app->instances[0].state);
-
-   app->running = true;
-
-
+static void _loadReflectionTest() {
    appAddGUI("ReflectedUiTest", [] {
       bool p_open = true;
       if (ImGui::Begin("Reflected UI Test", &p_open, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -243,17 +228,37 @@ void appCreateWindow(App* app, WindowConfig const& info) {
       ImGui::End();
       return p_open;
    });
+}
 
-   //EngineConstants c;
 
+static bool _doTextureManager() {
+   bool p_open = true;
+   if (ImGui::Begin("Textures", &p_open, ImGuiWindowFlags_AlwaysAutoResize)) {
+      doTypeUI(&TextureMap);
+      //ImGui::Button("LPP?");
+   }
+   ImGui::End();
+   return p_open;
+}
 
-   //auto writer = scfWriterCreate();
-   //serialize(writer, reflect<EngineConstants>(), &c);
-   //auto mem = scfWriteToBuffer(writer);
+void appCreateWindow(App* app, WindowConfig const& info) {
+   _windowCreate(app, info);
 
-   //auto view = scfView(mem);
-   //EngineConstants cpy;
-   //deserialize(view, reflect<EngineConstants>(), &cpy);
+   Graphics.build();
+
+   GameInstance mainInstance;
+   mainInstance.outputFbo = render::fboBuild(Const.resolution);
+
+   app->instances.push_back(mainInstance);
+   gameStartActionMode(app->instances[0].state);
+
+   app->running = true;
+
+   _loadReflectionTest();
+
+   appAddGUI("Textures", [] {
+      return _doTextureManager();
+   });
 
    return;
 }

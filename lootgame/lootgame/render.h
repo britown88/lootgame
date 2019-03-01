@@ -36,14 +36,16 @@ typedef uint16_t TextureFlag;
 
 // @reflect{
 struct Texture {
+   // @image @file
+   std::string filepath;
+
    // @readonly
    Int2 sz;
 
    // @type_override:TextureFlag_
    TextureFlag flags;
 
-   // @image @file
-   std::string filepath;
+   Blob storedImageData;
 
    // @ignore{
    TextureHandle handle = 0; // }

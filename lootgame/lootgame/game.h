@@ -10,10 +10,17 @@
 
 typedef struct GameState GameState;
 
+//@reflect{
+struct _TextureMap {
+   std::unordered_map<Symbol*, Texture> map;
+};
+//}
+
 struct GraphicObjects {
    ShaderHandle shader = 0;
 
    Texture textures[GameTexture_COUNT];
+   _TextureMap tmap;
 
    Mesh mesh, meshUncentered;
    FBO
@@ -63,6 +70,7 @@ extern EngineConstants Const;
 extern EngineState Engine;
 extern GraphicObjects Graphics;
 extern Texture* Textures;
+extern _TextureMap& TextureMap;
 
 enum GameButton_ {
    GameButton_LEFT = 0,

@@ -21,6 +21,7 @@ EngineConstants Const;
 EngineState Engine;
 GraphicObjects Graphics;
 Texture* Textures = Graphics.textures;
+_TextureMap& TextureMap = Graphics.tmap;
 
 
 void dudeBeginCooldown(Dude&d, Milliseconds duration);

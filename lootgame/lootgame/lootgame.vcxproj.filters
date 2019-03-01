@@ -37,6 +37,9 @@
     <Filter Include="Header Files\generated">
       <UniqueIdentifier>{bcdb1192-9b44-4244-8a77-abbb1119bd41}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Precompiled">
+      <UniqueIdentifier>{e0c6df65-ed12-46d6-8d6e-39f6a5992dec}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -111,14 +114,11 @@
     <ClCompile Include="reflection_ui.cpp">
       <Filter>Source Files\utility</Filter>
     </ClCompile>
-    <ClCompile Include="custom_ui_renders.cpp">
-      <Filter>Source Files\utility</Filter>
-    </ClCompile>
     <ClCompile Include="natsort.cpp">
       <Filter>Source Files\utility</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Precompiled</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -189,7 +189,7 @@
       <Filter>Header Files\utility</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
+      <Filter>Precompiled</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -213,6 +213,9 @@
     </None>
     <None Include="reflection_gen.inl">
       <Filter>Header Files\generated</Filter>
+    </None>
+    <None Include="config.ini">
+      <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
 </Project>

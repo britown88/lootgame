@@ -897,10 +897,10 @@ static void _generateFileInline(ParsedFile &file) {
 }
 
 
-void runReflectGen(AppConfig const& config) {
+void runReflectGen() {
    std::vector<ParsedFile> files;
 
-   forEachFileInFolder(config.reflectTarget, [&](std::filesystem::path const& path) {
+   forEachFileInFolder(AppConfig.reflectTarget, [&](std::filesystem::path const& path) {
       if (auto file = _parseFile(path)) {
          files.push_back(file);
       }

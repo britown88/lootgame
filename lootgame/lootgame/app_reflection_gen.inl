@@ -268,6 +268,28 @@ void app_reflectionStartup_generated(){
       }
 
       
+      {
+         StructMemberMetadata member;
+         member.name = intern("int2");
+         member.offset = offsetof(MyStruct, int2);
+         member.type = reflect<Int2>();
+         member.customUI = customUIRenderer<Int2>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("float2");
+         member.offset = offsetof(MyStruct, float2);
+         member.type = reflect<Float2>();
+         member.customUI = customUIRenderer<Float2>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
    }
 
       

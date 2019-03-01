@@ -6,36 +6,53 @@
 
 #include "reflection_gen.h"
 #include "vex.h"
+#include "win.h"
 
-static void _parseArgs(int argc, char** argv, AppConfig &config) {
+static void _parseArgs(int argc, char** argv) {
    auto begin = argv + 1;
    auto end = argv + argc;
 
    for (auto arg = begin; arg < end; ++arg) {
-      if (!strcmp(*arg, "-assets") && ++arg < end) {
-         config.assetFolder = *arg;
+      if (!strcmp(*arg, "-reflectgen") && ++arg < end) {
+         AppConfig.reflectgen = true;
+         AppConfig.reflectTarget = *arg;
       }
-      else if (!strcmp(*arg, "-reflectgen") && ++arg < end) {
-         config.reflectgen = true;
-         config.reflectTarget = *arg;
+   }
+}
+
+static void _loadConfig() {
+   auto ini = fileReadString("config.ini");
+   if (!ini.empty()) {
+      auto vex = vexCreate(ini);
+
+      auto child = vex->children;
+      while (child) {
+         if (child->tag == "assetdir") {
+            AppConfig.assetPath = std::string(child->body.begin, child->body.end);
+         }
+
+         child = child->next;
       }
+
+      vexDestroy(vex);
    }
 }
 
 
 int main(int argc, char** argv)
 {
-   AppConfig config;
-   _parseArgs(argc, argv, config);
+   _parseArgs(argc, argv);
 
-   if (config.reflectgen) {
-      runReflectGen(config);
+   if (AppConfig.reflectgen) {
+      runReflectGen();
    }
    else {
       lppStartup();
+      _loadConfig();
+
       reflectionStartup();
       
-      auto app = appCreate(config);
+      auto app = appCreate();
       appCreateWindow(app, WindowConfig{ 1280, 720, "Making Games is Fucking Hard" });
       while (appRunning(app)) {
          appStep(app);

@@ -181,7 +181,6 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     <ClCompile Include="app.cpp" />
     <ClCompile Include="assets.cpp" />
     <ClCompile Include="coords.cpp" />
-    <ClCompile Include="custom_ui_renders.cpp" />
     <ClCompile Include="game_draw.cpp" />
     <ClCompile Include="lpp.cpp" />
     <ClCompile Include="mode_action.cpp" />
@@ -235,6 +234,7 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
   <ItemGroup>
     <None Include="assets\fragment.glsl" />
     <None Include="assets\vertex.glsl" />
+    <None Include="config.ini" />
     <None Include="reflection_gen.h.temp" />
     <None Include="reflection_gen.inl" />
     <None Include="reflection_gen.temp" />

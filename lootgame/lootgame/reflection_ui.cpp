@@ -9,6 +9,57 @@
 #include "custom_ui_renders.h"
 
 #include "win.h"
+#include "app.h"
+
+bool customUIRender_ColorRGBAf(TypeMetadata const* type, void* data, StructMemberMetadata const* parent, const char* label) {
+   auto c = (ColorRGBAf*)data;
+   return ImGui::ColorEdit4(label ? label : parent->name, (float*)c);
+}
+bool customUIRender_Int2(TypeMetadata const* type, void* data, StructMemberMetadata const* member, const char* label) {
+   auto str_label = "";
+   if (member) { str_label = member->name; }
+   if (label) { str_label = label; }
+
+   bool hasStep = member && member->ui.step > 0.0f;
+   bool hasRange = member && member->ui.min < member->ui.max;
+
+   bool changed = false;
+
+   if (hasStep && hasRange) {
+      changed = ImGui::DragInt2(str_label, (int*)data, member->ui.step, (int)member->ui.min, (int)member->ui.max);
+   }
+   else if (hasRange) {
+      changed = ImGui::SliderInt2(str_label, (int*)data, (int)member->ui.min, (int)member->ui.max);
+   }
+   else {
+      changed = ImGui::InputInt2(str_label, (int*)data);
+   }
+
+   return changed;
+}
+bool customUIRender_Float2(TypeMetadata const* type, void* data, StructMemberMetadata const* member, const char* label) {
+   auto str_label = "";
+   if (member) { str_label = member->name; }
+   if (label) { str_label = label; }
+
+   bool hasStep = member && member->ui.step > 0.0f;
+   bool hasRange = member && member->ui.min < member->ui.max;
+
+   bool changed = false;
+
+   if (hasStep && hasRange) {
+      changed = ImGui::DragFloat2(str_label, (float*)data, member->ui.step, member->ui.min, member->ui.max);
+   }
+   else if (hasRange) {
+      changed = ImGui::SliderFloat2(str_label, (float*)data, member->ui.min, member->ui.max);
+   }
+   else {
+      changed = ImGui::InputFloat2(str_label, (float*)data);
+   }
+
+   return changed;
+}
+
 
 template<typename T>
 static bool _doIntegerType(void* data, StructMemberMetadata const* member, const char* label) {
@@ -94,9 +145,7 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
       return false;
    }
 
-   if (parent && parent->customUI) {
-      return parent->customUI(type, data, parent, label);
-   }
+   
 
    auto str_label = "";
    if (parent) {
@@ -123,17 +172,26 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
       ImGui::PopID(); 
    };
 
+   if (parent && parent->customUI) {
+      return parent->customUI(type, data, parent, label);
+   }
+
    if (parent && parent->flags&StructMemberFlags_File) {
       if (type == meta_string) {
          if (ImGui::Button(ICON_FA_FOLDER)) {
             OpenFileConfig cfg;
             cfg.filterNames = "All Files (*.*)";
             cfg.filterExtensions = "*.*";
-            cfg.initialDir = cwd();
+
+            auto assetDir = AppConfig.assetPath.string();
+            cfg.initialDir = assetDir.c_str();
 
             auto file = openFile(cfg);
             if (!file.empty()) {
-               *(std::string*)data = file;
+               auto fpath = std::filesystem::path(file).string();
+               fpath = fpath.replace(fpath.begin(), fpath.begin() + assetDir.size(), "");
+
+               *(std::string*)data = fpath.c_str();
                return true;
             }
          }
@@ -174,6 +232,7 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
       }
 
       if (shown) {
+         bool changed = false;
          if (parent) ImGui::Indent();
          for (auto&& member : type->structMembers) {
             if (member.flags&StructMemberFlags_StaticArray) {
@@ -181,18 +240,23 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
                   ImGui::Indent();
 
                   for (int i = 0; i < member.staticArraySize; ++i) {
-                     doTypeUIEX(member.type, (byte*)data + member.offset + (member.type->size * i), &member, std::to_string(i).c_str());
+                     if (doTypeUIEX(member.type, (byte*)data + member.offset + (member.type->size * i), &member, std::to_string(i).c_str())) {
+                        changed = true;
+                     }
                   }
 
                   ImGui::Unindent();
                }
             }
             else {
-               doTypeUIEX(member.type, (byte*)data + member.offset, &member);
+               if (doTypeUIEX(member.type, (byte*)data + member.offset, &member)) {
+                  changed = true;
+               }
             }
          }
       
          if (parent) ImGui::Unindent();
+         return changed;
       }
 
    }  break;
@@ -200,6 +264,7 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
       if (type->enumFlags&EnumFlags_Bitfield) {
 
          if (ImGui::CollapsingHeader(str_label)) {
+            bool changed = false;
             ImGui::Indent();
             for (auto&&entry : type->enumEntries) {
                bool compareBitfieldValue(size_t enumSize, int64_t entryValue, void*data);
@@ -215,9 +280,12 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
                   else {
                      addBitfieldValue(type->size, entry.value, data);
                   }
+                  changed = true;
                }
             }
             ImGui::Unindent();
+
+            return changed;
          }
       }
       else {
@@ -230,22 +298,25 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
             }
          }
 
+         bool changed = false;
          if (ImGui::BeginCombo(str_label, entry ? entry->name : "")) {
             for (auto&&e : type->enumEntries) {
                if (ImGui::MenuItem(e.name)) {
                   void assignEnumValue(size_t enumSize, int64_t entryValue, void*target);
                   assignEnumValue(type->size, e.value, data);
+                  changed = true;
                }
             }
             ImGui::EndCombo();
          }
+
+         return changed;
       }
 
    }  break;
    case TypeVariety_Array:
    case TypeVariety_KVP:
-      type->funcs.doUI(data, parent, label);
-      break;
+      return type->funcs.doUI(data, parent, label);
    }
 
    return false;

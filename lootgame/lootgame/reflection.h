@@ -144,7 +144,7 @@ private:
       if (TypeMetadata const*  innerType = reflect<T>()) {
          TypeMetadata out;
          out.variety = TypeVariety_Array;
-         out.name = intern(format("std::vector<%s>", innerType->name).c_str());
+         out.name = intern(format("std::vector<%s>"/*, innerType->name*/).c_str());
          out.value = innerType;
          out.size = sizeof(std::vector<T>);
 
@@ -208,7 +208,7 @@ private:
          if (TypeMetadata const*  valType = reflect<V>()) {
             TypeMetadata out;
             out.variety = TypeVariety_KVP;
-            out.name = intern(format("std::unordered_map<%s, %s>", keyType->name, valType->name).c_str());
+            out.name = intern(format("std::unordered_map<%s, %s>"/*, keyType->name, valType->name*/).c_str());
             out.key = keyType;
             out.value = valType;
             out.size = sizeof(ThisType);

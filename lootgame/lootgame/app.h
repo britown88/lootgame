@@ -13,18 +13,20 @@
 #define MOUSE_RIGHT 1
 #define MOUSE_MIDDLE 2
 
-struct AppConfig {
-   const char* assetFolder = nullptr;
+struct _AppConfig {
+   std::filesystem::path assetPath;
 
    bool reflectgen = false;
    const char* reflectTarget = nullptr;
 };
 
-void runReflectGen(AppConfig const& config);
+extern _AppConfig AppConfig;
+
+void runReflectGen();
 
 // APP
 typedef struct App App;
-App* appCreate(AppConfig const& config);
+App* appCreate();
 
 typedef struct {
    uint32_t w, h;

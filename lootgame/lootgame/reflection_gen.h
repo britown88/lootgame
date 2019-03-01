@@ -87,6 +87,15 @@ struct Reflector<ColorRGBAf>{
 };
 
 
+// _TextureMap ----------------------------
+typedef struct _TextureMap _TextureMap;
+extern TypeMetadata* meta__TextureMap;
+template<>
+struct Reflector<_TextureMap>{
+   static TypeMetadata const* type() { return meta__TextureMap; }
+};
+
+
 // EngineConstants ----------------------------
 typedef struct EngineConstants EngineConstants;
 extern TypeMetadata* meta_EngineConstants;
