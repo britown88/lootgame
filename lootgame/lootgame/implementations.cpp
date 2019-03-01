@@ -9,3 +9,16 @@
 
 #include "reflection_gen.h"
 #include "reflection_gen.inl"
+
+Blob blobCreate(byte const* data, size_t sz) {
+   Blob out = { new byte[sz], sz };
+   memcpy(out.data, data, sz);
+   return out;
+}
+void blobDestroy(Blob& self) {
+   if (self.data) {
+      delete[] self.data;
+      self.data = nullptr;
+      self.sz = 0;
+   }
+}

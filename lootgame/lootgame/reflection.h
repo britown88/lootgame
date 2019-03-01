@@ -9,6 +9,7 @@
 #include <unordered_map>
 
 #include <imgui.h>
+#include "IconsFontAwesome.h"
 
 void reflectionStartup();
 
@@ -115,6 +116,7 @@ struct Reflector<c_type> { \
    static TypeMetadata const* type() { return metaname; } \
 };
 
+BASIC_TYPE_REFLECT(Blob, meta_blob)
 BASIC_TYPE_REFLECT(bool, meta_bool)
 
 BASIC_TYPE_REFLECT(byte, meta_byte)
@@ -176,7 +178,11 @@ private:
 
          out.funcs.doUI = [](void* data, StructMemberMetadata const* parent, const char* label) {
             bool changed = false;
-            if (ImGui::CollapsingHeader(label ? label : parent->name)) {
+            if (ImGui::CollapsingHeader(label ? label : parent->name, ImGuiTreeNodeFlags_AllowItemOverlap)) {
+               ImGui::SameLine();
+               if (ImGui::Button(ICON_FA_PLUS)) {
+                  ((ThisType*)data)->push_back(T());
+               }
                ImGui::Indent();
                int idx = 0;
                for (auto&&item : *((ThisType*)data)) {
@@ -244,9 +250,28 @@ private:
 
             out.funcs.doUI = [](void* data, StructMemberMetadata const* parent, const char* label) {
                bool changed = false;
-               if (ImGui::CollapsingHeader(label ? label : parent->name)) {
+               auto &thisObj = *(ThisType*)data;
+
+               if (ImGui::CollapsingHeader(label ? label : parent->name, ImGuiTreeNodeFlags_AllowItemOverlap)) {
+                  ImGui::SameLine();
+                  static K newkey;
+                  if (ImGui::Button(ICON_FA_PLUS)) {
+                     ImGui::OpenPopup("newkey");  
+                     newkey = {};
+                  }
+
+                  if (ImGui::BeginPopupModal("newkey")) {
+
+                     doTypeUIEX(reflect<K>(), &newkey, nullptr, "key");
+                     if (ImGui::Button("OK")) {
+                        thisObj.insert({ newkey, V{} });
+                        ImGui::CloseCurrentPopup();
+                     }
+
+                     ImGui::EndPopup();
+                  }
                   ImGui::Indent();
-                  auto &thisObj = *(ThisType*)data;
+                  
                   for (auto&&kvp : thisObj) {
                      if (reflect<K>() == reflect<Symbol*>()) {
                         if (doTypeUIEX(reflect<V>(), &kvp.second, parent, (StringView)kvp.first)) changed = true;

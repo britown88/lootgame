@@ -20,8 +20,8 @@ static bool _doIntegerType(void* data, StructMemberMetadata const* member, const
       str_label = label;
    }
    
-   bool hasStep = member->ui.step > 0.0f;
-   bool hasRange = member->ui.min < member->ui.max;
+   bool hasStep = member && member->ui.step > 0.0f;
+   bool hasRange = member && member->ui.min < member->ui.max;
 
    bool changed = false;
 
@@ -141,6 +141,7 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
 
    switch (type->variety) {
    case TypeVariety_Basic: {
+      if (type == meta_blob) { ImGui::Text("%s: %d bytes", str_label, ((Blob*)data)->sz); return false; }
       if (type == meta_bool)  return ImGui::Checkbox(str_label, (bool*)data);
       if (type == meta_byte)  return _doIntegerType<byte>(data, parent, label);
       if (type == meta_sbyte) return _doIntegerType<char>(data, parent, label);
@@ -153,7 +154,16 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
       if (type == meta_f32)   return _doFloatType<float>(data, parent, label);
       if (type == meta_f64)   return _doFloatType<double>(data, parent, label);
       if (type == meta_string) { return ImGui::InputText(str_label, (std::string*)data); }
-      if (type == meta_symbol) { ImGui::AlignTextToFramePadding(); ImGui::TextUnformatted(*(StringView*)data); return false; }
+      if (type == meta_symbol) { 
+         auto& sym = *(StringView*)data;
+         if (!sym) { sym = ""; }
+         std::string str = sym;
+         if (ImGui::InputText(str_label, &str)) {
+            sym = intern(str.c_str());
+            return true;
+         }
+         return false; 
+      }
    }  break;
    case TypeVariety_Struct: {
       bool shown = true;

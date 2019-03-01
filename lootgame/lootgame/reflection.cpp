@@ -4,6 +4,7 @@
 
 #define UNKNOWN_ENUM_ENTRY "__UNKNOWN_ENUM__"
 
+TypeMetadata const* meta_blob;
 TypeMetadata const* meta_bool;
 TypeMetadata const* meta_byte;
 TypeMetadata const* meta_sbyte;
@@ -45,6 +46,7 @@ static TypeMetadata const* _createBasicTypeNonTrivial(Symbol* name) {
 #define BASIC_TYPE_CREATE_NON_TRIVIAL(Type) _createBasicTypeNonTrivial<Type>(intern(#Type))
 
 static void _createBasicTypes() {
+   meta_blob = BASIC_TYPE_CREATE_NON_TRIVIAL(Blob);
    meta_bool = BASIC_TYPE_CREATE(bool);
 
    meta_byte = BASIC_TYPE_CREATE(byte);
@@ -128,7 +130,8 @@ void serialize(SCFWriter* writer, TypeMetadata const* type, void* data) {
 
    switch (type->variety) {
    case TypeVariety_Basic:
-      if      (type == meta_bool)   scfWriteInt(writer, *(bool*)data);
+      if      (type == meta_blob)   scfWriteBytes(writer, ((Blob*)data)->data, ((Blob*)data)->sz);
+      else if (type == meta_bool)   scfWriteInt(writer, *(bool*)data);
       else if (type == meta_byte)   scfWriteInt(writer, *(byte*)data);
       else if (type == meta_sbyte)  scfWriteInt(writer, *(char*)data);
       else if (type == meta_i16)    scfWriteInt(writer, *(int16_t*)data);
@@ -201,7 +204,12 @@ void deserialize(SCFReader& reader, TypeMetadata const* type, void* target) {
 
    switch (type->variety) {
    case TypeVariety_Basic:
-      if      (type == meta_bool)   *(bool*)target = (bool)*scfReadInt(reader);
+      if (type == meta_blob) {
+         auto &b = *(Blob*)target;
+         blobDestroy(b);
+         b = blobCreate(scfReadBytes(reader, &b.sz), b.sz);
+      }       
+      else if (type == meta_bool)   *(bool*)target = (bool)*scfReadInt(reader);
       else if (type == meta_byte)   *(byte*)target = (byte)*scfReadInt(reader);
       else if (type == meta_sbyte)  *(char*)target = (char)*scfReadInt(reader);
       else if (type == meta_i16)    *(int16_t*)target = (int16_t)*scfReadInt(reader);

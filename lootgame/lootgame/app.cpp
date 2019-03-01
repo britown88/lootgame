@@ -197,6 +197,8 @@ struct MyStruct {
 
    //@file
    std::string path;
+
+   Blob dataTest;
 };//}
 
 #include  "app_reflection_gen.inl"

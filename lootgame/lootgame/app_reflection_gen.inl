@@ -257,6 +257,17 @@ void app_reflectionStartup_generated(){
       }
 
       
+      {
+         StructMemberMetadata member;
+         member.name = intern("dataTest");
+         member.offset = offsetof(MyStruct, dataTest);
+         member.type = reflect<Blob>();
+         member.customUI = customUIRenderer<Blob>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
    }
 
       

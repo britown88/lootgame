@@ -3,9 +3,15 @@
 #include <stdint.h>
 #include <string>
 
-
-
 typedef uint8_t   byte;
+
+struct Blob {
+   void* data = nullptr;
+   size_t sz = 0;
+};
+
+Blob blobCreate(byte const* data, size_t sz);
+void blobDestroy(Blob& self);
 
 typedef const char *StringView;
 typedef const char Symbol;
