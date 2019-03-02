@@ -79,16 +79,17 @@ struct Rectf{
    void setPos(Float2 const& p) { x = p.x; y = p.y; }
 
    void scaleFromPoint(Float2 const&p, float s) {
-      x += (p.x / w) * s;
-      y += (p.y / h) * s;
+      Float2 vpPos = { (p.x - x) / w, (p.y - y) / h };
       w *= s;
       h *= s;
+      x = p.x - w * vpPos.x;
+      y = p.y - h * vpPos.y;
    }
 
    Float2 xy() const { return { x,y }; }
    Float2 sz() const { return { w,h }; }
-   Float2 min() const { return { x,y }; }
-   Float2 max() const { return { x+w,y+h }; }
+   Float2 Min() const { return { x,y }; }
+   Float2 Max() const { return { x+w,y+h }; }
 
 
 };//}
