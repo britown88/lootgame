@@ -253,7 +253,7 @@ struct GameStateDebug {
    bool showCollisionDebugging = false;
 
    //@ui(min=0 max=1)
-   float ambientLight = 0.0f;
+   float ambientLight = 0.2f;
 };
 //}
 

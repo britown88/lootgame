@@ -363,6 +363,8 @@ void render::textureRefresh(Texture&t) {
       }
 
       t.handle = buildTextureHandle(t.sz, t.flags, (ColorRGBA const*)t.storedImageData.data);
+
+      LOG("Refreshed texture [%s] from file", t.id);
    }
 }
 

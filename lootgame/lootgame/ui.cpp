@@ -654,16 +654,16 @@ static void _doTextureManager(TextureManagerState& state) {
                
 
                ImGui::PopID();
-
                
                ImGui::Unindent();
             }
                
          }
+         
          ImGui::Unindent();
-      }
-      ImGui::End();
+      }     
    }
+   ImGui::End();
 }
 
 void uiOpenTextureManager() {

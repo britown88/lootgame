@@ -40,6 +40,8 @@ void assets_textureMapSave() {
    writeBinaryFile(fpath.string().c_str(), (byte*)output, sz);
    scfWriterDestroy(writer);
    delete[] output;
+
+   LOG("Texture Map Saved");
 }
 
 
@@ -67,14 +69,21 @@ void assets_textureMapReload() {
             render::textureRefresh(existing);
          }
       }
+      LOG("Reloaded Texture Map");
+   }
+   else {
+      ERR("Error reloading texture map");
    }
 }
 
 void assets_textureMapRefreshAll() {
+   LOG("Refreshing All Textures...");
+
    for (auto&& kvp : TextureMap.map) {
       auto& t = kvp.second;
       render::textureRefresh(t);
    }
+   
 }
 
 void assets_textureMapLoad() {
@@ -100,6 +109,11 @@ void assets_textureMapLoad() {
             render::textureRefresh(t);
          }
       }
+
+      LOG("Loaded Texture Map");
+   }
+   else {
+      ERR("Error reloading texture map, assets file not found");
    }
 
 }

@@ -25,6 +25,65 @@
 
 _AppConfig AppConfig;
 
+struct LogEntry {
+   std::string file, message;
+   LogLevel level;
+};
+struct Logger {
+   std::vector<LogEntry> entries;
+   bool pushBottom = false;
+};
+
+static Logger g_logger;
+
+void _log(const char* file, LogLevel level, const char*msg) {
+
+   std::filesystem::path p = file;
+
+
+   g_logger.entries.push_back({ p.filename().string(), msg, level });
+   g_logger.pushBottom = true;
+}
+
+static void _doLogger() {
+   if (ImGui::Begin("Logger")) {
+      static ImVec4 cols[3];
+      static bool init = false;
+      if (!init) {
+         cols[LogLevel_Normal] = ImVec4(0.00f, 0.67f, 0.08f, 1.00f);
+         cols[LogLevel_Warning] = ImVec4(0.69f, 0.74f, 0.00f, 1.00f);
+         cols[LogLevel_Error] = ImVec4(0.88f, 0.25f, 0.13f, 1.00f);
+      }
+
+      auto max = ImVec2(ImGui::GetContentRegionAvailWidth(), ImGui::GetTextLineHeightWithSpacing());
+      auto cpos = ImGui::GetCursorPosY();
+
+      ImGui::BeginGroup();
+      for (auto&& entry : g_logger.entries) {
+         ImGui::TextColored(cols[entry.level], entry.file.c_str());
+      }
+      ImGui::EndGroup();
+      ImGui::SameLine(0, 50);
+      ImGui::BeginGroup();
+      for (auto&& entry : g_logger.entries) {
+         ImGui::TextColored(cols[entry.level], entry.message.c_str());
+      }
+      if (g_logger.pushBottom) {
+         ImGui::SetScrollHereY(1.0f);
+         g_logger.pushBottom = false;
+      }
+      ImGui::EndGroup();
+   }
+   ImGui::End();
+}
+
+static void _openLogger() {
+   appAddGUI("Logger", [=] {
+      _doLogger();
+      return true;
+   });
+}
+
 struct GameInstance {
    GameState state;
    FBO outputFbo;
@@ -243,10 +302,10 @@ void appCreateWindow(App* app, WindowConfig const& info) {
 
    app->running = true;
 
-   _loadReflectionTest();
-
+   //_loadReflectionTest();
 
    uiOpenTextureManager();
+   _openLogger();
 
    return;
 }

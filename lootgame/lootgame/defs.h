@@ -1,7 +1,16 @@
 #pragma once
 
+enum LogLevel {
+   LogLevel_Normal = 0,
+   LogLevel_Warning,
+   LogLevel_Error,
+};
 
+void _log(const char* file, LogLevel level, const char*msg);
 
+#define LOG(msg, ...) _log(__FILE__, LogLevel_Normal, format(msg, __VA_ARGS__).c_str())
+#define WARN(msg, ...) _log(__FILE__, LogLevel_Warning, format(msg, __VA_ARGS__).c_str())
+#define ERR(msg, ...) _log(__FILE__, LogLevel_Error, format(msg, __VA_ARGS__).c_str())
 
 typedef uint8_t   byte;
 
