@@ -24,6 +24,7 @@
 #include "reflection_gen.h"
 
 _AppConfig AppConfig;
+static bool _gameInstanceStep(GameInstance& g);
 
 struct LogEntry {
    std::string file, message;
@@ -94,6 +95,7 @@ struct App {
    SDL_Window* sdlWnd = nullptr;
    SDL_GLContext sdlCtx = nullptr;
    ImGuiContext* imguiContext = nullptr;
+   uint32_t fullscreen_flag = 0;
 
    bool shouldClose = false;
 
@@ -295,19 +297,20 @@ void appBeginNewGameInstance() {
    LOG("Starting game instance in Viewer %d", viewerCount);
 
    gameStartActionMode(inst->state);
+   ImGui::SetWindowFocus(inst->winTitle.c_str());
 
    appAddGUI(inst->winTitle.c_str(), [=]()mutable {
-      return gameDoUIWindow(*inst);
+      return _gameInstanceStep(*inst);
    });
 }
 
 void appCreateWindow(App* app, WindowConfig const& info) {
    _windowCreate(app, info);
    Graphics.build();   
-
-   appBeginNewGameInstance();
+      
    uiOpenTextureManager();
    _openLogger();
+   appBeginNewGameInstance();
 
    app->running = true;
 }
@@ -316,6 +319,15 @@ void appCreateWindow(App* app, WindowConfig const& info) {
 
 bool appRunning(App* app) { return app->running; }
 void appPollEvents(App* app) {
+
+   GameInstance* g = nullptr;
+   for (auto&&i : app->instances) {
+      if (i->focused) {
+         g = i;
+         break;
+      }
+   }
+
    SDL_Event event;
    auto &io = ImGui::GetIO();
    while (SDL_PollEvent(&event))
@@ -331,7 +343,10 @@ void appPollEvents(App* app) {
          case SDL_MOUSEBUTTONDOWN:
          case SDL_MOUSEMOTION:
          case SDL_MOUSEWHEEL:
-            gameHandled = gameProcessEvent(app->instances[0]->state, &event) || gameHandled;
+            if (g) {
+               gameHandled = gameProcessEvent(g->state, &event) || gameHandled;
+            }
+            
             break;
          }
       }
@@ -343,7 +358,9 @@ void appPollEvents(App* app) {
          case SDL_KEYUP:
          case SDL_TEXTEDITING:
          case SDL_TEXTINPUT:
-            gameHandled = gameProcessEvent(app->instances[0]->state, &event) || gameHandled;
+            if (g) {
+               gameHandled = gameProcessEvent(g->state, &event) || gameHandled;
+            }
             break;
          }
       }
@@ -366,8 +383,8 @@ void appPollEvents(App* app) {
       }
 
       // finally pass everything else through to the game to handle as it will
-      if (!gameHandled) {
-         gameProcessEvent(app->instances[0]->state, &event);
+      if (!gameHandled && g) {
+         gameProcessEvent(g->state, &event);
       }
    }
 }
@@ -423,27 +440,41 @@ static void _updateDialogs(App* app) {
    }
 }
 
+bool _gameInstanceStep(GameInstance& g) {
+   gameUpdate(g.state);
+   gameDraw(g.state,g.outputFbo);
+   return gameDoUIWindow(g);
+}
+
+static void _appSetFullscreen(bool fullscreen) {
+   uint32_t flag = fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
+   if (flag != g_app->fullscreen_flag) {
+      g_app->fullscreen_flag = flag;
+      SDL_SetWindowFullscreen(g_app->sdlWnd, flag);
+   }
+   
+}
+
 static void _updateFrame(App* app) {
 
    bool fscreenupdate = false;
    for (auto&& i : app->instances) {
       if (i->state.fullscreen) {
-         gameUpdate(i->state);
-         gameDraw(i->state, i->outputFbo);
-         gameDoUIWindow(*i);
-         fscreenupdate = true;
+         _gameInstanceStep(*i);
+         fscreenupdate = true;         
          break;
       }
-   }
-   
+   }   
+
+   _appSetFullscreen(fscreenupdate);
    
    if(!fscreenupdate){
       doRootUI();
 
-      for (auto&& i : app->instances) {
-         gameUpdate(i->state);
-         gameDraw(i->state, i->outputFbo);
-      }
+      //for (auto&& i : app->instances) {
+      //   gameUpdate(i->state);
+      //   gameDraw(i->state, i->outputFbo);
+      //}
 
       _updateDialogs(app);
    }

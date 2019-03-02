@@ -283,7 +283,7 @@ struct GameInstance {
    GameState state;
    FBO outputFbo;
 
-   bool running = true;
+   bool focused = true;
 };
 
 void gameBeginFrame(GameState& g);

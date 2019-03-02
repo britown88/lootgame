@@ -190,6 +190,7 @@ xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ui_textureManager.cpp" />
+    <ClCompile Include="ui_viewer.cpp" />
     <ClCompile Include="vex.cpp" />
     <ClCompile Include="win.cpp" />
     <ClCompile Include="colors.cpp" />
