@@ -369,9 +369,11 @@ static void renderOutput(GameState& game, FBO& output) {
 
    uber::bindTexture(Uniform_DiffuseTexture, Graphics.litScene.out[0].handle);
    render::meshRender(Graphics.meshUncentered);
-   
-   uber::bindTexture(Uniform_DiffuseTexture, Graphics.UI.out[0].handle);
-   render::meshRender(Graphics.meshUncentered);
+
+   if (game.ui.showGameUI) {
+      uber::bindTexture(Uniform_DiffuseTexture, Graphics.UI.out[0].handle);
+      render::meshRender(Graphics.meshUncentered);
+   }
 
    if (game.mode.type == ModeType_YOUDIED) {
       render::setBlendMode(BlendMode_MULITPLY);

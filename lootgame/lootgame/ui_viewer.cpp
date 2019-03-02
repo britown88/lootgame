@@ -85,6 +85,16 @@ static void _viewerMenuBar(GameState& g) {
          ImGui::PopStyleColor();
       }
 
+      ImGui::Separator();
+      ImGui::Checkbox("Game UI", &g.ui.showGameUI);
+
+      ImGui::Separator();
+      ImGui::Checkbox("Edit Grid", &g.ui.showEditGrid);
+      float gridSize = g.ui.gridSize.x;
+      ImGui::PushItemWidth(100.0f);
+      ImGui::SliderFloat("##grid", &gridSize, 10.0f, 100.0f, "%0.0f");
+      ImGui::PopItemWidth();
+      g.ui.gridSize = { gridSize, gridSize };
 
       ImGui::EndMenuBar();
    }
@@ -160,6 +170,42 @@ static void _viewerHandleInput(GameState& g) {
    }
 }
 
+static void _renderGrid(GameState& g) {
+   Float2 &gridSize = g.ui.gridSize;
+
+   auto& vp = g.camera.viewport;
+   auto vpMin = vp.Min();
+   auto vpMax = vp.Max();
+
+   vpMin.x = floorf(vpMin.x / gridSize.x) * gridSize.x;
+   vpMin.y = floorf(vpMin.y / gridSize.y) * gridSize.y;
+
+   vpMin.x = clamp(vpMin.x, 0, vp.Max().x);
+   vpMin.y = clamp(vpMin.y, 0, vp.Max().y);
+   vpMax.x = clamp(vpMax.x, 0, g.map.size.x);
+   vpMax.y = clamp(vpMax.y, 0, g.map.size.y);
+
+   auto color = IM_COL32(255, 255, 255, 64);
+
+   while (vpMin.x < vpMax.x) {
+      Coords pa = { { vpMin.x, vp.y } };
+      Coords pb = { { vpMin.x, vp.y + vp.h } };
+      auto a = pa.toScreen(g);
+      auto b = pb.toScreen(g);
+      ImGui::GetWindowDrawList()->AddLine(ImVec2(a.x, a.y), ImVec2(b.x, b.y), color);
+      vpMin.x += gridSize.x;
+   }
+   while (vpMin.y < vpMax.y) {
+      Coords pa = { { vp.x, vpMin.y } };
+      Coords pb = { { vp.x + vp.w, vpMin.y } };
+      auto a = pa.toScreen(g);
+      auto b = pb.toScreen(g);
+      ImGui::GetWindowDrawList()->AddLine(ImVec2(a.x, a.y), ImVec2(b.x, b.y), color);
+      vpMin.y += gridSize.y;
+   }
+
+}
+
 static bool _showWindowedViewer(GameInstance& gi) {
    bool p_open = true;
    auto& g = gi.state;
@@ -173,6 +219,10 @@ static bool _showWindowedViewer(GameInstance& gi) {
       viewsz.y -= ImGui::GetTextLineHeightWithSpacing();
 
       _renderViewerFBO(g, gi.outputFbo, viewsz);
+
+      if (g.ui.editing && g.ui.showEditGrid) {
+         _renderGrid(g);
+      }
 
       ImGui::SetCursorPosY(ImGui::GetCursorPosY() + viewsz.y);
       _statusBar(g);

@@ -12,6 +12,15 @@ ScreenCoords Coords::toScreen(GameState& g) {
       vpScreen.y + ((world.y - vpCamera.y) / vpCamera.h) * vpScreen.h
    };
 }
+DlgCoords Coords::toDialog(GameState& g) {
+   auto& vpScreen = g.vpScreenArea;
+   auto& vpCamera = g.camera.viewport;
+
+   return {
+      ((world.x - vpCamera.x) / vpCamera.w) * vpScreen.w,
+      ((world.y - vpCamera.y) / vpCamera.h) * vpScreen.h
+   };
+}
 VPCoords Coords::toViewport(GameState& g) {
    auto& vpCamera = g.camera.viewport;
    return {
@@ -30,6 +39,15 @@ Coords Coords::fromScreen(ScreenCoords const& c, GameState& g) {
    return {
       vpCamera.x + (c.x - vpScreen.x) / vpScreen.w * vpCamera.w,
       vpCamera.y + (c.y - vpScreen.y) / vpScreen.h * vpCamera.h
+   };
+}
+Coords Coords::fromDialog(DlgCoords const& c, GameState& g) {
+   auto& vpScreen = g.vpScreenArea;
+   auto& vpCamera = g.camera.viewport;
+
+   return {
+      vpCamera.x + (c.x) / vpScreen.w * vpCamera.w,
+      vpCamera.y + (c.y) / vpScreen.h * vpCamera.h
    };
 }
 Coords Coords::fromViewport(VPCoords const& c, GameState& g) {

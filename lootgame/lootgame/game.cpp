@@ -777,6 +777,8 @@ void gameUpdate(GameState& g) {
       //camera follow on dude
       vp.x = clamp(dudePos.x - (vp.w / 2), 0, g.map.size.x - vp.w);
       vp.y = clamp(dudePos.y - (vp.h / 2), 0, g.map.size.y - vp.h);
+      vp.w = Const.vpSize.x;
+      vp.h = Const.vpSize.y;
    }
 
    g.lastUpdate += timeMillis(ms);

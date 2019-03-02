@@ -267,6 +267,10 @@ struct GameStateUI {
    bool draggingCamera = false;
    Float2 cameraDragStart;
    Float2 cameraDragVpStart = { 0,0 };
+
+   bool showGameUI = true;
+   Float2 gridSize = { 100.0f, 100.0f };
+   bool showEditGrid = true;
 };
 
 struct GameState {
