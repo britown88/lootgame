@@ -85,7 +85,7 @@ static void _openLogger() {
 }
 
 struct App {
-   std::vector<GameInstance> instances;
+   std::vector<GameInstance*> instances;
 
    bool running = false;
 
@@ -287,18 +287,17 @@ static void _loadReflectionTest() {
 static int viewerCount = 0;
 
 void appBeginNewGameInstance() {
-   GameInstance secondInstance;
-   secondInstance.outputFbo = render::fboBuild(Const.resolution);
-   secondInstance.winTitle = format("Viewer %d", viewerCount++ + 1);
-   g_app->instances.push_back(secondInstance);
+   auto inst = new GameInstance();
+   inst->outputFbo = render::fboBuild(Const.resolution);
+   inst->winTitle = format("Viewer %d", viewerCount++ + 1);
+   g_app->instances.push_back(inst);
 
    LOG("Starting game instance in Viewer %d", viewerCount);
 
-   auto addedIndex = g_app->instances.size() - 1;
-   gameStartActionMode(g_app->instances[addedIndex].state);
+   gameStartActionMode(inst->state);
 
-   appAddGUI(g_app->instances[addedIndex].winTitle.c_str(), [=]()mutable {
-      return gameDoUIWindow(g_app->instances[addedIndex]);
+   appAddGUI(inst->winTitle.c_str(), [=]()mutable {
+      return gameDoUIWindow(*inst);
    });
 }
 
@@ -332,7 +331,7 @@ void appPollEvents(App* app) {
          case SDL_MOUSEBUTTONDOWN:
          case SDL_MOUSEMOTION:
          case SDL_MOUSEWHEEL:
-            gameHandled = gameProcessEvent(app->instances[0].state, &event) || gameHandled;
+            gameHandled = gameProcessEvent(app->instances[0]->state, &event) || gameHandled;
             break;
          }
       }
@@ -344,7 +343,7 @@ void appPollEvents(App* app) {
          case SDL_KEYUP:
          case SDL_TEXTEDITING:
          case SDL_TEXTINPUT:
-            gameHandled = gameProcessEvent(app->instances[0].state, &event) || gameHandled;
+            gameHandled = gameProcessEvent(app->instances[0]->state, &event) || gameHandled;
             break;
          }
       }
@@ -368,7 +367,7 @@ void appPollEvents(App* app) {
 
       // finally pass everything else through to the game to handle as it will
       if (!gameHandled) {
-         gameProcessEvent(app->instances[0].state, &event);
+         gameProcessEvent(app->instances[0]->state, &event);
       }
    }
 }
@@ -428,10 +427,10 @@ static void _updateFrame(App* app) {
 
    bool fscreenupdate = false;
    for (auto&& i : app->instances) {
-      if (i.state.fullscreen) {
-         gameUpdate(i.state);
-         gameDraw(i.state, i.outputFbo);
-         gameDoUIWindow(i);
+      if (i->state.fullscreen) {
+         gameUpdate(i->state);
+         gameDraw(i->state, i->outputFbo);
+         gameDoUIWindow(*i);
          fscreenupdate = true;
          break;
       }
@@ -442,8 +441,8 @@ static void _updateFrame(App* app) {
       doRootUI();
 
       for (auto&& i : app->instances) {
-         gameUpdate(i.state);
-         gameDraw(i.state, i.outputFbo);
+         gameUpdate(i->state);
+         gameDraw(i->state, i->outputFbo);
       }
 
       _updateDialogs(app);
@@ -458,7 +457,7 @@ void appStep(App* app) {
    lppSync();
 
    for (auto&& i : app->instances) {
-      gameBeginFrame(i.state);
+      gameBeginFrame(i->state);
    }
    
    appPollEvents(app);
