@@ -5,5 +5,6 @@
 #include "render.h"
 
 void gameDoUIWindow(GameState& g, FBO& output);
+void uiOpenTextureManager();
 
 

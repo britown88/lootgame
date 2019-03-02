@@ -230,17 +230,6 @@ static void _loadReflectionTest() {
    });
 }
 
-
-static bool _doTextureManager() {
-   bool p_open = true;
-   if (ImGui::Begin("Textures", &p_open, ImGuiWindowFlags_AlwaysAutoResize)) {
-      doTypeUI(&TextureMap);
-      //ImGui::Button("LPP?");
-   }
-   ImGui::End();
-   return p_open;
-}
-
 void appCreateWindow(App* app, WindowConfig const& info) {
    _windowCreate(app, info);
 
@@ -256,9 +245,8 @@ void appCreateWindow(App* app, WindowConfig const& info) {
 
    _loadReflectionTest();
 
-   appAddGUI("Textures", [] {
-      return _doTextureManager();
-   });
+
+   uiOpenTextureManager();
 
    return;
 }

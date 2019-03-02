@@ -10,6 +10,7 @@
 
 typedef struct GameState GameState;
 
+
 //@reflect{
 struct _TextureMap {
    std::unordered_map<Symbol*, Texture> map;
@@ -32,6 +33,11 @@ struct GraphicObjects {
    void build();
    bool reloadShaders();
 };
+
+void assets_textureMapSave();
+void assets_textureMapRefreshAll();
+void assets_textureMapReload();
+void assets_textureMapLoad();
 
 //@reflect{
 struct EngineConstants {

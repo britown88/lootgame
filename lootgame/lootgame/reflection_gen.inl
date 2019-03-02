@@ -1492,6 +1492,18 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
+         member.name = intern("id");
+         member.offset = offsetof(Texture, id);
+         member.type = reflect<Symbol*>();
+         member.customUI = customUIRenderer<Symbol*>();
+         member.flags |= StructMemberFlags_ReadOnly;
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
          member.name = intern("sz");
          member.offset = offsetof(Texture, sz);
          member.type = reflect<Int2>();

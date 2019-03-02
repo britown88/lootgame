@@ -40,15 +40,19 @@ struct Texture {
    std::string filepath;
 
    // @readonly
-   Int2 sz;
+   Symbol* id = nullptr;
+
+   // @readonly
+   Int2 sz = { 0,0 };
 
    // @type_override:TextureFlag_
-   TextureFlag flags;
+   TextureFlag flags = TextureFlag_Defaults;
 
    Blob storedImageData;
 
    // @ignore{
-   TextureHandle handle = 0; // }
+   TextureHandle handle = 0; 
+   bool markForDelete = false;// }
 }; // }
 
 // @reflect{
@@ -136,9 +140,11 @@ namespace render{
    void shaderSetActive(ShaderHandle s);
       
    // textures
+   void textureRefresh(Texture&t); // uses the internal members to rebuild/reload the graphics objects
    Texture textureBuild(Int2 const& sz, TextureFlag flags = TextureFlag_Defaults, ColorRGBA const* pixels = nullptr);
+   TextureHandle buildTextureHandle(Int2 const& sz, TextureFlag flags, ColorRGBA const* pixels);
 
-   void textureDestroy(TextureHandle t);
+   void textureDestroy(TextureHandle& t);
    void textureBind(TextureHandle t, TextureSlot slot = 0);
 
    // uniform sets

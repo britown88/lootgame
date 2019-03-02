@@ -3,6 +3,9 @@
 #include "render.h"
 
 #include <GL/glew.h>
+#include "win.h"
+#include "app.h"
+#include <stb/stb_image.h>
 
 
 
@@ -278,21 +281,19 @@ void render::shaderSetActive(ShaderHandle s) {
    g_activeShader = s;
 }
 
-// textures
-Texture render::textureBuild(Int2 const& sz, TextureFlag flags, ColorRGBA const* pixels) {
-   Texture out;
-   out.sz = sz;
-   
+TextureHandle render::buildTextureHandle(Int2 const& sz, TextureFlag flags, ColorRGBA const* pixels) {
+   TextureHandle out = 0;
+
    glEnable(GL_TEXTURE_2D);
-   glGenTextures(1, &out.handle);
-   glBindTexture(GL_TEXTURE_2D, out.handle);
+   glGenTextures(1, &out);
+   glBindTexture(GL_TEXTURE_2D, out);
    //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
    if (flags & TextureFlag_FilterNearest) {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
    }
-   else if(flags & TextureFlag_FilterLinear){
+   else if (flags & TextureFlag_FilterLinear) {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
    }
@@ -322,23 +323,63 @@ Texture render::textureBuild(Int2 const& sz, TextureFlag flags, ColorRGBA const*
       colorFormat = GL_RGBA8;
       type = GL_UNSIGNED_BYTE;
    }
-   else if (flags&TextureFlag_Color_RGBA16F) {
+   else if (!pixels && flags&TextureFlag_Color_RGBA16F) {
+      // only allowed if we didnt pass in a pixel buffer, since this assumes floats (used for fbos)
       colorFormat = GL_RGBA16F;
       type = GL_FLOAT;
    }
 
-   assert(colorFormat); 
+   if (colorFormat) {
+      //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+      glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, sz.x, sz.y, 0, GL_RGBA, type, pixels);
 
-   //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-   glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, sz.x, sz.y, 0, GL_RGBA, type, pixels);
+   }
 
+   
    glBindTexture(GL_TEXTURE_2D, 0);
 
    return out;
 }
 
-void render::textureDestroy(TextureHandle t) {
+void render::textureRefresh(Texture&t) {
+   if (!t.filepath.empty()) {
+      int32_t comp = 0;
+
+      auto assetPath = AppConfig.assetPath / t.filepath;
+
+      if (t.storedImageData) {
+         blobDestroy(t.storedImageData);
+      }
+      uint64_t fsz = 0;
+      auto mem = fileReadBinary(assetPath.string().c_str(), &fsz);
+      t.storedImageData.data = stbi_load_from_memory(mem, (int32_t)fsz, &t.sz.x, &t.sz.y, &comp, 4);
+      t.storedImageData.sz = t.sz.x * t.sz.y * comp;
+
+
+      free(mem);
+
+      if (t.handle) {
+         render::textureDestroy(t.handle);
+      }
+
+      t.handle = buildTextureHandle(t.sz, t.flags, (ColorRGBA const*)t.storedImageData.data);
+   }
+}
+
+
+
+// textures
+Texture render::textureBuild(Int2 const& sz, TextureFlag flags, ColorRGBA const* pixels) {
+   Texture out;
+   out.sz = sz;
+   out.handle = buildTextureHandle(sz, flags, pixels);  
+
+   return out;
+}
+
+void render::textureDestroy(TextureHandle& t) {
    glDeleteTextures(1, &t);
+   t = 0;
 }
 void render::textureBind(TextureHandle t, TextureSlot slot) {
    glActiveTexture(GL_TEXTURE0 + slot);

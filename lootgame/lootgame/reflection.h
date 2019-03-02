@@ -83,12 +83,10 @@ struct TypeMetadata {
    TypeMetadataFunctions funcs;
 };
 
-void serialize(SCFWriter* writer, TypeMetadata const* type, void* data);
-void deserialize(SCFReader& reader, TypeMetadata const* type, void* target);
+void serializeEX(SCFWriter* writer, TypeMetadata const* type, void* data);
+void deserializeEX(SCFReader& reader, TypeMetadata const* type, void* target);
 
 bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const* parent = nullptr, const char* label = nullptr);
-
-
 
 template<typename T>
 struct Reflector {
@@ -102,6 +100,17 @@ template<typename T>
 bool doTypeUI(T*data, const char* label = nullptr) {
    return doTypeUIEX(reflect<T>(), data, nullptr, label);
 }
+
+template<typename T>
+void serialize(SCFWriter* writer, T* data) {
+   serializeEX(writer, reflect<T>(), data);
+}
+
+template<typename T>
+void deserialize(SCFReader& reader, T* target) {
+   deserializeEX(reader, reflect<T>(), target);
+}
+
 
 #define BASIC_TYPE_REFLECT(c_type, metaname) \
 extern TypeMetadata const* metaname; \
@@ -156,7 +165,7 @@ private:
          out.funcs.serialize = [](SCFWriter* writer, void* data) {
             scfWriteListBegin(writer);
             for (auto&& member : *((ThisType*)data)) {
-               serialize(writer, reflect<T>(), &member);
+               serializeEX(writer, reflect<T>(), &member);
             }
             scfWriteListEnd(writer);
          };
@@ -165,7 +174,7 @@ private:
             auto arr = scfReadList(reader);
             while (!scfReaderAtEnd(arr)) {
                T obj;
-               deserialize(arr, reflect<T>(), &obj);
+               deserializeEX(arr, reflect<T>(), &obj);
                ((ThisType*)target)->push_back(std::move(obj));
             }
          };
@@ -222,8 +231,8 @@ private:
                scfWriteListBegin(writer);
                for (auto&& member : *((ThisType*)data)) {
                   scfWriteListBegin(writer);
-                  serialize(writer, reflect<K>(), (void*)&member.first);
-                  serialize(writer, reflect<V>(), (void*)&member.second);
+                  serializeEX(writer, reflect<K>(), (void*)&member.first);
+                  serializeEX(writer, reflect<V>(), (void*)&member.second);
                   scfWriteListEnd(writer);
                }
                scfWriteListEnd(writer);
@@ -236,8 +245,8 @@ private:
 
                   K key;
                   V value;
-                  deserialize(kvp, reflect<K>(), &key);
-                  deserialize(kvp, reflect<V>(), &value);
+                  deserializeEX(kvp, reflect<K>(), &key);
+                  deserializeEX(kvp, reflect<V>(), &value);
                   ((ThisType*)target)->insert({ key,  value });
                }
             };

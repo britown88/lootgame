@@ -147,7 +147,7 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
 
    
 
-   auto str_label = "";
+   StringView str_label = nullptr;
    if (parent) {
       str_label = parent->name;
    }
@@ -189,7 +189,7 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
             auto file = openFile(cfg);
             if (!file.empty()) {
                auto fpath = std::filesystem::path(file).string();
-               fpath = fpath.replace(fpath.begin(), fpath.begin() + assetDir.size(), "");
+               fpath = fpath.replace(fpath.begin(), fpath.begin() + assetDir.size() + 1, "");
 
                *(std::string*)data = fpath.c_str();
                return true;
@@ -227,13 +227,13 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
    }  break;
    case TypeVariety_Struct: {
       bool shown = true;
-      if (parent) {
+      if (str_label) {
          shown = ImGui::CollapsingHeader(str_label, ImGuiTreeNodeFlags_DefaultOpen);
       }
 
       if (shown) {
          bool changed = false;
-         if (parent) ImGui::Indent();
+         if (str_label) ImGui::Indent();
          for (auto&& member : type->structMembers) {
             if (member.flags&StructMemberFlags_StaticArray) {
                if (ImGui::CollapsingHeader(member.name)) {
@@ -255,7 +255,7 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
             }
          }
       
-         if (parent) ImGui::Unindent();
+         if (str_label) ImGui::Unindent();
          return changed;
       }
 

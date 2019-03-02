@@ -8,6 +8,10 @@ typedef uint8_t   byte;
 struct Blob {
    void* data = nullptr;
    size_t sz = 0;
+
+   operator bool() {
+      return data;
+   }
 };
 
 Blob blobCreate(byte const* data, size_t sz);
