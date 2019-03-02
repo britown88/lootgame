@@ -20,7 +20,7 @@
 EngineConstants Const;
 EngineState Engine;
 GraphicObjects Graphics;
-Texture* Textures = Graphics.textures;
+//Texture* Textures = Graphics.textures;
 _TextureMap& TextureMap = Graphics.tmap;
 
 

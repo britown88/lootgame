@@ -110,9 +110,7 @@
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y "$(glew)bin" "$(OutDir)"
-xcopy /y "$(sdl2)bin" "$(OutDir)"
-mkdir "$(OutDir)assets/"
-xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
+xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>$(SolutionDir)codegen/lootgame.exe -reflectgen "$(ProjectDir)."</Command>
@@ -156,9 +154,7 @@ xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y "$(glew)bin" "$(OutDir)"
-xcopy /y "$(sdl2)bin" "$(OutDir)"
-mkdir "$(OutDir)assets/"
-xcopy /s /y "$(ProjectDir)assets" "$(OutDir)assets"</Command>
+xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>$(SolutionDir)codegen/lootgame.exe -reflectgen "$(ProjectDir)."</Command>

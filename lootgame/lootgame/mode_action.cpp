@@ -48,8 +48,8 @@ static MoveSet _createMoveSet() {
 
 static Dude _createDude(GameState& game) {
    Dude out;
-
-   auto &tex = Textures[GameTextures_Dude];
+   
+   out.texture = &TextureMap.map[intern("Dude")];
 
    out.c = White;
    out.moveset = _createMoveSet();
@@ -57,8 +57,8 @@ static Dude _createDude(GameState& game) {
    out.phy.circle.size = 10.0f;
    out.phy.maxSpeed = Const.dudeMoveSpeed;
    out.phy.invMass = 0.0f;
-   out.renderSize = { (float)tex.sz.x, (float)tex.sz.y };
-   out.texture = tex.handle;
+   out.renderSize = { (float)out.texture->sz.x, (float)out.texture->sz.y };
+
 
    out.status.stamina = out.status.staminaMax = 4;
    out.status.health = out.status.healthMax = 1;
@@ -69,7 +69,7 @@ static Dude _createDude(GameState& game) {
 static Dude _createEnemy(Float2 pos) {
    Dude out;
 
-   auto &tex = Textures[GameTextures_Dude];
+   out.texture = &TextureMap.map[intern("Dude")];
 
    out.moveset = _createMoveSet();
    out.c = White;// {1.0f, 0.3f, 0.3f, 1.0f};
@@ -78,8 +78,8 @@ static Dude _createEnemy(Float2 pos) {
    out.phy.velocity = { 0,0 };
    out.phy.maxSpeed = Const.dudeMoveSpeed;
    out.phy.invMass = (float)(rand() % 50 + 5) / 100.0f;
-   out.renderSize = { (float)tex.sz.x, (float)tex.sz.y };
-   out.texture = tex.handle;
+   out.renderSize = { (float)out.texture->sz.x, (float)out.texture->sz.y };
+
    out.status.stamina = out.status.staminaMax = 3;
    out.status.health = out.status.healthMax = 1;
 

@@ -20,8 +20,10 @@ static void _renderSwing(Dude&dude) {
    );
    uber::set(Uniform_ModelMatrix, model);
    uber::set(Uniform_Height, Const.dudeHeight);
-   uber::bindTexture(Uniform_DiffuseTexture, Textures[GameTextures_ShittySword].handle);
-   uber::bindTexture(Uniform_NormalsTexture, Textures[GameTextures_SwordNormals].handle);
+      
+
+   uber::bindTexture(Uniform_DiffuseTexture, TextureMap.map[intern("ShittySword")].handle);
+   uber::bindTexture(Uniform_NormalsTexture, TextureMap.map[intern("SwordNormals")].handle);
 
    render::meshRender(Graphics.meshUncentered);
 }
@@ -57,8 +59,8 @@ static void _renderDude(GameState& g, Dude& dude) {
    uber::set(Uniform_NormalTransform, Matrix::rotate2D(v2Angle({ rotate.x, -rotate.y })));
 
    uber::set(Uniform_ModelMatrix, model);
-   uber::bindTexture(Uniform_DiffuseTexture, dude.texture);
-   uber::bindTexture(Uniform_NormalsTexture, Textures[GameTextures_DudeNormals].handle);
+   uber::bindTexture(Uniform_DiffuseTexture, dude.texture->handle);   
+   uber::bindTexture(Uniform_NormalsTexture, TextureMap.map[intern("DudeNormals")].handle);
    render::meshRender(Graphics.mesh);
 
    //uber::set(Uniform_OutlineOnly, true);
@@ -79,8 +81,8 @@ static void _renderDudeCollision(GameState& g, Dude& dude) {
    uber::set(Uniform_Color, DkGreen);
    uber::set(Uniform_Alpha, 0.25f);
    uber::set(Uniform_ModelMatrix, model);
-
-   uber::bindTexture(Uniform_DiffuseTexture, Textures[GameTextures_Circle].handle);
+   
+   uber::bindTexture(Uniform_DiffuseTexture, TextureMap.map[intern("Circle")].handle);
    render::meshRender(Graphics.mesh);
 }
 
@@ -89,7 +91,9 @@ static void _renderDudeCollision(GameState& g, Dude& dude) {
 static void _renderTarget(Float2 pos, ColorRGBAf color) {
    auto model = Matrix::identity();
 
-   auto sz = Textures[GameTextures_Target].sz;
+   auto& t = TextureMap.map[intern("Target")];
+
+   auto sz = t.sz;
 
    model *= Matrix::translate2f(pos);
    model *= Matrix::scale2f({ (float)sz.x, (float)sz.y });
@@ -97,7 +101,7 @@ static void _renderTarget(Float2 pos, ColorRGBAf color) {
    uber::resetToDefault();
    uber::set(Uniform_Color, color);
    uber::set(Uniform_ModelMatrix, model);
-   uber::bindTexture(Uniform_DiffuseTexture, Textures[GameTextures_Target].handle);
+   uber::bindTexture(Uniform_DiffuseTexture, t.handle);
    render::meshRender(Graphics.mesh);
 }
 
@@ -111,8 +115,9 @@ static void _renderFloor(GameState& game) {
    uber::set(Uniform_Height, Const.floorHeight);
    uber::set(Uniform_TextureMatrix, Matrix::scale2f({ fres.x / tileSize.x, fres.y / tileSize.y }));
    uber::set(Uniform_ModelMatrix, Matrix::scale2f(fres));
-   uber::bindTexture(Uniform_DiffuseTexture, Textures[GameTextures_Tile].handle);
-   uber::bindTexture(Uniform_NormalsTexture, Textures[GameTextures_TileNormals].handle);
+
+   uber::bindTexture(Uniform_DiffuseTexture, TextureMap.map[intern("Tile")].handle);
+   uber::bindTexture(Uniform_NormalsTexture, TextureMap.map[intern("TileNormals")].handle);
    //uber::set(Uniform_ColorOnly, true);
 
    render::meshRender(Graphics.meshUncentered);
@@ -273,7 +278,13 @@ void renderUI(GameState& game) {
    render::setBlendMode(BlendMode_NORMAL);
 
    /*if (game->maindude.stamina < game->maindude.staminaMax)*/ {
-      auto tsz = Textures[GameTextures_GemFilled].sz;
+      auto &tfilled = TextureMap.map[intern("GemFilled")];
+      auto &tempty = TextureMap.map[intern("GemEmpty")];
+
+      auto &thfilled = TextureMap.map[intern("HeartFilled")];
+      auto &thempty = TextureMap.map[intern("HeartEmpty")];
+
+      auto tsz = tfilled.sz;
       Float2 gemSize = { (float)tsz.x, (float)tsz.y };
       float gemSpace = 0.0f;
       auto w = (gemSize.x + gemSpace) * game.maindude.status.staminaMax;
@@ -289,7 +300,7 @@ void renderUI(GameState& game) {
 
          auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
          uber::set(Uniform_ModelMatrix, model);
-         uber::bindTexture(Uniform_DiffuseTexture, Textures[i < game.maindude.status.stamina ? GameTextures_GemFilled : GameTextures_GemEmpty].handle);
+         uber::bindTexture(Uniform_DiffuseTexture, i < game.maindude.status.stamina ? tfilled.handle : tempty.handle);
          render::meshRender(Graphics.meshUncentered);
 
          staminaCorner.x += gemSize.x + gemSpace;
@@ -305,7 +316,7 @@ void renderUI(GameState& game) {
 
          auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
          uber::set(Uniform_ModelMatrix, model);
-         uber::bindTexture(Uniform_DiffuseTexture, Textures[i < game.maindude.status.health ? GameTextures_HeartFilled : GameTextures_HeartEmpty].handle);
+         uber::bindTexture(Uniform_DiffuseTexture, i < game.maindude.status.health ? thfilled.handle: thempty.handle);
          render::meshRender(Graphics.meshUncentered);
 
          staminaCorner.x += gemSize.x + gemSpace;

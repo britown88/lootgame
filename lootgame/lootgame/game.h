@@ -20,7 +20,7 @@ struct _TextureMap {
 struct GraphicObjects {
    ShaderHandle shader = 0;
 
-   Texture textures[GameTexture_COUNT];
+   //Texture textures[GameTexture_COUNT];
    _TextureMap tmap;
 
    Mesh mesh, meshUncentered;
@@ -75,7 +75,7 @@ struct EngineState {
 extern EngineConstants Const;
 extern EngineState Engine;
 extern GraphicObjects Graphics;
-extern Texture* Textures;
+//extern Texture* Textures;
 extern _TextureMap& TextureMap;
 
 enum GameButton_ {
@@ -218,7 +218,7 @@ struct Dude {
    DashState dash;
    FreeState free;
 
-   TextureHandle texture = 0;
+   Texture* texture = nullptr;
    Float2 renderSize;
    ColorRGBAf c;
 

@@ -142,20 +142,6 @@ static Texture _textureBuildFromFile(const char* path, TextureFlag flags = Textu
 void GraphicObjects::build() {
    assets_textureMapLoad();
 
-   textures[GameTextures_Dude] = _textureBuildFromFile("assets/dude2.png");
-   textures[GameTextures_DudeNormals] = _textureBuildFromFile("assets/dudenormal2.png", TextureFlag_ClampedNearest | TextureFlag_Color_RGBA8);
-   textures[GameTextures_Target] = _textureBuildFromFile("assets/target.png");
-   textures[GameTextures_Light] = _textureBuildFromFile("assets/light3.png");
-   textures[GameTextures_Circle] = _textureBuildFromFile("assets/circle.png", TextureFlag_ClampedLinear | TextureFlag_Color_SRGBA);
-   textures[GameTextures_ShittySword] = _textureBuildFromFile("assets/sword.png");
-   textures[GameTextures_SwordNormals] = _textureBuildFromFile("assets/swordnormal.png", TextureFlag_ClampedNearest | TextureFlag_Color_RGBA8);
-   textures[GameTextures_GemEmpty] = _textureBuildFromFile("assets/gemempty.png");
-   textures[GameTextures_GemFilled] = _textureBuildFromFile("assets/gemfilled.png");
-   textures[GameTextures_HeartEmpty] = _textureBuildFromFile("assets/heartempty.png");
-   textures[GameTextures_HeartFilled] = _textureBuildFromFile("assets/heartfilled.png");
-   textures[GameTextures_Tile] = _textureBuildFromFile("assets/toldold.png", TextureFlag_RepeatedNearest | TextureFlag_Color_SRGBA);
-   textures[GameTextures_TileNormals] = _textureBuildFromFile("assets/tilenormal.png", TextureFlag_RepeatedNearest | TextureFlag_Color_RGBA8 | TextureFlag_DisablePremultiply);
-
    assert(_reloadShader(*this));
 
    Vertex vbo[] = {
