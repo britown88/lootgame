@@ -278,6 +278,14 @@ struct GameState {
    int waveSize = 1;
 };
 
+struct GameInstance {
+   std::string winTitle;
+   GameState state;
+   FBO outputFbo;
+
+   bool running = true;
+};
+
 void gameBeginFrame(GameState& g);
 
 typedef union SDL_Event SDL_Event;

@@ -4,7 +4,8 @@
 #include "game.h"
 #include "render.h"
 
-void gameDoUIWindow(GameState& g, FBO& output);
+void doRootUI();
+bool gameDoUIWindow(GameInstance& instance);
 void uiOpenTextureManager();
 
 

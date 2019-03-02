@@ -84,11 +84,6 @@ static void _openLogger() {
    });
 }
 
-struct GameInstance {
-   GameState state;
-   FBO outputFbo;
-};
-
 struct App {
    std::vector<GameInstance> instances;
 
@@ -289,26 +284,36 @@ static void _loadReflectionTest() {
    });
 }
 
+static int viewerCount = 0;
+
+void appBeginNewGameInstance() {
+   GameInstance secondInstance;
+   secondInstance.outputFbo = render::fboBuild(Const.resolution);
+   secondInstance.winTitle = format("Viewer %d", viewerCount++ + 1);
+   g_app->instances.push_back(secondInstance);
+
+   LOG("Starting game instance in Viewer %d", viewerCount);
+
+   auto addedIndex = g_app->instances.size() - 1;
+   gameStartActionMode(g_app->instances[addedIndex].state);
+
+   appAddGUI(g_app->instances[addedIndex].winTitle.c_str(), [=]()mutable {
+      return gameDoUIWindow(g_app->instances[addedIndex]);
+   });
+}
+
 void appCreateWindow(App* app, WindowConfig const& info) {
    _windowCreate(app, info);
+   Graphics.build();   
 
-   Graphics.build();
-
-   GameInstance mainInstance;
-   mainInstance.outputFbo = render::fboBuild(Const.resolution);
-
-   app->instances.push_back(mainInstance);
-   gameStartActionMode(app->instances[0].state);
-
-   app->running = true;
-
-   //_loadReflectionTest();
-
+   appBeginNewGameInstance();
    uiOpenTextureManager();
    _openLogger();
 
-   return;
+   app->running = true;
 }
+
+
 
 bool appRunning(App* app) { return app->running; }
 void appPollEvents(App* app) {
@@ -420,15 +425,30 @@ static void _updateDialogs(App* app) {
 }
 
 static void _updateFrame(App* app) {
-   auto& i = app->instances[0];
-   gameUpdate(i.state);
-   gameDraw(i.state, i.outputFbo);
-   gameDoUIWindow(i.state, i.outputFbo);
 
-   //if (gameDataGet()->imgui.showUI) {
-      _updateDialogs(app);
-   //}
+   bool fscreenupdate = false;
+   for (auto&& i : app->instances) {
+      if (i.state.fullscreen) {
+         gameUpdate(i.state);
+         gameDraw(i.state, i.outputFbo);
+         gameDoUIWindow(i);
+         fscreenupdate = true;
+         break;
+      }
+   }
    
+   
+   if(!fscreenupdate){
+      doRootUI();
+
+      for (auto&& i : app->instances) {
+         gameUpdate(i.state);
+         gameDraw(i.state, i.outputFbo);
+      }
+
+      _updateDialogs(app);
+   }
+
 }
 
 #include <thread>
@@ -437,12 +457,12 @@ static void _updateFrame(App* app) {
 void appStep(App* app) {
    lppSync();
 
-   auto& g = app->instances[0];
-   gameBeginFrame(g.state);
+   for (auto&& i : app->instances) {
+      gameBeginFrame(i.state);
+   }
+   
    appPollEvents(app);
-
    _beginUIFrame(app);
-
    _updateFrame(app);
    _renderFrame(app);
 
@@ -451,7 +471,6 @@ void appStep(App* app) {
    }
    using namespace std::chrono_literals;
    //std::this_thread::sleep_for(50ms);
-
 
 }
 

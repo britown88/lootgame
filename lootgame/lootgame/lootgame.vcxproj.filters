@@ -40,6 +40,9 @@
     <Filter Include="Precompiled">
       <UniqueIdentifier>{e0c6df65-ed12-46d6-8d6e-39f6a5992dec}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\ui">
+      <UniqueIdentifier>{7138fc06-f2ce-4dbe-aafe-ac5bb85cac60}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -52,9 +55,6 @@
       <Filter>Source Files\app</Filter>
     </ClCompile>
     <ClCompile Include="game.cpp">
-      <Filter>Source Files\game</Filter>
-    </ClCompile>
-    <ClCompile Include="ui.cpp">
       <Filter>Source Files\game</Filter>
     </ClCompile>
     <ClCompile Include="win.cpp">
@@ -111,14 +111,20 @@
     <ClCompile Include="reflection.cpp">
       <Filter>Source Files\utility</Filter>
     </ClCompile>
-    <ClCompile Include="reflection_ui.cpp">
-      <Filter>Source Files\utility</Filter>
-    </ClCompile>
     <ClCompile Include="natsort.cpp">
       <Filter>Source Files\utility</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>Precompiled</Filter>
+    </ClCompile>
+    <ClCompile Include="ui.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="ui_textureManager.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="ui_reflection.cpp">
+      <Filter>Source Files\ui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

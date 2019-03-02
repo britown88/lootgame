@@ -7,9 +7,6 @@
 #include <misc/cpp/imgui_stdlib.h>
 #include <SDL2/SDL.h>
 
-
-
-
 #include "scf.h"
 #include "vex.h"
 
@@ -245,6 +242,10 @@ static void _mainMenu() {
    if (ImGui::BeginMenuBar()) {
       if (ImGui::BeginMenu("Debug")) {
 
+         if (ImGui::MenuItem("New Game Instance")) {
+            appBeginNewGameInstance();
+         }
+
          ImGui::ColorEdit4("Clear Color", (float*)&Engine.bgClearColor);
 
          if (ImGui::MenuItem("Dialog Stats")) {
@@ -298,10 +299,7 @@ static void _mainMenu() {
          ImGui::EndMenu();
       }
 
-      if (ImGui::BeginMenu("Tools")) {
 
-         ImGui::EndMenu();
-      }
 
       auto stats = format("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
       ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvailWidth() - ImGui::CalcTextSize(stats.c_str()).x);
@@ -329,7 +327,7 @@ static void _renderViewerFBO(GameState& g, FBO& output) {
    draw_list->AddCallback([](auto, auto) { render::disableSRGB(); }, nullptr);
 }
 
-static void _showFullScreenViewer(GameState& g, FBO& output) {
+static void _showFullScreenViewer(GameInstance& g) {
    auto sz = ImGui::GetIO().DisplaySize;
 
    auto &style = ImGui::GetStyle();
@@ -343,8 +341,8 @@ static void _showFullScreenViewer(GameState& g, FBO& output) {
    ImGui::SetNextWindowPos(vp->Pos, ImGuiCond_Always);
    ImGui::SetNextWindowSize(vp->Size, ImGuiCond_Always);
 
-   if (ImGui::Begin("GameWindow", nullptr, BorderlessFlags)) {
-      _renderViewerFBO(g, output);
+   if (ImGui::Begin(g.winTitle.c_str(), nullptr, BorderlessFlags)) {
+      _renderViewerFBO(g.state, g.outputFbo);
       //g.mouseActive = true;
    }
    ImGui::End();
@@ -352,12 +350,13 @@ static void _showFullScreenViewer(GameState& g, FBO& output) {
    ImGui::PopStyleVar(3);
 }
 
-static void _showWindowedViewer(GameState& g, FBO& output) {
+static bool _showWindowedViewer(GameInstance& g) {
+   bool p_open = true;
 
    //auto sz = ImGui::GetIO().DisplaySize;
    //ImGui::SetNextWindowSize(ImVec2(sz.x / 2.0f, sz.y / 2.0f), ImGuiCond_Appearing);
 
-   if (ImGui::Begin("Viewer", nullptr, 0)) {
+   if (ImGui::Begin(g.winTitle.c_str(), &p_open, 0)) {
 
       if (ImGui::IsWindowFocused()) {
          if (ImGui::IsKeyPressed(SDL_SCANCODE_ESCAPE)) {
@@ -365,7 +364,7 @@ static void _showWindowedViewer(GameState& g, FBO& output) {
          }
       }
 
-      _renderViewerFBO(g, output);
+      _renderViewerFBO(g.state, g.outputFbo);
 
       //g.mouseActive = ImGui::IsWindowHovered();
 
@@ -373,11 +372,16 @@ static void _showWindowedViewer(GameState& g, FBO& output) {
    }
    ImGui::End();
 
+   if (!p_open) {
+      g.running = false;
+   }
+
+   return p_open;
 }
 
-static void _doUIDebugger(GameState& g) {
+static void _doUIDebugger(const char* str_id, GameState& g) {
    ImGui::SetNextWindowSize(ImVec2(400, 1000), ImGuiCond_FirstUseEver);
-   if (ImGui::Begin("Game Debugger", nullptr)) {
+   if (ImGui::Begin(str_id, nullptr)) {
 
       
       if (ImGui::Button("Reload Shaders", ImVec2(ImGui::GetContentRegionAvailWidth(), 0))) {
@@ -404,51 +408,43 @@ static void _doUIDebugger(GameState& g) {
 
       doTypeUI(&g.DEBUG);
 
-      //ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
-      //if (ImGui::CollapsingHeader("Fiddling")) {
-      //   auto& c = Const;
-
-      //   ImGui::Checkbox("Show Movement UI", &g.DEBUG.showMovementDebugging);
-      //   ImGui::Checkbox("Show Collision Checks", &g.DEBUG.showCollisionDebugging);
-
-
-      //   ImGui::SliderFloat("Ambient Light", &g.DEBUG.ambientLight, 0.0f, 1.0f);
-      //}
-
    }
    ImGui::End();
 }
 
-void gameDoUIWindow(GameState& g, FBO& output) {
-   if (!g.fullscreen) {
-      auto sz = ImGui::GetIO().DisplaySize;
-      auto &style = ImGui::GetStyle();
+void doRootUI() {
+   auto sz = ImGui::GetIO().DisplaySize;
+   auto &style = ImGui::GetStyle();
 
-      auto vp = ImGui::GetMainViewport();
+   auto vp = ImGui::GetMainViewport();
 
-      ImGui::SetNextWindowViewport(vp->ID);
-      ImGui::SetNextWindowPos(vp->Pos, ImGuiCond_Always);      
-      ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize, ImGuiCond_Always);
+   ImGui::SetNextWindowViewport(vp->ID);
+   ImGui::SetNextWindowPos(vp->Pos, ImGuiCond_Always);
+   ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize, ImGuiCond_Always);
 
-      if (ImGui::Begin("Root", nullptr, BorderlessFlags | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBringToFrontOnFocus)) { 
-         _mainMenu();
-         ImGui::BeginChild("content");
-         ImGui::DockSpace(ImGui::GetID("dockspace"));
-         ImGui::EndChild();
-      }
-      ImGui::End();
+   if (ImGui::Begin("root", nullptr, BorderlessFlags | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBringToFrontOnFocus)) {
+      _mainMenu();
+      ImGui::BeginChild("content");
+      ImGui::DockSpace(ImGui::GetID("dockspace"));
+      ImGui::EndChild();
+   }
+   ImGui::End();
+}
 
-      _doUIDebugger(g);
-      _showWindowedViewer(g, output);
+bool gameDoUIWindow(GameInstance& inst) {
+   if (!inst.state.fullscreen) {
+
+      _doUIDebugger(format("%s##%s", "Debugger", inst.winTitle.c_str()).c_str(), inst.state);
+      return _showWindowedViewer(inst);
    }
    else {
-      _showFullScreenViewer(g, output);
+      _showFullScreenViewer(inst);
 
       if (ImGui::IsKeyPressed(SDL_SCANCODE_ESCAPE)) {
          appClose();
       }
    }
-   
+   return true;
 }
 
 
@@ -542,134 +538,4 @@ void uiEditDude(Dude& dude) {
       }
    }
    ImGui::End();
-}
-
-struct TextureState {
-   Symbol* sym;
-   bool srgbPreview = true;
-};
-
-struct TextureManagerState {
-   std::vector<TextureState> keyList;
-   bool keysDirty = true;
-   Symbol* newkey;
-   bool focusNewKey = false;
-   
-};
-
-static void _doTextureManager(TextureManagerState& state) {
-   if (ImGui::Begin("Textures", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-      if (ImGui::Button(ICON_FA_SAVE)) {
-         assets_textureMapSave();
-      }
-      ImGui::SameLine();
-      if (ImGui::Button(ICON_FA_RECYCLE)) {
-         assets_textureMapReload();
-      }
-
-
-      if (ImGui::CollapsingHeader("Textures", ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_DefaultOpen)) {
-         ImGui::SameLine();
-
-         if (ImGui::Button(ICON_FA_PLUS)) {
-            ImGui::OpenPopup("newkey");
-            state.newkey = nullptr;
-            state.focusNewKey = true;
-         }
-
-         if (ImGui::BeginPopupModal("newkey")) {
-            if (state.focusNewKey) {
-               ImGui::SetKeyboardFocusHere();
-               state.focusNewKey = false;
-            }
-            
-            doTypeUIEX(reflect<Symbol*>(), &state.newkey, nullptr, "key");
-            if (ImGui::Button("OK") || ImGui::IsKeyPressed(ImGui::GetIO().KeyMap[ImGuiKey_Enter])) {
-               Texture newtex;
-               newtex.id = state.newkey;
-               TextureMap.map.insert({ state.newkey, newtex });
-               state.keysDirty = true;
-               ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::EndPopup();
-         }
-         ImGui::Indent();
-
-         if (state.keysDirty) {
-            state.keyList.clear();
-            for (auto&&kvp : TextureMap.map) {
-               state.keyList.push_back({ kvp.first });
-            }
-            std::sort(state.keyList.begin(), state.keyList.end(), [](TextureState const&a, TextureState const&b) {return natstrcmp(a.sym, b.sym) < 0; });
-            state.keysDirty = false;
-         }
-
-         for (auto&&k : state.keyList) {
-            auto& tex = TextureMap.map[k.sym];
-
-            if (tex.markForDelete) {
-               continue;
-            }
-
-            bool open = ImGui::CollapsingHeader(k.sym, ImGuiTreeNodeFlags_AllowItemOverlap);
-            if (ImGui::BeginPopupContextItem()) {
-               if (ImGui::MenuItem("Delete")) {
-                  tex.markForDelete = true;
-               }
-               ImGui::EndPopup();
-            }
-
-            if (open) { 
-               ImGui::PushID(k.sym);
-
-               ImGui::SameLine();
-               if (ImGui::Button(ICON_FA_RECYCLE)) {
-                  render::textureRefresh(tex);
-               }
-
-               ImGui::Indent();
-               if (doTypeUIEX(reflect<Texture>(), &tex)) {
-                  render::textureRefresh(tex);
-               }
-               
-               auto w = ImGui::GetContentRegionAvailWidth() * 0.5f;
-               ImVec2 imgsz = ImVec2(w, (w / tex.sz.x) * tex.sz.y);
-
-               if (tex.handle) {
-                  ImGui::Checkbox("SRGB Preview", &k.srgbPreview);
-
-                  ImDrawList* draw_list = ImGui::GetWindowDrawList();
-                  if (k.srgbPreview) {
-                     draw_list->AddCallback([](auto, auto) { render::enableSRGB();  }, nullptr);
-                  }
-
-                  ImGui::Image((ImTextureID)(intptr_t)tex.handle, imgsz);
-
-                  if (k.srgbPreview) {
-                     draw_list->AddCallback([](auto, auto) { render::disableSRGB();  }, nullptr);
-                  }
-               }
-
-               
-
-               ImGui::PopID();
-               
-               ImGui::Unindent();
-            }
-               
-         }
-         
-         ImGui::Unindent();
-      }     
-   }
-   ImGui::End();
-}
-
-void uiOpenTextureManager() {
-   TextureManagerState state;
-   appAddGUI("Textures", [=]()mutable {
-      _doTextureManager(state);
-      return true;
-   });
 }

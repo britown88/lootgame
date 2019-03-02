@@ -3,8 +3,6 @@
 #include "defs.h"
 #include "math.h"
 
-
-
 //fuck it we'll put all our app stuff here!
 
 // the imgui example maps these differently from SDL 
@@ -47,3 +45,5 @@ void appStep(App* app);
 void appAddGUI(StringView label, std::function<bool()> gui);
 void appClose();
 Time appGetTime();
+
+void appBeginNewGameInstance();
