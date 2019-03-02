@@ -132,6 +132,15 @@ struct Reflector<GameCamera>{
 };
 
 
+// Wall ----------------------------
+typedef struct Wall Wall;
+extern TypeMetadata* meta_Wall;
+template<>
+struct Reflector<Wall>{
+   static TypeMetadata const* type() { return meta_Wall; }
+};
+
+
 // Map ----------------------------
 typedef struct Map Map;
 extern TypeMetadata* meta_Map;

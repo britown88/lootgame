@@ -99,7 +99,7 @@ typedef byte GameButton;
 
 //@reflect{
 struct IO {
-   Coords mousePos = { 0,0 };
+   Coords mousePos = { { 0,0 } };
 
    Float2 leftStick;   // unit vector of left stick
    Float2 rightStick;  // unit vector of right stick
@@ -118,10 +118,15 @@ struct GameCamera {
    
 };//}
 
+//@reflect{
+struct Wall {
+   std::vector<Float2> points;
+}; //}
 
 //@reflect{
 struct Map {
-   Float2 size;
+   Float2 size; 
+   std::vector<Wall> walls;
 };//}
 
 //@reflect{
@@ -259,6 +264,11 @@ struct GameStateDebug {
 };
 //}
 
+enum GameEditMode {
+   GameEditMode_None = 0,
+   GameEditMode_Walls
+};
+
 struct GameStateUI {
    bool fullscreen = false;
    bool focused = false;
@@ -271,6 +281,10 @@ struct GameStateUI {
    bool showGameUI = true;
    Float2 gridSize = { 100.0f, 100.0f };
    bool showEditGrid = true;
+
+   GameEditMode mode = GameEditMode_None;
+
+   Wall* editingWall = nullptr;
 };
 
 struct GameState {

@@ -9,4 +9,5 @@ bool gameDoUIWindow(GameInstance& instance);
 void uiDoGameDebugger(GameInstance& instance);
 void uiOpenTextureManager();
 
-
+void beginDisabled();
+void endDisabled();

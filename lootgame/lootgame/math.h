@@ -19,6 +19,8 @@ struct Int3 {
 struct Float2 {
    float x = 0, y = 0;
 
+   operator ImVec2() const { return ImVec2(x, y); }
+
    inline Float2 operator-(Float2 lhs) const { return { x - lhs.x, y - lhs.y }; }
    inline Float2 operator-() const { return { -x, -y }; }
    inline Float2 operator+(Float2 lhs) const { return { x + lhs.x, y + lhs.y }; }

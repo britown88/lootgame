@@ -5,6 +5,7 @@
 #include "render.h"
 
 #include <misc/cpp/imgui_stdlib.h>
+#include <imgui_internal.h>
 #include <SDL2/SDL.h>
 
 #include "scf.h"
@@ -12,7 +13,14 @@
 
 #include "reflection_gen.h"
 
-
+void beginDisabled() {
+   ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+   ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+}
+void endDisabled() {
+   ImGui::PopItemFlag();
+   ImGui::PopStyleVar();
+}
 
 
 struct SCFTestState {

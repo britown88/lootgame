@@ -10,6 +10,7 @@
 
 #include "win.h"
 #include "app.h"
+#include "ui.h"
 
 bool customUIRender_ColorRGBAf(TypeMetadata const* type, void* data, StructMemberMetadata const* parent, const char* label) {
    auto c = (ColorRGBAf*)data;
@@ -160,14 +161,12 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
    bool readOnly = parent && parent->flags&StructMemberFlags_ReadOnly;
 
    if (readOnly) {
-      ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-      ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+      beginDisabled();
    }
 
    DEFER{ 
       if (readOnly) {
-         ImGui::PopItemFlag();
-         ImGui::PopStyleVar();
+         endDisabled();
       }
       ImGui::PopID(); 
    };

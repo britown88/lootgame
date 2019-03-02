@@ -16,6 +16,7 @@ TypeMetadata* meta_EngineConstants = new TypeMetadata;
 TypeMetadata* meta_EngineState = new TypeMetadata;
 TypeMetadata* meta_IO = new TypeMetadata;
 TypeMetadata* meta_GameCamera = new TypeMetadata;
+TypeMetadata* meta_Wall = new TypeMetadata;
 TypeMetadata* meta_Map = new TypeMetadata;
 TypeMetadata* meta_AttackSwing = new TypeMetadata;
 TypeMetadata* meta_MoveSet = new TypeMetadata;
@@ -949,6 +950,30 @@ void reflectionStartup_generated() {
 
    
    {
+      auto& structName = meta_Wall;
+      structName->name = intern("Wall");
+      structName->size = sizeof(Wall);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) Wall;};
+      structName->funcs.destroy = [](void* data) {((Wall*)data)->~Wall(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("points");
+         member.offset = offsetof(Wall, points);
+         member.type = reflect<std::vector<Float2>>();
+         member.customUI = customUIRenderer<std::vector<Float2>>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
       auto& structName = meta_Map;
       structName->name = intern("Map");
       structName->size = sizeof(Map);
@@ -964,6 +989,17 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Map, size);
          member.type = reflect<Float2>();
          member.customUI = customUIRenderer<Float2>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("walls");
+         member.offset = offsetof(Map, walls);
+         member.type = reflect<std::vector<Wall>>();
+         member.customUI = customUIRenderer<std::vector<Wall>>();
          
          structName->structMembers.push_back(member);
       }

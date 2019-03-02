@@ -72,29 +72,55 @@ static void _toggleEditing(GameState&g) {
    LOG(g.ui.editing ? "Entered Edit Mode" : "Existing Edit Mode");
 }
 
+static void _setEditMode(GameState& g, GameEditMode mode) {
+   switch (g.ui.mode) {
+   case GameEditMode_Walls:
+      g.ui.editingWall = nullptr;
+      break;
+   }
+
+   if (g.ui.mode == mode) {
+      g.ui.mode = GameEditMode_None;
+   }
+
+   g.ui.mode = mode;
+}
+
 static void _viewerMenuBar(GameState& g) {
    if (ImGui::BeginMenuBar()) {
       bool editing = g.ui.editing;
-      if (editing) {
-         ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive));
-      }
-      if (ImGui::Button(ICON_FA_PENCIL_ALT)) { 
-         _toggleEditing(g);
-      }
-      if (editing) {
-         ImGui::PopStyleColor();
-      }
+      if (editing) { ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive)); }
+      if (ImGui::Button(ICON_FA_PENCIL_ALT)) { _toggleEditing(g); }
+      if (editing) { ImGui::PopStyleColor(); }
 
       ImGui::Separator();
       ImGui::Checkbox("Game UI", &g.ui.showGameUI);
 
       ImGui::Separator();
+
+      if (!editing) {
+         beginDisabled();
+      }
+
       ImGui::Checkbox("Edit Grid", &g.ui.showEditGrid);
       float gridSize = g.ui.gridSize.x;
       ImGui::PushItemWidth(100.0f);
       ImGui::SliderFloat("##grid", &gridSize, 10.0f, 100.0f, "%0.0f");
       ImGui::PopItemWidth();
       g.ui.gridSize = { gridSize, gridSize };
+
+      ImGui::Separator();
+
+      auto m = g.ui.mode;
+
+
+      if (m == GameEditMode_Walls) {ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive));}
+      if (ImGui::Button("Walls")) { _setEditMode(g, GameEditMode_Walls); }
+      if (m == GameEditMode_Walls) {ImGui::PopStyleColor();}
+
+      if (!editing) {
+         endDisabled();
+      }
 
       ImGui::EndMenuBar();
    }
@@ -116,6 +142,24 @@ static void _statusBar(GameState&g) {
    ImGui::Text("Mouse (%0.1f, %0.1f)", mpos.x, mpos.y);
 }
 
+static void _handleWallInputs(GameState& g) {
+   auto& current = g.ui.editingWall;
+
+   if (ImGui::IsItemClicked()) {
+      if (!current) {
+         Wall newall;
+         newall.points.push_back(g.io.mousePos.toWorld());
+         g.map.walls.push_back(newall);
+         current = &g.map.walls.back();
+      }
+      else {
+         current->points.push_back(g.io.mousePos.toWorld());
+      }
+   }
+}
+
+
+
 static void _viewerHandleInput(GameState& g) {
    auto& io = ImGui::GetIO();
    auto& keys = io.KeyMap;
@@ -125,6 +169,7 @@ static void _viewerHandleInput(GameState& g) {
    }
    if (io.KeyCtrl && ImGui::IsKeyPressed(keys[ImGuiKey_Enter])) {
       g.ui.fullscreen = true;
+      g.ui.editing = false;
    }
    if (ImGui::IsKeyPressed(SDL_SCANCODE_E)) {
       _toggleEditing(g);
@@ -167,11 +212,35 @@ static void _viewerHandleInput(GameState& g) {
             
          }
       }
+
+      switch (g.ui.mode) {
+      case GameEditMode_Walls:
+         _handleWallInputs(g);
+         break;
+      }
    }
 }
 
+static void _doRightClickMenu(GameState&g) {
+
+   switch (g.ui.mode) {
+   case GameEditMode_Walls:
+      if (g.ui.editingWall) {
+         if (ImGui::MenuItem("Finish Wall")) {
+            g.ui.editingWall = nullptr;
+         }
+      }
+      break;
+   }
+}
+
+
 static void _renderGrid(GameState& g) {
    Float2 &gridSize = g.ui.gridSize;
+
+   auto a = g.vpScreenArea.Min();
+   auto b = g.vpScreenArea.Max();
+   ImGui::GetWindowDrawList()->AddRect(a, b, IM_COL32(255, 255, 255, 128), 0.0f, 15, 2.0f);
 
    auto& vp = g.camera.viewport;
    auto vpMin = vp.Min();
@@ -206,6 +275,61 @@ static void _renderGrid(GameState& g) {
 
 }
 
+
+static void _renderWalls(GameState& g) {
+   ImU32 lineCol = IM_COL32(255, 0, 0, 255);
+   ImU32 finisherCol = IM_COL32(255, 128, 128, 255);
+   ImU32 previewCol = IM_COL32(255, 128, 128, 128);
+
+   for (auto&& wall : g.map.walls) {
+      for (auto iter = wall.points.begin(); iter != wall.points.end(); ++iter) {
+         if (iter + 1 != wall.points.end()) {
+            auto a = Coords::fromWorld(*iter).toScreen(g);
+            auto b = Coords::fromWorld(*(iter + 1)).toScreen(g);
+
+            ImGui::GetWindowDrawList()->AddLine(a, b, lineCol);
+         }
+      }
+
+      if (&wall != g.ui.editingWall && wall.points.size() > 2) {
+         auto a = Coords::fromWorld(*(wall.points.begin())).toScreen(g);
+         auto b = Coords::fromWorld(*(wall.points.end() - 1)).toScreen(g);
+         ImGui::GetWindowDrawList()->AddLine(a, b, finisherCol);
+      }
+   }
+
+   // render the editing wall
+   if (g.ui.editingWall && !g.ui.editingWall->points.empty()) {
+      auto back = g.ui.editingWall->points.back();
+      auto a = Coords::fromWorld(back).toScreen(g);
+      auto b = g.io.mousePos.toScreen(g);
+
+      ImGui::GetWindowDrawList()->AddLine(a, b, lineCol);
+
+      if (g.ui.editingWall->points.size() > 2) {
+         auto a = Coords::fromWorld(*(g.ui.editingWall->points.end() - 1)).toScreen(g);
+         auto b = Coords::fromWorld(*(g.ui.editingWall->points.begin())).toScreen(g);
+         ImGui::GetWindowDrawList()->AddLine(a, b, previewCol);
+      }
+
+      if (g.ui.editingWall->points.size() > 1) {
+         auto a = g.io.mousePos.toScreen(g);
+         auto b = Coords::fromWorld(*(g.ui.editingWall->points.begin())).toScreen(g);
+         ImGui::GetWindowDrawList()->AddLine(a, b, finisherCol);
+      }
+   }
+}
+
+static void _renderHelpers(GameState& g) {
+   if (g.ui.editing && g.ui.showEditGrid) {
+      _renderGrid(g);
+   }
+
+   _renderWalls(g);
+
+}
+
+
 static bool _showWindowedViewer(GameInstance& gi) {
    bool p_open = true;
    auto& g = gi.state;
@@ -219,17 +343,25 @@ static bool _showWindowedViewer(GameInstance& gi) {
       viewsz.y -= ImGui::GetTextLineHeightWithSpacing();
 
       _renderViewerFBO(g, gi.outputFbo, viewsz);
-
-      if (g.ui.editing && g.ui.showEditGrid) {
-         _renderGrid(g);
+      ImGui::InvisibleButton("invisbtn", viewsz);
+      if (ImGui::BeginPopupContextItem()) {
+         _doRightClickMenu(g);
+         ImGui::EndPopup();
       }
-
-      ImGui::SetCursorPosY(ImGui::GetCursorPosY() + viewsz.y);
-      _statusBar(g);
 
       if (g.ui.focused) {
          _viewerHandleInput(g);
       }
+
+      auto a = g.vpScreenArea.Min();
+      auto b = g.vpScreenArea.Max();      
+      
+      ImGui::PushClipRect(a, b, false);      
+      _renderHelpers(g);
+      ImGui::PopClipRect();
+
+      _statusBar(g);
+
    }
    ImGui::End();
 
