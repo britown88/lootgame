@@ -473,7 +473,7 @@ void dudeUpdateBehavior(Dude& dude) {
          dude.mv.moveVector = dude.mv.faceVector = vec;
       }
       else {
-         dudeBeginAttack(dude, 1, 0);
+         //dudeBeginAttack(dude, 1, 0);
          dude.ai.attack = false;
       }
       return;

@@ -112,8 +112,8 @@ void gameStartActionMode(GameState &g) {
 }
 
 
-void DEBUG_gameSpawnDude(GameState& game) {
-   auto e = _createEnemy({ (float)(rand() % 1820) + 100, (float)(rand() % 980) + 100 });
+void DEBUG_gameSpawnDude(GameState& game, Coords location) {
+   auto e = _createEnemy(location.toWorld());
    e.ai.target = &game.maindude;
    game.baddudes.push_back(e);
 }

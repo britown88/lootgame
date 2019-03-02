@@ -82,8 +82,11 @@ static void _setEditMode(GameState& g, GameEditMode mode) {
    if (g.ui.mode == mode) {
       g.ui.mode = GameEditMode_None;
    }
+   else {
+      g.ui.mode = mode;
+   }
 
-   g.ui.mode = mode;
+   
 }
 
 static bool _wallIsConvex(Wall& w, Float2 mouse) {
@@ -91,6 +94,10 @@ static bool _wallIsConvex(Wall& w, Float2 mouse) {
    auto polycopy = wall;
    polycopy.push_back(mouse);
    return polyConvex(polycopy.data(), polycopy.size());
+}
+
+static bool _pointInWall(Wall& w, Float2 mouse) {
+   return pointInPoly(mouse, w.points.data(), w.points.size());
 }
 
 
@@ -164,6 +171,15 @@ static void _handleWallInputs(GameState& g) {
          auto mouse = g.io.mousePos.toWorld();
          if (_wallIsConvex(*current, mouse)) {
             current->points.push_back(mouse);
+
+            Float2 min = { FLT_MAX,FLT_MAX }, max = { -FLT_MAX,-FLT_MAX };
+            for (auto&&p : current->points) {
+               min.x = MIN(min.x, p.x);
+               min.y = MIN(min.y, p.y);
+               max.x = MAX(max.x, p.x);
+               max.y = MAX(max.y, p.y);
+            }
+            current->bb = rectFromMinMax(min, max);
          }         
       }
    }
@@ -234,7 +250,19 @@ static void _viewerHandleInput(GameState& g) {
 
 static void _doRightClickMenu(GameState&g) {
 
+   if (ImGui::MenuItem("Spawn Test Dude")) {
+      DEBUG_gameSpawnDude(g, g.io.mousePos);
+   }
+   ImGui::Separator();
+
    switch (g.ui.mode) {
+   case GameEditMode_None:
+      if (ImGui::MenuItem("Edit Walls")) {
+         if (!g.ui.editing) {
+            _toggleEditing(g);
+         }
+         _setEditMode(g, GameEditMode_Walls);
+      }
    case GameEditMode_Walls:
       if (g.ui.editingWall) {
          if (ImGui::MenuItem("Finish Wall")) {
@@ -298,18 +326,28 @@ static void _renderGrid(GameState& g) {
 static void _renderWalls(GameState& g) {
    ImU32 lineCol = IM_COL32(50, 200, 50, 255);
    ImU32 badPolyCol = IM_COL32(255, 0, 0, 255);
+   ImU32 bbCol = IM_COL32(0, 255, 255, 128);
+
+   ImU32 hovCol = IM_COL32(255, 255, 0, 255);
+
+   auto mouse = g.io.mousePos.toWorld();
 
    bool badPoly = false;
    if (g.ui.editingWall) {
-      badPoly = !_wallIsConvex(*g.ui.editingWall, g.io.mousePos.toWorld());
+      badPoly = !_wallIsConvex(*g.ui.editingWall, mouse);
    }
 
-
    for (auto&& wall : g.map.walls) {
-
+      auto pCount = wall.points.size();
       auto c = lineCol;
-      if (badPoly && &wall == g.ui.editingWall) {
+      bool editing = &wall == g.ui.editingWall;
+
+      if (badPoly && editing) {
          c = badPolyCol;
+      }
+
+      if (!editing && _pointInWall(wall, mouse)) {
+         c = hovCol;
       }
 
       for (auto iter = wall.points.begin(); iter != wall.points.end(); ++iter) {
@@ -321,11 +359,18 @@ static void _renderWalls(GameState& g) {
          }
       }
 
-      if (wall.points.size() > 2) {
+      if (pCount > 2) {
          auto a = Coords::fromWorld(wall.points.front()).toScreen(g);
          auto b = Coords::fromWorld(wall.points.back()).toScreen(g);
          ImGui::GetWindowDrawList()->AddLine(a, b, c);
       }
+
+      //// draw bb
+      //if (pCount >= 3) {
+      //   auto a = Coords::fromWorld(wall.bb.Min()).toScreen(g);
+      //   auto b = Coords::fromWorld(wall.bb.Max()).toScreen(g);
+      //   ImGui::GetWindowDrawList()->AddRect(a, b, bbCol);
+      //}
    }
 
    // render the editing wall
@@ -353,10 +398,8 @@ static void _renderWalls(GameState& g) {
 static void _renderHelpers(GameState& g) {
    if (g.ui.editing && g.ui.showEditGrid) {
       _renderGrid(g);
+      _renderWalls(g);
    }
-
-   _renderWalls(g);
-
 }
 
 

@@ -970,6 +970,17 @@ void reflectionStartup_generated() {
       }
 
       
+      {
+         StructMemberMetadata member;
+         member.name = intern("bb");
+         member.offset = offsetof(Wall, bb);
+         member.type = reflect<Rectf>();
+         member.customUI = customUIRenderer<Rectf>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
    }
 
    

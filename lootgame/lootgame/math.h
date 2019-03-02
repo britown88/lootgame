@@ -96,6 +96,10 @@ struct Rectf{
 
 };//}
 
+static Rectf rectFromMinMax(Float2 min, Float2 max) { 
+   return { min.x, min.y, max.x - min.x, max.y - min.y };
+}
+
 static void rectiOffset(Recti *r, int32_t x, int32_t y) {
    r->x += x;
    r->y += y;
@@ -126,6 +130,7 @@ Recti getProportionallyFitRect(Int2 srcSize, Int2 destSize);
 
 int32_t pointOnLine(Int2 l1, Int2 l2, Int2 point);
 int pointSideOfSegment(Float2 a, Float2 b, Float2 p);
+bool pointInPoly(Float2 p, Float2*pts, int vCount);
 bool polyConvex(Float2*pts, int vCount);
 
 

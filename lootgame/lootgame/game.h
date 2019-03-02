@@ -121,6 +121,7 @@ struct GameCamera {
 //@reflect{
 struct Wall {
    std::vector<Float2> points;
+   Rectf bb;
 }; //}
 
 //@reflect{
@@ -325,3 +326,5 @@ bool dudeAlive(Dude&d);
 
 
 void gameStartActionMode(GameState &g);
+
+void DEBUG_gameSpawnDude(GameState& game, Coords location);

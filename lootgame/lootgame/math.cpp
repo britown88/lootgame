@@ -166,6 +166,20 @@ int pointSideOfSegment(Float2 a, Float2 b, Float2 p) {
    return SIGN(v2Determinant(b, p));
 }
 
+bool pointInPoly(Float2 p, Float2*pts, int vCount) {
+   int lastSide = 0;
+   for (int i = 0; i < vCount; ++i) {
+      int next = i + 1;
+      if (i == vCount - 1) { next = 0; }
+      auto side = pointSideOfSegment(pts[i], pts[next], p);
+      if (side && lastSide && side != lastSide) {
+         return false;
+      }
+      lastSide = side;
+   }
+   return true;
+}
+
 bool polyConvex(Float2*pts, int vCount) {
    if (vCount <= 3) {
       return true;
