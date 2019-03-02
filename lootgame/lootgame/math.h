@@ -75,6 +75,13 @@ struct Recti{
 //@reflect{
 struct Rectf{
    float x, y, w, h;
+
+   void setPos(Float2 const& p) { x = p.x; y = p.y; }
+
+   Float2 xy() const { return { x,y }; }
+   Float2 sz() const { return { w,h }; }
+   Float2 min() const { return { x,y }; }
+   Float2 max() const { return { x+w,y+h }; }
 };//}
 
 static void rectiOffset(Recti *r, int32_t x, int32_t y) {

@@ -771,8 +771,13 @@ void gameUpdate(GameState& g) {
       gameUpdateMilliStep(g, fd);
    }
 
-   vp.x = clamp(dudePos.x - (vp.w / 2), 0, g.map.size.x - vp.w);
-   vp.y = clamp(dudePos.y - (vp.h / 2), 0, g.map.size.y - vp.h);
+
+
+   if (!g.ui.editing) {
+      //camera follow on dude
+      vp.x = clamp(dudePos.x - (vp.w / 2), 0, g.map.size.x - vp.w);
+      vp.y = clamp(dudePos.y - (vp.h / 2), 0, g.map.size.y - vp.h);
+   }
 
    g.lastUpdate += timeMillis(ms);
 

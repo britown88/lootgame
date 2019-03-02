@@ -294,6 +294,7 @@ void appBeginNewGameInstance() {
    inst->outputFbo = render::fboBuild(Const.resolution);
    inst->winTitle = format("Viewer %d", viewerCount++ + 1);
    g_app->instances.push_back(inst);
+   g_app->lastFocused = inst;
 
    LOG("Starting game instance in Viewer %d", viewerCount);
 
@@ -323,7 +324,7 @@ void appPollEvents(App* app) {
 
    GameInstance* g = nullptr;
    for (auto&&i : app->instances) {
-      if (i->focused) {
+      if (i->state.ui.focused) {
          g = i;
          break;
       }
@@ -456,11 +457,23 @@ static void _appSetFullscreen(bool fullscreen) {
    
 }
 
+static void _doGameDebugger(App* app) {
+   // find the focused instance and draw the debugger for it
+   for (auto&& i : app->instances) {
+      if (i->state.ui.focused) { app->lastFocused = i; break; }
+   }
+
+   if (app->lastFocused) {
+      uiDoGameDebugger(*app->lastFocused);
+   }
+}
+
 static void _updateFrame(App* app) {
 
+   // first we look for a fullscreen instance and only render that
    bool fscreenupdate = false;
    for (auto&& i : app->instances) {
-      if (i->state.fullscreen) {
+      if (i->state.ui.fullscreen) {
          ImGui::SetWindowFocus(i->winTitle.c_str());
          _gameInstanceStep(*i);
          app->lastFocused = i;
@@ -469,27 +482,27 @@ static void _updateFrame(App* app) {
       }
    }   
 
+   // update sdlwnd with fullscreen state
    _appSetFullscreen(fscreenupdate);
    
    if(!fscreenupdate){
+      // we're in ui mode so render everything
       doRootUI();
-
-      // find the focused instance and draw the debugger for it
-      for (auto&& i : app->instances) {
-         if (i->focused) {  app->lastFocused = i; break;  }
-      }
-
-      if (app->lastFocused) {
-         uiDoGameDebugger(*app->lastFocused);
-      }
-
+      _doGameDebugger(app);
       _updateDialogs(app);
    }
 
+   static bool firstFrameFocus = true;
+   if (firstFrameFocus) {
+      ImGui::SetWindowFocus(app->lastFocused->winTitle.c_str());
+      firstFrameFocus = false;
+   }
+
+
 }
 
-#include <thread>
-#include <chrono>
+//#include <thread>
+//#include <chrono>
 
 void appStep(App* app) {
    lppSync();
@@ -506,7 +519,7 @@ void appStep(App* app) {
    if (app->shouldClose) {
       app->running = false;
    }
-   using namespace std::chrono_literals;
+   //using namespace std::chrono_literals;
    //std::this_thread::sleep_for(50ms);
 
 }

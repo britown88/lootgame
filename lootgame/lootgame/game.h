@@ -114,6 +114,7 @@ struct IO {
 //@reflect{
 struct GameCamera {
    Rectf viewport;
+   
 };//}
 
 
@@ -257,10 +258,19 @@ struct GameStateDebug {
 };
 //}
 
+struct GameStateUI {
+   bool fullscreen = false;
+   bool focused = false;
+   bool editing = false;
+
+   bool draggingCamera = false;
+   Coords cameraDragStart;
+   Float2 cameraDragVpStart = { 0,0 };
+};
+
 struct GameState {
 
-   bool fullscreen = false;
-
+   GameStateUI ui;
    IO io;
    Map map = { { 10000, 10000 } };
    GameCamera camera = { { 0, 0, 426, 240 } }; // viewport into the world
@@ -282,8 +292,6 @@ struct GameInstance {
    std::string winTitle;
    GameState state;
    FBO outputFbo;
-
-   bool focused = true;
 };
 
 void gameBeginFrame(GameState& g);

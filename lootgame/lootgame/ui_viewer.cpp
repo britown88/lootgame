@@ -5,6 +5,7 @@
 #include "app.h"
 
 #include "reflection_gen.h"
+#include <SDL2/SDL_keycode.h>
 
 static ImGuiWindowFlags BorderlessFlags =
       ImGuiWindowFlags_NoMove |
@@ -63,39 +64,83 @@ static void _showFullScreenViewer(GameInstance& g) {
       appClose();
    }
    if (io.KeyCtrl && ImGui::IsKeyPressed(keys[ImGuiKey_Enter])) {
-      g.state.fullscreen = false;
+      g.state.ui.fullscreen = false;
    }
 }
 
-static bool _showWindowedViewer(GameInstance& g) {
-   bool p_open = true;
+static void _toggleEditing(GameState&g) {
+   g.ui.editing = !g.ui.editing;
+   LOG(g.ui.editing ? "Entered Edit Mode" : "Existing Edit Mode");
+}
 
-   //auto sz = ImGui::GetIO().DisplaySize;
-   //ImGui::SetNextWindowSize(ImVec2(sz.x / 2.0f, sz.y / 2.0f), ImGuiCond_Appearing);
-
-   if (ImGui::Begin(g.winTitle.c_str(), &p_open, 0)) {
-      g.focused = ImGui::IsWindowFocused();
-
-      if (ImGui::IsWindowFocused()) {
-         if (ImGui::IsKeyPressed(ImGui::GetIO().KeyMap[ImGuiKey_Escape])) {
-            appClose();
-         }
+static void _viewerMenuBar(GameState& g) {
+   if (ImGui::BeginMenuBar()) {
+      bool editing = g.ui.editing;
+      if (editing) {
+         ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive));
+      }
+      if (ImGui::Button(ICON_FA_PENCIL_ALT)) { 
+         _toggleEditing(g);
+      }
+      if (editing) {
+         ImGui::PopStyleColor();
       }
 
-      _renderViewerFBO(g.state, g.outputFbo);
 
-      auto& io = ImGui::GetIO();
-      auto& keys = io.KeyMap;
-      if (g.focused) {
-         if (io.KeyCtrl && ImGui::IsKeyPressed(keys[ImGuiKey_Enter])) {
-            g.state.fullscreen = true;
-         }
+      ImGui::EndMenuBar();
+   }
+}
+
+static void _viewerHandleInput(GameState& g) {
+   auto& io = ImGui::GetIO();
+   auto& keys = io.KeyMap;
+
+   if (ImGui::IsKeyPressed(ImGui::GetIO().KeyMap[ImGuiKey_Escape])) {
+      appClose();
+   }
+   if (io.KeyCtrl && ImGui::IsKeyPressed(keys[ImGuiKey_Enter])) {
+      g.ui.fullscreen = true;
+   }
+   if (ImGui::IsKeyPressed(SDL_SCANCODE_E)) {
+      _toggleEditing(g);
+   }
+
+   if (g.ui.editing) {
+      if (ImGui::IsKeyPressed(keys[ImGuiKey_Space])) {
+         g.ui.cameraDragStart = g.io.mousePos;
+         g.ui.cameraDragVpStart = g.camera.viewport.xy();
+      }
+      g.ui.draggingCamera = ImGui::IsKeyDown(keys[ImGuiKey_Space]);
+
+      if (g.ui.draggingCamera) {
+         auto start = g.ui.cameraDragStart.toWorld();
+         auto end = g.io.mousePos.toWorld();
+         Float2 delta = { start.x - end.x, start.y - end.y };
+
+         auto&vp = g.camera.viewport;
+         vp.setPos(vp.xy() + delta);
+      }
+   }
+}
+
+static bool _showWindowedViewer(GameInstance& gi) {
+   bool p_open = true;
+   auto& g = gi.state;
+
+   if (ImGui::Begin(gi.winTitle.c_str(), &p_open, ImGuiWindowFlags_MenuBar)) {
+      g.ui.focused = ImGui::IsWindowFocused();
+
+      _viewerMenuBar(g);
+      _renderViewerFBO(g, gi.outputFbo);
+
+      if (g.ui.focused) {
+         _viewerHandleInput(g);
       }
    }
    ImGui::End();
 
    if (!p_open) {
-
+      //cleanup?
    }
 
    return p_open;
@@ -105,6 +150,11 @@ static bool _showWindowedViewer(GameInstance& g) {
 void uiDoGameDebugger(GameInstance& instance) {
    if (ImGui::Begin("Game Debugger", nullptr)) {
       auto&g = instance.state;
+
+      if (ImGui::Button("Restart", ImVec2(ImGui::GetContentRegionAvailWidth(), 0))) {
+         instance.state = {};
+         gameStartActionMode(instance.state);
+      }
 
       if (ImGui::Button("Reload Shaders", ImVec2(ImGui::GetContentRegionAvailWidth(), 0))) {
          //gameReloadShaders(g);
@@ -136,7 +186,7 @@ void uiDoGameDebugger(GameInstance& instance) {
 
 
 bool gameDoUIWindow(GameInstance& inst) {
-   if (inst.state.fullscreen) {
+   if (inst.state.ui.fullscreen) {
       _showFullScreenViewer(inst);
       return true;
    }
