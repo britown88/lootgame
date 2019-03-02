@@ -307,12 +307,6 @@ TextureHandle render::buildTextureHandle(Int2 const& sz, TextureFlag flags, Colo
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
    }
 
-   if (pixels && !(flags&TextureFlag_DisablePremultiply)) {
-      for (int i = 0; i < sz.x*sz.y; ++i) {
-         ((ColorRGBA*)pixels)[i] = srgbPremultipleAlpha(pixels[i]);
-      }
-   }
-
    GLuint colorFormat = 0;
    GLenum type = 0;
    if (flags&TextureFlag_Color_SRGBA) {
@@ -337,7 +331,6 @@ TextureHandle render::buildTextureHandle(Int2 const& sz, TextureFlag flags, Colo
 
    
    glBindTexture(GL_TEXTURE_2D, 0);
-
    return out;
 }
 
@@ -355,6 +348,12 @@ void render::textureRefresh(Texture&t) {
       t.storedImageData.data = stbi_load_from_memory(mem, (int32_t)fsz, &t.sz.x, &t.sz.y, &comp, 4);
       t.storedImageData.sz = t.sz.x * t.sz.y * comp;
 
+      if (!(t.flags&TextureFlag_DisablePremultiply)) {
+         auto pixels = ((ColorRGBA*)t.storedImageData.data);
+         for (int i = 0; i < t.sz.x*t.sz.y; ++i) {
+            pixels[i] = srgbPremultipleAlpha(pixels[i]);
+         }
+      }
 
       free(mem);
 
