@@ -17,8 +17,7 @@ static ImGuiWindowFlags BorderlessFlags =
       ImGuiWindowFlags_NoDocking;
 
 
-static void _renderViewerFBO(GameState& g, FBO& output) {
-   auto sz = ImGui::GetContentRegionAvail();
+static void _renderViewerFBO(GameState& g, FBO& output, ImVec2 sz) {
 
    auto rect = getProportionallyFitRect(output.sz, { (int32_t)sz.x, (int32_t)sz.y });
 
@@ -50,7 +49,7 @@ static void _showFullScreenViewer(GameInstance& g) {
    ImGui::SetNextWindowSize(vp->Size, ImGuiCond_Always);
 
    if (ImGui::Begin("fullscreenViewer", nullptr, BorderlessFlags)) {
-      _renderViewerFBO(g.state, g.outputFbo);
+      _renderViewerFBO(g.state, g.outputFbo, ImGui::GetContentRegionAvail());
       //g.mouseActive = true;
    }
    ImGui::End();
@@ -91,6 +90,22 @@ static void _viewerMenuBar(GameState& g) {
    }
 }
 
+static void _statusBar(GameState&g) {
+
+   if (g.ui.editing) {
+      ImGui::TextUnformatted("Editing");
+      ImGui::SameLine();
+   }
+
+   auto &vp = g.camera.viewport;
+   ImGui::Text("VP: x:%0.1f y:%0.1f w:%0.1f h:%0.1f", vp.x, vp.y, vp.w, vp.h);
+
+   ImGui::SameLine();
+
+   auto mpos = g.io.mousePos.toWorld();
+   ImGui::Text("Mouse (%0.1f, %0.1f)", mpos.x, mpos.y);
+}
+
 static void _viewerHandleInput(GameState& g) {
    auto& io = ImGui::GetIO();
    auto& keys = io.KeyMap;
@@ -106,19 +121,41 @@ static void _viewerHandleInput(GameState& g) {
    }
 
    if (g.ui.editing) {
-      if (ImGui::IsKeyPressed(keys[ImGuiKey_Space])) {
-         g.ui.cameraDragStart = g.io.mousePos;
-         g.ui.cameraDragVpStart = g.camera.viewport.xy();
-      }
-      g.ui.draggingCamera = ImGui::IsKeyDown(keys[ImGuiKey_Space]);
 
+      //------------- camera drag with space
+      if (ImGui::IsWindowHovered() && ImGui::IsKeyPressed(keys[ImGuiKey_Space])) {
+         g.ui.cameraDragStart = g.io.mousePos.toWorld();
+         g.ui.cameraDragVpStart = g.camera.viewport.xy();
+         g.ui.draggingCamera = true;
+      }
       if (g.ui.draggingCamera) {
-         auto start = g.ui.cameraDragStart.toWorld();
+         auto start = g.ui.cameraDragStart;
          auto end = g.io.mousePos.toWorld();
          Float2 delta = { start.x - end.x, start.y - end.y };
 
          auto&vp = g.camera.viewport;
          vp.setPos(vp.xy() + delta);
+
+         if (ImGui::IsKeyReleased(keys[ImGuiKey_Space])) {
+            g.ui.draggingCamera = false ;
+         }
+      }
+
+      // ----------------- camera zoom with mouse
+      if (!g.ui.draggingCamera) {
+         auto wheel = ImGui::GetIO().MouseWheel;
+         if (wheel != 0.0f) {
+
+            auto mPos = g.io.mousePos.toWorld();
+            auto scale = 1.0f + -wheel * 0.1f;
+
+            auto& vp = g.camera.viewport;
+            if ( scale > 1.0f || vp.w > 50.0f) {
+               vp.scaleFromPoint(mPos, scale);
+            }
+
+            
+         }
       }
    }
 }
@@ -131,7 +168,14 @@ static bool _showWindowedViewer(GameInstance& gi) {
       g.ui.focused = ImGui::IsWindowFocused();
 
       _viewerMenuBar(g);
-      _renderViewerFBO(g, gi.outputFbo);
+
+      auto viewsz = ImGui::GetContentRegionAvail();
+      viewsz.y -= ImGui::GetTextLineHeightWithSpacing();
+
+      _renderViewerFBO(g, gi.outputFbo, viewsz);
+
+      ImGui::SetCursorPosY(ImGui::GetCursorPosY() + viewsz.y);
+      _statusBar(g);
 
       if (g.ui.focused) {
          _viewerHandleInput(g);

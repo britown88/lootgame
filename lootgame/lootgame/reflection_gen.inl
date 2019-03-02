@@ -550,6 +550,17 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
+         member.name = intern("vpSize");
+         member.offset = offsetof(EngineConstants, vpSize);
+         member.type = reflect<Int2>();
+         member.customUI = customUIRenderer<Int2>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
          member.name = intern("floorHeight");
          member.offset = offsetof(EngineConstants, floorHeight);
          member.type = reflect<float>();

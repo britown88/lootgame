@@ -277,6 +277,9 @@ void renderUI(GameState& game) {
 
    render::setBlendMode(BlendMode_NORMAL);
 
+   Float2 fbosz = { (float)Const.vpSize.x, (float)Const.vpSize.y };
+   uber::set(Uniform_ViewMatrix, Matrix::ortho(0, fbosz.x, 0, fbosz.y, 1, -1));
+
    /*if (game->maindude.stamina < game->maindude.staminaMax)*/ {
       auto &tfilled = TextureMap.map[intern("GemFilled")];
       auto &tempty = TextureMap.map[intern("GemEmpty")];
@@ -306,7 +309,9 @@ void renderUI(GameState& game) {
          staminaCorner.x += gemSize.x + gemSpace;
       }
 
-      uber::resetToDefault();
+      //uber::resetToDefault();
+      //uber::set(Uniform_ViewMatrix, Matrix::ortho(0, fbosz.x, 0, fbosz.y, 1, -1));
+
       if (game.maindude.status.stamina != 0) {
          uber::set(Uniform_Alpha, 0.5f);
          //uber::set(Uniform_Color, Red);
@@ -364,7 +369,7 @@ static void renderOutput(GameState& game, FBO& output) {
 
    uber::bindTexture(Uniform_DiffuseTexture, Graphics.litScene.out[0].handle);
    render::meshRender(Graphics.meshUncentered);
-
+   
    uber::bindTexture(Uniform_DiffuseTexture, Graphics.UI.out[0].handle);
    render::meshRender(Graphics.meshUncentered);
 

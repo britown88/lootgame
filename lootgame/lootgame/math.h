@@ -78,10 +78,19 @@ struct Rectf{
 
    void setPos(Float2 const& p) { x = p.x; y = p.y; }
 
+   void scaleFromPoint(Float2 const&p, float s) {
+      x += (p.x / w) * s;
+      y += (p.y / h) * s;
+      w *= s;
+      h *= s;
+   }
+
    Float2 xy() const { return { x,y }; }
    Float2 sz() const { return { w,h }; }
    Float2 min() const { return { x,y }; }
    Float2 max() const { return { x+w,y+h }; }
+
+
 };//}
 
 static void rectiOffset(Recti *r, int32_t x, int32_t y) {

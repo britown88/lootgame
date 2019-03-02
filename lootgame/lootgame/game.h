@@ -43,6 +43,7 @@ void assets_textureMapLoad();
 struct EngineConstants {
    //@readonly
    Int2 resolution = { 1920, 1080 };
+   Int2 vpSize = { 426, 240 };
 
    float floorHeight = 0.0f;
    float dudeHeight = 0.1f;
@@ -264,7 +265,7 @@ struct GameStateUI {
    bool editing = false;
 
    bool draggingCamera = false;
-   Coords cameraDragStart;
+   Float2 cameraDragStart;
    Float2 cameraDragVpStart = { 0,0 };
 };
 
@@ -273,7 +274,7 @@ struct GameState {
    GameStateUI ui;
    IO io;
    Map map = { { 10000, 10000 } };
-   GameCamera camera = { { 0, 0, 426, 240 } }; // viewport into the world
+   GameCamera camera = { { 0, 0, (float)Const.vpSize.x, (float)Const.vpSize.y } }; // viewport into the world
    Rectf vpScreenArea = { 0, 0, 1, 1 }; // screen coordinates or the viewer image within the UI
    GameMode mode;
 
