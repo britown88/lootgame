@@ -87,6 +87,7 @@ static void _openLogger() {
 
 struct App {
    std::vector<GameInstance*> instances;
+   GameInstance* lastFocused = nullptr;
 
    bool running = false;
 
@@ -460,7 +461,9 @@ static void _updateFrame(App* app) {
    bool fscreenupdate = false;
    for (auto&& i : app->instances) {
       if (i->state.fullscreen) {
+         ImGui::SetWindowFocus(i->winTitle.c_str());
          _gameInstanceStep(*i);
+         app->lastFocused = i;
          fscreenupdate = true;         
          break;
       }
@@ -471,10 +474,14 @@ static void _updateFrame(App* app) {
    if(!fscreenupdate){
       doRootUI();
 
-      //for (auto&& i : app->instances) {
-      //   gameUpdate(i->state);
-      //   gameDraw(i->state, i->outputFbo);
-      //}
+      // find the focused instance and draw the debugger for it
+      for (auto&& i : app->instances) {
+         if (i->focused) {  app->lastFocused = i; break;  }
+      }
+
+      if (app->lastFocused) {
+         uiDoGameDebugger(*app->lastFocused);
+      }
 
       _updateDialogs(app);
    }

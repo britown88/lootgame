@@ -6,6 +6,7 @@
 
 void doRootUI();
 bool gameDoUIWindow(GameInstance& instance);
+void uiDoGameDebugger(GameInstance& instance);
 void uiOpenTextureManager();
 
 

@@ -102,10 +102,9 @@ static bool _showWindowedViewer(GameInstance& g) {
 }
 
 
-static void _doUIDebugger(const char* str_id, GameState& g) {
-   ImGui::SetNextWindowSize(ImVec2(400, 1000), ImGuiCond_FirstUseEver);
-   if (ImGui::Begin(str_id, nullptr)) {
-
+void uiDoGameDebugger(GameInstance& instance) {
+   if (ImGui::Begin("Game Debugger", nullptr)) {
+      auto&g = instance.state;
 
       if (ImGui::Button("Reload Shaders", ImVec2(ImGui::GetContentRegionAvailWidth(), 0))) {
          //gameReloadShaders(g);
@@ -113,7 +112,6 @@ static void _doUIDebugger(const char* str_id, GameState& g) {
       if (ImGui::Button("Spawn Dude", ImVec2(ImGui::GetContentRegionAvailWidth(), 0))) {
          //DEBUG_gameSpawnDude(g);
       }
-
 
       auto&io = g.io;
 
@@ -142,7 +140,5 @@ bool gameDoUIWindow(GameInstance& inst) {
       _showFullScreenViewer(inst);
       return true;
    }
-
-   _doUIDebugger(format("%s##%s", "Debugger", inst.winTitle.c_str()).c_str(), inst.state);
    return _showWindowedViewer(inst);   
 }
