@@ -124,6 +124,11 @@ Recti getProportionallyFitRect(Float2 srcSize, Float2 destSize);
 Recti getProportionallyFitRect(Int2 srcSize, Int2 destSize);
 
 
+int32_t pointOnLine(Int2 l1, Int2 l2, Int2 point);
+int pointSideOfSegment(Float2 a, Float2 b, Float2 p);
+bool polyConvex(Float2*pts, int vCount);
+
+
 ColorRGBAf sRgbToLinear(ColorRGBAf const& srgb);
 ColorRGBAf sRgbToLinear(ColorRGBf const& srgb);
 ColorRGBAf sRgbToLinear(ColorRGBA const& srgb);

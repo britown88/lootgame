@@ -86,6 +86,14 @@ static void _setEditMode(GameState& g, GameEditMode mode) {
    g.ui.mode = mode;
 }
 
+static bool _wallIsConvex(Wall& w, Float2 mouse) {
+   auto &wall = w.points;
+   auto polycopy = wall;
+   polycopy.push_back(mouse);
+   return polyConvex(polycopy.data(), polycopy.size());
+}
+
+
 static void _viewerMenuBar(GameState& g) {
    if (ImGui::BeginMenuBar()) {
       bool editing = g.ui.editing;
@@ -153,7 +161,10 @@ static void _handleWallInputs(GameState& g) {
          current = &g.map.walls.back();
       }
       else {
-         current->points.push_back(g.io.mousePos.toWorld());
+         auto mouse = g.io.mousePos.toWorld();
+         if (_wallIsConvex(*current, mouse)) {
+            current->points.push_back(mouse);
+         }         
       }
    }
 }
@@ -227,6 +238,15 @@ static void _doRightClickMenu(GameState&g) {
    case GameEditMode_Walls:
       if (g.ui.editingWall) {
          if (ImGui::MenuItem("Finish Wall")) {
+            auto& w = g.ui.editingWall;
+            if (w->points.size() < 3) {
+               for (auto iter = g.map.walls.begin(); iter != g.map.walls.end(); ++iter) {
+                  if (&*iter == w) {
+                     g.map.walls.erase(iter);
+                     break;
+                  }
+               }
+            }
             g.ui.editingWall = nullptr;
          }
       }
@@ -275,47 +295,57 @@ static void _renderGrid(GameState& g) {
 
 }
 
-
 static void _renderWalls(GameState& g) {
-   ImU32 lineCol = IM_COL32(255, 0, 0, 255);
-   ImU32 finisherCol = IM_COL32(255, 128, 128, 255);
-   ImU32 previewCol = IM_COL32(255, 128, 128, 128);
+   ImU32 lineCol = IM_COL32(50, 200, 50, 255);
+   ImU32 badPolyCol = IM_COL32(255, 0, 0, 255);
+
+   bool badPoly = false;
+   if (g.ui.editingWall) {
+      badPoly = !_wallIsConvex(*g.ui.editingWall, g.io.mousePos.toWorld());
+   }
+
 
    for (auto&& wall : g.map.walls) {
+
+      auto c = lineCol;
+      if (badPoly && &wall == g.ui.editingWall) {
+         c = badPolyCol;
+      }
+
       for (auto iter = wall.points.begin(); iter != wall.points.end(); ++iter) {
          if (iter + 1 != wall.points.end()) {
             auto a = Coords::fromWorld(*iter).toScreen(g);
             auto b = Coords::fromWorld(*(iter + 1)).toScreen(g);
 
-            ImGui::GetWindowDrawList()->AddLine(a, b, lineCol);
+            ImGui::GetWindowDrawList()->AddLine(a, b, c);
          }
       }
 
-      if (&wall != g.ui.editingWall && wall.points.size() > 2) {
-         auto a = Coords::fromWorld(*(wall.points.begin())).toScreen(g);
-         auto b = Coords::fromWorld(*(wall.points.end() - 1)).toScreen(g);
-         ImGui::GetWindowDrawList()->AddLine(a, b, finisherCol);
+      if (wall.points.size() > 2) {
+         auto a = Coords::fromWorld(wall.points.front()).toScreen(g);
+         auto b = Coords::fromWorld(wall.points.back()).toScreen(g);
+         ImGui::GetWindowDrawList()->AddLine(a, b, c);
       }
    }
 
    // render the editing wall
-   if (g.ui.editingWall && !g.ui.editingWall->points.empty()) {
-      auto back = g.ui.editingWall->points.back();
-      auto a = Coords::fromWorld(back).toScreen(g);
-      auto b = g.io.mousePos.toScreen(g);
+   if (g.ui.editingWall) {
 
-      ImGui::GetWindowDrawList()->AddLine(a, b, lineCol);
+      auto &eWall = g.ui.editingWall->points;
+      auto eCount = eWall.size();
 
-      if (g.ui.editingWall->points.size() > 2) {
-         auto a = Coords::fromWorld(*(g.ui.editingWall->points.end() - 1)).toScreen(g);
-         auto b = Coords::fromWorld(*(g.ui.editingWall->points.begin())).toScreen(g);
-         ImGui::GetWindowDrawList()->AddLine(a, b, previewCol);
+      auto c = badPoly ? badPolyCol : lineCol;
+
+      if (eCount > 0) {
+         ImGui::GetWindowDrawList()->AddLine(
+            Coords::fromWorld(eWall.back()).toScreen(g),
+            g.io.mousePos.toScreen(g), c);
       }
 
-      if (g.ui.editingWall->points.size() > 1) {
-         auto a = g.io.mousePos.toScreen(g);
-         auto b = Coords::fromWorld(*(g.ui.editingWall->points.begin())).toScreen(g);
-         ImGui::GetWindowDrawList()->AddLine(a, b, finisherCol);
+      if (eCount > 1) {
+         ImGui::GetWindowDrawList()->AddLine(
+            Coords::fromWorld(eWall.front()).toScreen(g),
+            g.io.mousePos.toScreen(g), c);
       }
    }
 }

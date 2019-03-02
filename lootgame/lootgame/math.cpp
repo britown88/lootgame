@@ -129,7 +129,6 @@ Float2 v2CapLength(Float2 v, float max) {
    return v;
 }
 
-
 bool circleVsAabb(Float2 co, float cr, Rectf const& aabb) {
    Float2 a = { aabb.x, aabb.y };
    Float2 b = { a.x + aabb.w, a.y + aabb.h };
@@ -146,9 +145,6 @@ bool circleVsAabb(Float2 co, float cr, Rectf const& aabb) {
    return v2Len(offset) < cr;
 }
 
-
-
-
 int32_t int2Dot(Int2 v1, Int2 v2) {
    return v1.x * v2.x + v1.y * v2.y;
 }
@@ -164,6 +160,37 @@ Int2 int2Subtract(Int2 v1, Int2 v2) {
 int32_t pointOnLine(Int2 l1, Int2 l2, Int2 point) {
    return int2Dot(int2Perp(int2Subtract(l2, l1)), int2Subtract(point, l1));
 }
+
+int pointSideOfSegment(Float2 a, Float2 b, Float2 p) {
+   b -= a; p -= a;
+   return SIGN(v2Determinant(b, p));
+}
+
+bool polyConvex(Float2*pts, int vCount) {
+   if (vCount <= 3) {
+      return true;
+   }
+
+   for (int i = 0; i < vCount; ++i) {
+      int iEnd = i+1;
+      if (i == vCount - 1) {
+         iEnd = 0;
+      }
+      int lastSide = 0;
+      for (int j = 0; j < vCount; ++j) {
+         if (j == iEnd || j == i) { continue; }
+
+         auto side = pointSideOfSegment(pts[i], pts[iEnd], pts[j]);
+         if (side && lastSide && side != lastSide) {
+            return false;
+         }
+         lastSide = side;
+      }
+   }
+
+   return true;
+}
+
 
 bool lineSegmentIntersectsAABBi(Int2 l1, Int2 l2, Recti *rect) {
    int32_t topleft, topright, bottomright, bottomleft;
@@ -539,6 +566,7 @@ static float lin2s(float x) {
 }
 
 static float i255 = 1.0f / 255.0f;
+
 
 ColorRGBAf sRgbToLinear(ColorRGBAf const& srgb) {
    return { s2lin(srgb.r), s2lin(srgb.g), s2lin(srgb.b), srgb.a };
