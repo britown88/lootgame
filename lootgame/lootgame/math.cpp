@@ -26,8 +26,8 @@ Float3 vNormalized(Float3 v) {
    return vScale(v, sqrtf(vDot(v, v)));
 }
 
-float v2Dot(Float2 v1, Float2 v2) {
-   return (v1.x * v2.x) + (v1.y * v2.y);
+float v2Dot(Float2 const&a, Float2 const& b) {
+   return (a.x * b.x) + (a.y * b.y);
 }
 float v2Dist(Float2 a, Float2 b) {
    return v2Len(b - a);
@@ -161,6 +161,43 @@ int32_t pointOnLine(Int2 l1, Int2 l2, Int2 point) {
    return int2Dot(int2Perp(int2Subtract(l2, l1)), int2Subtract(point, l1));
 }
 
+void pointClosestOnSegment(Float2 a, Float2 b, Float2 p, float& t, Float2& d) {
+   Float2 ab = b - a;
+
+   // project p onto ab, but defer the divide by dot(ab,ab)
+   t = v2Dot(p - a, ab);
+   if (t <= 0.0f) {
+      // c projects outside the [a,b] interval on the a side, so clamp to a
+      t = 0.0f;
+      d = a;
+   }
+   else {
+      float denom = v2Dot(ab, ab);
+      if (t >= denom) {
+         // c projects outside the [a,b] interval on the b side, so clamp to b
+         t = 1.0f;
+         d = b;
+      }
+      else {
+         // c projects inside the [a,b] interval, now we do our deferred divide
+         t /= denom;
+         d = a + ab * t;
+      }
+   }
+}
+
+float pointDistToSegmentSquared(Float2 a, Float2 b, Float2 c) {
+   auto ab = b - a, ac = c - a, bc = c - b;
+   float e = v2Dot(ac, ab);
+   // handle c projecting outside ab
+   if (e <= 0.0f) return v2Dot(ac, ac);
+   float f = v2Dot(ab, ab);
+   if (e >= f) return v2Dot(bc, bc);
+   // handle c projects onto ab
+   return v2Dot(ac, ac) - e * e / f;
+
+}
+
 int pointSideOfSegment(Float2 a, Float2 b, Float2 p) {
    b -= a; p -= a;
    return SIGN(v2Determinant(b, p));
@@ -205,6 +242,104 @@ bool polyConvex(Float2*pts, int vCount) {
    return true;
 }
 
+// Returns 1 if the lines intersect, otherwise 0. In addition, if the lines 
+// intersect the intersection point may be stored in the floats i_x and i_y.
+char get_line_intersection(float p0_x, float p0_y, float p1_x, float p1_y,
+   float p2_x, float p2_y, float p3_x, float p3_y, float *i_x, float *i_y)
+{
+   float s1_x, s1_y, s2_x, s2_y;
+   s1_x = p1_x - p0_x;     s1_y = p1_y - p0_y;
+   s2_x = p3_x - p2_x;     s2_y = p3_y - p2_y;
+
+   float s, t;
+   s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / (-s2_x * s1_y + s1_x * s2_y);
+   t = (s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / (-s2_x * s1_y + s1_x * s2_y);
+
+   if (s >= 0 && s <= 1 && t >= 0 && t <= 1)
+   {
+      // Collision detected
+      if (i_x != NULL)
+         *i_x = p0_x + (t * s1_x);
+      if (i_y != NULL)
+         *i_y = p0_y + (t * s1_y);
+      return 1;
+   }
+
+   return 0; // No collision
+}
+
+// Returns 1 if the lines intersect, otherwise 0. In addition, if the lines 
+// intersect the intersection point may be stored in the floats i_x and i_y.
+bool segmentSegmentIntersect(Float2 p1, Float2 p2, Float2 q1, Float2 q2, float&t1, float& t2, Float2& i) {
+
+   auto ps = p2 - p1;
+   auto qs = q2 - q1;
+
+   t1 = (-ps.y * (p1.x - q1.x) + ps.x * (p1.y - q1.y)) / (-qs.x * ps.y + ps.x * qs.y);
+   t2 = (qs.x * (p1.y - q1.y) - qs.y * (p1.x - q1.x)) / (-qs.x * ps.y + ps.x * qs.y);
+
+   i.x = p1.x + (t2 * ps.x);
+   i.y = p1.y + (t2 * ps.y);
+
+   // return wither the t's are both 0-1
+   return t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1;
+}
+
+float segmentSegmentDistSquared(Float2 p1, Float2 q1, Float2 p2, Float2 q2, float& s, float& t, Float2& c1, Float2& c2) {
+   auto d1 = q1 - p1;
+   auto d2 = q2 - p2;
+   auto r = p1 - p2;
+   auto a = v2Dot(d1, d1);
+   auto e = v2Dot(d2, d2);
+   auto f = v2Dot(d2, r);
+
+   if (a <= EPSILON && e <= EPSILON) {
+      s = t = 0.0f;
+      c1 = p1;
+      c2 = p2;
+      return v2Dot(c1 - c2, c1 - c2);
+   }
+
+   if (a <= EPSILON) {
+      s = 0.0f;
+      t = f / e;
+      t = clamp(t, 0.0f, 1.0f);
+   }
+   else {
+      float c = v2Dot(d1, r);
+      if (e <= EPSILON) {
+         t = 0.0f;
+         s = clamp(-c / a, 0.0f, 1.0f);
+      }
+      else {
+         float b = v2Dot(d1, d2);
+         float denom = a * e - b * b;
+
+         if (denom != 0.0f) {
+            s = clamp((b*f - c * e) / denom, 0.0f, 1.0f);
+         }
+         else {
+            s = 0.0f;
+         }
+
+         t = (b*s + f) / e;
+
+         if (t < 0.0f) {
+            t = 0.0f;
+            s = clamp(-c / a, 0.0f, 1.0f);
+         }
+         else if (t > 1.0f) {
+            t = 1.0f;
+            s = clamp((b - c) / a, 0.0f, 1.0f);
+         }
+      }
+   }
+
+   c1 = p1 + d1 * s;
+   c2 = p2 + d2 * t;
+
+   return v2Dot(c1 - c2, c1 - c2);
+}
 
 bool lineSegmentIntersectsAABBi(Int2 l1, Int2 l2, Recti *rect) {
    int32_t topleft, topright, bottomright, bottomleft;
@@ -560,7 +695,6 @@ float const &Matrix::operator[](size_t index) const {
    return data[index];
 }
 
-
 static float s2lin(float x) {
    if (x <= 0.04045f) {
       return x * (1.0f / 12.92f);
@@ -580,7 +714,6 @@ static float lin2s(float x) {
 }
 
 static float i255 = 1.0f / 255.0f;
-
 
 ColorRGBAf sRgbToLinear(ColorRGBAf const& srgb) {
    return { s2lin(srgb.r), s2lin(srgb.g), s2lin(srgb.b), srgb.a };
@@ -603,7 +736,6 @@ ColorRGBA linearToSrgb(ColorRGBAf const& lin) {
       (byte)(lin.a * 255) };
 }
 
-
 ColorRGBA srgbPremultipleAlpha(ColorRGBA const& srgb) {
    auto alphaScale = srgb.a * i255;
 
@@ -614,7 +746,6 @@ ColorRGBA srgbPremultipleAlpha(ColorRGBA const& srgb) {
       srgb.a,
       };
 }
-
 
 // Intersects ray r = p + td, |d| = 1, with sphere co,cr and, if intersecting,
 // returns t value of intersection and intersection point q
@@ -636,7 +767,6 @@ int intersectRaySphere(Float2 p, Float2 d, Float2 co, float cr, float& t, Float2
 
    return 1;
 }
-
 
 float clamp(float f, float min, float max) {
    return f > max ? max : (f < min ? min : f);

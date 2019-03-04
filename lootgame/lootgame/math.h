@@ -5,6 +5,8 @@ static const float PI = 3.14159265359f;
 static const float RAD2DEG = 180.0f / PI;
 static const float DEG2RAD = PI / 180.0f;
 
+static const float EPSILON = 0.0001f;
+
 //@reflect{
 struct Int2 {
    int32_t x, y;
@@ -46,7 +48,7 @@ Float3 vAdd(Float3 a, Float3 b);
 Float3 vNormalized(Float3 v);
 Float3 vScale(Float3 v, float s);
 
-float v2Dot(Float2 a, Float2 b);
+float v2Dot(Float2 const&a, Float2 const& b);
 float v2Dist(Float2 a, Float2 b);
 float v2DistSquared(Float2 a, Float2 b);
 float v2Len(Float2 v);
@@ -93,7 +95,7 @@ struct Rectf{
    Float2 Min() const { return { x,y }; }
    Float2 Max() const { return { x+w,y+h }; }
 
-
+   bool containsPoint(Float2 const& p) { return p.x > x && p.y > y && p.x <= x + w && p.y <= y + h; }
 };//}
 
 static Rectf rectFromMinMax(Float2 min, Float2 max) { 
@@ -127,11 +129,16 @@ bool circleVsAabb(Float2 co, float cr, Rectf const& aabb);
 Recti getProportionallyFitRect(Float2 srcSize, Float2 destSize);
 Recti getProportionallyFitRect(Int2 srcSize, Int2 destSize);
 
+float pointDistToSegmentSquared(Float2 a, Float2 b, Float2 c);
+void pointClosestOnSegment(Float2 a, Float2 b, Float2 p, float& t, Float2& d);
 
 int32_t pointOnLine(Int2 l1, Int2 l2, Int2 point);
 int pointSideOfSegment(Float2 a, Float2 b, Float2 p);
 bool pointInPoly(Float2 p, Float2*pts, int vCount);
 bool polyConvex(Float2*pts, int vCount);
+
+bool segmentSegmentIntersect(Float2 p1, Float2 p2, Float2 q1, Float2 q2, float&t1, float& t2, Float2& i);
+float segmentSegmentDistSquared(Float2 p1, Float2 q1, Float2 p2, Float2 q2, float& s, float& t, Float2& c1, Float2& c2);
 
 
 ColorRGBAf sRgbToLinear(ColorRGBAf const& srgb);

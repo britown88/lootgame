@@ -122,6 +122,7 @@ struct GameCamera {
 struct Wall {
    std::vector<Float2> points;
    Rectf bb;
+   std::vector<PhyObject> phyObjs;
 }; //}
 
 //@reflect{

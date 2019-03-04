@@ -459,7 +459,7 @@ void uiDoGameDebugger(GameInstance& instance) {
          //gameReloadShaders(g);
       }
       if (ImGui::Button("Spawn Dude", ImVec2(ImGui::GetContentRegionAvailWidth(), 0))) {
-         //DEBUG_gameSpawnDude(g);
+         DEBUG_gameSpawnDude(g, Coords::fromWorld(Float2{(float)(rand()%100), (float)(rand()%100)}));
       }
 
       auto&io = g.io;

@@ -533,6 +533,31 @@ void buildFrameData(GameState&game, FrameData& fd) {
       }
    }
 
+   for (auto && w : game.map.walls) {
+      auto& pts = w.points;
+      auto pCount = pts.size();
+      if (pCount >= 3) {
+         if (w.phyObjs.size() < pCount) {
+            w.phyObjs.clear();
+            for (int i = 0; i < pCount; ++i) {
+               auto next = (i + 1) % pCount;
+
+               PhyObject segment;
+               segment.type = PhyObject::PhyType_Segment;
+               segment.pos = pts[i];
+               segment.segment.b = pts[next];
+               segment.maxSpeed = 0.0f;
+               segment.invMass = 0.0f;
+               w.phyObjs.push_back(segment);
+            }
+         }
+
+         for (auto&& po : w.phyObjs) {
+            fd.phyObjs.push_back(&po);
+         }
+      }
+   }
+
 
    if (fd.phyObjs.size() == 1) {
       ++game.waveSize;

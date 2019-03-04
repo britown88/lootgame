@@ -1,14 +1,103 @@
 #include "stdafx.h"
 
 #include "phy.h"
+enum CollisionType {
+   CollisionType_CircleCircle = 0,
+   CollisionType_CircleSegment,
+};
 
 struct PhyCollision {
    PhyObject* a = nullptr;
    PhyObject* b = nullptr;
    float time = 0.0f;
+
+   CollisionType type;
+   Float2 collisionPoint;
 };
 
+static void _detect_CircleCircle(PhyObject*a, PhyObject*b, std::vector<PhyCollision>& collisions, float &timeRemaining) {   
+   // first an early-out test to see if both positions plus both velocities can fall within their combioned radii
+   auto combinedSize = a->circle.size + b->circle.size;
+   float rangeCheck = //v2DistSquared(a->pos + a->velocity, b->pos + b->velocity);
+      v2LenSquared({
+      (a->pos.x + a->velocity.x) - (b->pos.x + b->velocity.x),
+      (a->pos.y + a->velocity.y) - (b->pos.y + b->velocity.y)
+         });
 
+   if (rangeCheck < combinedSize*combinedSize) {
+      float t = 0.0f;
+      Float2 q = { 0,0 };
+
+      auto avelscaled = a->velocity * timeRemaining;
+      auto bvelscaled = b->velocity * timeRemaining;
+
+      auto dirvec = avelscaled - bvelscaled;
+      auto len = v2Len(dirvec);
+      dirvec /= len;
+
+      //now we determine the time t in which a ray from obj a toward their combined velocities intersects b
+      if (intersectRaySphere(a->pos, dirvec, b->pos, combinedSize, t, q) && t <= len && t > EPSILON) {
+         PhyCollision c = { a, b, (t / len) * timeRemaining, CollisionType_CircleCircle };
+         collisions.push_back(c);
+      }
+   }
+}
+
+static void _detect_CircleSegment(PhyObject*a, PhyObject*b, std::vector<PhyCollision>& collisions, float &timeRemaining) {
+   float collisionRange = a->circle.size;
+
+   // we need to find the point t in a's movement that causes a collision with line segment b
+   // first we cast a ray from a'b pos in the direction of its velocity to determine the point it will will intersect b
+   Float2 p1 = a->pos;
+   Float2 p2 = a->pos + a->velocity * timeRemaining;
+
+   Float2 q1 = b->pos;
+   Float2 q2 = b->segment.b;
+
+   bool aabbCheck =
+      (p2.x > MIN(q1.x, q2.x) - collisionRange) &&
+      (p2.y > MIN(q1.y, q2.y) - collisionRange) &&
+      (p2.x <= MAX(q1.x, q2.x) + collisionRange) &&
+      (p2.y <= MAX(q1.y, q2.y) + collisionRange);
+
+   if (!aabbCheck) {
+      return;
+   }
+
+   float t1, t2;
+   Float2 iPoint;
+   bool intersect = segmentSegmentIntersect(p1, p2, q1, q2, t1, t2, iPoint);
+   //if (fabs(t2) < collisionRange*collisionRange) {
+      float rayt;
+      Float2 connectPoint;
+      auto pdiff = p2 - p1;
+      auto plen = v2Len(pdiff);
+      if (intersectRaySphere(p1, pdiff/ plen, iPoint, collisionRange, rayt, connectPoint) && rayt <= plen && rayt > EPSILON) {
+         PhyCollision c = { a, b, (rayt / plen) * timeRemaining, CollisionType_CircleSegment, iPoint };
+         collisions.push_back(c);
+      }
+   //}
+
+   //float s, t;
+   //Float2 c1, c2;
+   //auto disq = segmentSegmentDistSquared(p1, p2, q1, q2, s, t, c1, c2);
+
+   //if (disq < collisionRange*collisionRange) {
+   //   float t;
+   //   Float2 q;
+   //   auto dir = p2 - p1;
+   //   auto dirlen = v2Len(dir);
+   //   if (intersectRaySphere(p1, dir/dirlen, c2, collisionRange, t, q) && t <= dirlen && t > EPSILON) {
+   //      PhyCollision c = { a, b, (t / dirlen) * timeRemaining, CollisionType_CircleSegment, c2 };
+   //      collisions.push_back(c);
+   //   }
+   //}
+
+}
+
+// THis is the collision preventative component to complenet overlap resolution
+// Based on the propsed new positions of two objects given their velocities, push back a collision object to the list
+// marking the time 0-1 it will happen as both objs move forward one frame
 void getAllPhyCollisions(std::vector<PhyObject*>& objs, std::vector<PhyCollision>& collisions, float &timeRemaining) {
 
    auto oe = objs.end();
@@ -17,27 +106,17 @@ void getAllPhyCollisions(std::vector<PhyObject*>& objs, std::vector<PhyCollision
          auto& a = *i;
          auto& b = *j;
 
-         auto combinedSize = a->circle.size + b->circle.size;
-         float rangeCheck = //v2DistSquared(a->pos + a->velocity, b->pos + b->velocity);
-            v2LenSquared({
-            (a->pos.x + a->velocity.x) - (b->pos.x + b->velocity.x),
-            (a->pos.y + a->velocity.y) - (b->pos.y + b->velocity.y)
-               });
-
-         if (rangeCheck < combinedSize*combinedSize) {
-            float t = 0.0f;
-            Float2 q = { 0,0 };
-
-            auto avelscaled = a->velocity * timeRemaining;
-            auto bvelscaled = b->velocity * timeRemaining;
-
-            auto dirvec = avelscaled - bvelscaled;
-            auto len = v2Len(dirvec);
-            dirvec /= len;
-
-            if (intersectRaySphere(a->pos, dirvec, b->pos, combinedSize, t, q) && t <= len && t > 0.00001f) {
-               PhyCollision c = { a, b, (t / len) * timeRemaining };
-               collisions.push_back(c);
+         if (a->type == b->type) {
+            if (a->type == PhyObject::PhyType_Circle) {
+               _detect_CircleCircle(a, b, collisions, timeRemaining);
+            }
+         }
+         else{
+            if (a->type == PhyObject::PhyType_Circle) {
+               _detect_CircleSegment(a, b, collisions, timeRemaining);
+            }
+            else {
+               _detect_CircleSegment(b, a, collisions, timeRemaining);
             }
          }
       }
@@ -122,6 +201,101 @@ void partitionSetAddObjs(IslandPartitionSet* pSet, PhyObject*a, PhyObject* b, bo
    }
 }
 
+
+// returns whether an overlap correction occured
+// islandconnected = is updated to if a nad b should share an island
+static bool _resolveOverlap_CircleCircle(PhyObject*a, PhyObject*b, bool& islandConnected) {
+
+   float collisionRange = a->circle.size + b->circle.size;
+   float connectRange = collisionRange + (a->maxSpeed + b->maxSpeed);
+
+   auto diff = b->pos - a->pos;
+   float distSquared = v2LenSquared(diff);
+
+   // set whether these belong in the same island
+   islandConnected = distSquared < (connectRange*connectRange);
+
+   // now check not just against connection range but for current overlap
+   if (islandConnected && distSquared < collisionRange * collisionRange) {
+
+      // this is the slow part, generate an impulse against the normalized vector 
+      // between the centers
+      // the sqrt and / are spendy here but this should rarely be hit
+
+      auto dist = sqrtf(distSquared);
+      auto overlappedDist = collisionRange - dist;
+      auto impulse = (diff/dist) * (overlappedDist + EPSILON) / (a->invMass + b->invMass);
+
+      a->pos -= impulse * a->invMass;
+      b->pos += impulse * b->invMass;
+      return true;
+   }
+
+   return false;
+}
+
+// returns whether an overlap correction occured
+// islandconnected = is updated to if a and b should share an island
+static bool _resolveOverlap_CircleSegment(PhyObject*a, PhyObject*b, bool& islandConnected) {
+
+   float collisionRange = a->circle.size; // only a's radius matters for collision here
+   float connectRange = collisionRange + (a->maxSpeed + b->maxSpeed);
+
+   auto &ba = b->pos;
+   auto &bb = b->segment.b;
+   auto ap = a->pos;
+
+   bool aabbCheck =
+      (ap.x > MIN(ba.x, bb.x) - connectRange) &&
+      (ap.y > MIN(ba.y, bb.y) - connectRange) &&
+      (ap.x <= MAX(ba.x, bb.x) + connectRange) &&
+      (ap.y <= MAX(ba.y, bb.y) + connectRange);
+
+   if (!aabbCheck) {
+      islandConnected = false;
+      return false;
+   }
+
+   // for segments, the point we're watching for for collisions is the point on b closest to a
+   float bt;
+   Float2 bClosest;
+   pointClosestOnSegment(b->pos, b->segment.b, a->pos, bt, bClosest);
+
+   auto diff = bClosest - a->pos;
+   float distSquared = v2LenSquared(diff);
+
+   // set whether these belong in the same island
+   islandConnected = distSquared < (connectRange*connectRange);
+
+   // now check not just against connection range but for current overlap
+   if (islandConnected && distSquared < collisionRange * collisionRange) {
+
+      // this is the slow part, generate an impulse against the normalized vector 
+      // between the a's center and b's closest point
+      // the sqrt and / are spendy here but this should rarely be hit
+
+      auto dist = sqrtf(distSquared);
+      auto overlappedDist = collisionRange - dist;
+      auto impulse = (diff / dist) * (overlappedDist + EPSILON) / (a->invMass + b->invMass);
+
+      a->pos -= impulse * a->invMass;
+      b->pos += impulse * b->invMass;
+      return true;
+   }
+
+   return false;
+}
+
+/*
+This serves two purposes: 1 is attempting to separate overlapping PhyObjs, 
+and the other is to build the island aprtition table
+
+Table building happens in the first attempt automatically, where a and b are 'island connected' if they could potentially
+colide this frame (based on positions and max velocity)
+
+overlap resolution is a failsafe for collision restituion failing and causing an overlap. velocity is not factored in here
+because the objs are alrerady overlapped, this attempts multiple times to solve the system (resolving one overlap may cause a new overlap)
+*/
 void resolveOverlaps(std::vector<PhyObject*>& objs, IslandPartitionSet* pSet) {
    bool overlap = false;
    int attemptsToResolve = 0;
@@ -145,32 +319,32 @@ void resolveOverlaps(std::vector<PhyObject*>& objs, IslandPartitionSet* pSet) {
             auto& a = *i;
             auto& b = *j;
 
-            auto combinedSize = a->circle.size + b->circle.size;
-            auto connectRange = combinedSize + (a->maxSpeed + b->maxSpeed);
-            float distanceSquared = v2LenSquared({ a->pos.x - b->pos.x, a->pos.y - b->pos.y });
+            bool abIslandConnected = false;
 
-            bool connected = distanceSquared < connectRange * connectRange;
-
-            if (!attemptsToResolve) {
-               partitionSetAddObjs(pSet, a, b, connected);
+            if (a->type == b->type) {
+               if (a->type == PhyObject::PhyType_Circle) {
+                  if (_resolveOverlap_CircleCircle(a, b, abIslandConnected)) { overlap = true; }
+               }
+               else {
+                  //_segmentSegment(a, b, collisions, timeRemaining);
+               }
+            }
+            else {
+               if (a->type == PhyObject::PhyType_Circle) {
+                  if (_resolveOverlap_CircleSegment(a, b, abIslandConnected)) { overlap = true; }
+               }
+               else {
+                  if (_resolveOverlap_CircleSegment(b, a, abIslandConnected)) { overlap = true; }
+               }
             }
 
-            if (connected) {
-
-               if (distanceSquared < combinedSize * combinedSize) {
-                  auto dist = sqrtf(distanceSquared);
-
-                  auto overlap = combinedSize - dist;
-                  auto impulse = v2Normalized(b->pos - a->pos) * (overlap + 0.0001f) / (a->invMass + b->invMass);
-
-                  a->pos -= impulse * a->invMass;
-                  b->pos += impulse * b->invMass;
-                  overlap = true;
-               }
+            // first try, build out the partition table
+            if (!attemptsToResolve) {
+               partitionSetAddObjs(pSet, a, b, abIslandConnected);
             }
          }
       }
-
+      // continue to resolve until there are no overlaps (or we hit a attempt cap)
    } while (overlap && attemptsToResolve++ < 32);
 }
 
@@ -243,7 +417,12 @@ void updatePhyPositions(std::vector<PhyObject*>& objs) {
             d->pos += d->velocity * c.time;
          }
 
-         applyCollisionImpulse(a.pos, b.pos, a.velocity, b.velocity, a.invMass, b.invMass, 0.01f);
+         auto bpos = b.pos;
+         if (c.type == CollisionType_CircleSegment) {
+            bpos = c.collisionPoint;
+         }
+
+         applyCollisionImpulse(a.pos, bpos, a.velocity, b.velocity, a.invMass, b.invMass, 0.01f);
 
          timeRemaining -= c.time;
          ++attemptsToResolve;

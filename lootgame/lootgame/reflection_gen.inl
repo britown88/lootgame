@@ -981,6 +981,17 @@ void reflectionStartup_generated() {
       }
 
       
+      {
+         StructMemberMetadata member;
+         member.name = intern("phyObjs");
+         member.offset = offsetof(Wall, phyObjs);
+         member.type = reflect<std::vector<PhyObject>>();
+         member.customUI = customUIRenderer<std::vector<PhyObject>>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
    }
 
    

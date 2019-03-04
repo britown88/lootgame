@@ -16,11 +16,20 @@ struct PhyObject {
    int island = -1;
    int islandMailbox = -1;
 
-   union {
-      struct {
-         float size;
-      } circle;
+   enum PhyType {
+      PhyType_Circle = 0,
+      PhyType_Segment      
    };
+
+   PhyType type = PhyType_Circle;
+
+   struct {
+      Float2 b = { 0,0 };
+   } segment;
+
+   struct {
+      float size = 0;
+   } circle;
 };
 
 
