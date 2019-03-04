@@ -31,7 +31,7 @@ struct LogEntry {
    LogLevel level;
 };
 struct Logger {
-   std::vector<LogEntry> entries;
+   Array<LogEntry> entries;
    bool pushBottom = false;
 };
 
@@ -86,7 +86,7 @@ static void _openLogger() {
 }
 
 struct App {
-   std::vector<GameInstance*> instances;
+   Array<GameInstance*> instances;
    GameInstance* lastFocused = nullptr;
 
    bool running = false;
@@ -231,7 +231,7 @@ typedef int MyBitfield;
 //@reflect{
 struct MyStruct {
    MyEnum enumTest = MyEnum_E;
-   std::vector<int> ints;
+   Array<int> ints;
    std::string staticStrings[10];
 
    //@type_override:MyBitfield_
@@ -425,7 +425,7 @@ static void _renderFrame(App* app) {
 }
 
 static void _updateDialogs(App* app) {
-   std::vector<std::string> deleted;
+   Array<std::string> deleted;
    for (auto &dlg : app->dlgs) {
 
       if (dlg.second.bringToFront) {

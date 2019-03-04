@@ -153,8 +153,8 @@ void app_reflectionStartup_generated(){
          StructMemberMetadata member;
          member.name = intern("ints");
          member.offset = offsetof(MyStruct, ints);
-         member.type = reflect<std::vector<int>>();
-         member.customUI = customUIRenderer<std::vector<int>>();
+         member.type = reflect<Array<int>>();
+         member.customUI = customUIRenderer<Array<int>>();
          
          structName->structMembers.push_back(member);
       }

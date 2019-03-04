@@ -60,7 +60,7 @@ struct FBO {
    Int2 sz;
 
    // @ignore{
-   std::vector<Texture> out;
+   Array<Texture> out;
    FBOHandle fbo = 0; // }
 }; // }
 

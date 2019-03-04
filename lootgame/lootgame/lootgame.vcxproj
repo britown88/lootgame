@@ -91,7 +91,8 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>
+      </SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(imgui)examples/;$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SDL_MAIN_HANDLED;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -137,7 +138,8 @@ xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>
+      </SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(imgui)examples/;$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;D:/LivePP/API/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SDL_MAIN_HANDLED;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -210,6 +212,7 @@ xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
     <ClInclude Include="..\imgui\examples\imgui_impl_opengl3.h" />
     <ClInclude Include="..\imgui\examples\imgui_impl_sdl.h" />
     <ClInclude Include="app.h" />
+    <ClInclude Include="array.h" />
     <ClInclude Include="assets.h" />
     <ClInclude Include="coords.h" />
     <ClInclude Include="custom_ui_renders.h" />

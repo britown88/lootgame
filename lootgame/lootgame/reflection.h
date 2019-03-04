@@ -73,8 +73,8 @@ struct TypeMetadata {
 
    TypeVariety variety;
 
-   std::vector<StructMemberMetadata> structMembers;
-   std::vector<EnumEntryMetadata> enumEntries;
+   Array<StructMemberMetadata> structMembers;
+   Array<EnumEntryMetadata> enumEntries;
    EnumFlags enumFlags = 0;
 
    TypeMetadata const* key;
@@ -142,20 +142,20 @@ BASIC_TYPE_REFLECT(Symbol*, meta_symbol)
 #undef BASIC_TYPE_REFLECT
 
 template<typename T>
-struct Reflector<std::vector<T>> {
+struct Reflector<Array<T>> {
    static TypeMetadata const* type() { 
       static auto out = _createArrayMetadata();
       return out; 
    } 
 private:
-   typedef std::vector<T> ThisType;
+   typedef Array<T> ThisType;
    static TypeMetadata const* _createArrayMetadata() {
       if (TypeMetadata const*  innerType = reflect<T>()) {
          TypeMetadata out;
          out.variety = TypeVariety_Array;
-         out.name = intern(format("std::vector<>"/*, innerType->name*/).c_str());
+         out.name = intern(format("Array<>"/*, innerType->name*/).c_str());
          out.value = innerType;
-         out.size = sizeof(std::vector<T>);
+         out.size = sizeof(Array<T>);
 
          //out.funcs.create = [](void* data) { new(data) ThisType(); };
          //out.funcs.destroy = [](void* data) { ((ThisType*)data)->~ThisType(); };
@@ -275,7 +275,7 @@ private:
                   }
                   ImGui::Indent();
 
-                  std::vector<K*> keyList;
+                  Array<K*> keyList;
                   for (auto&&kvp : thisObj) {
                      keyList.push_back((K*)&kvp.first);
                   }

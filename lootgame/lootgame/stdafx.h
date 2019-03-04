@@ -18,4 +18,6 @@ namespace std {
    namespace filesystem = experimental::filesystem;
 }
 
+#include "array.h"
+
 //#include "defs.h"

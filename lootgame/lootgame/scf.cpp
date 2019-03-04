@@ -150,8 +150,8 @@ struct SCFBuffer {
 };
 
 struct SCFWriter {
-   std::vector<SCFBuffer> currentTypeList;
-   std::vector<SCFBuffer> currentDataSet;
+   Array<SCFBuffer> currentTypeList;
+   Array<SCFBuffer> currentDataSet;
 
    SCFBuffer dataSegment;
    SCFBuffer binarySegment;

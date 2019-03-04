@@ -33,4 +33,4 @@ struct PhyObject {
 };
 
 
-void updatePhyPositions(std::vector<PhyObject*>& objs);
+void updatePhyPositions(Array<PhyObject*>& objs);

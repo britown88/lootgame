@@ -223,7 +223,7 @@ static uint32_t _compile(const char* shader, int32_t type) {
 
          int infoLen = 0;
          glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &infoLen);
-         std::vector<GLchar> infoLog(infoLen);
+         Array<GLchar> infoLog(infoLen);
          glGetShaderInfoLog(handle, infoLen, &infoLen, &infoLog[0]);
          std::string err = infoLog.data();
 

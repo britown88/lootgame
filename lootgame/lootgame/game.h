@@ -120,15 +120,15 @@ struct GameCamera {
 
 //@reflect{
 struct Wall {
-   std::vector<Float2> points;
+   Array<Float2> points;
    Rectf bb;
-   std::vector<PhyObject> phyObjs;
+   Array<PhyObject> phyObjs;
 }; //}
 
 //@reflect{
 struct Map {
    Float2 size; 
-   std::vector<Wall> walls;
+   Array<Wall> walls;
 };//}
 
 //@reflect{
@@ -154,7 +154,7 @@ struct AttackSwing {
 
 //@reflect{
 struct MoveSet {
-   std::vector<AttackSwing> swings;
+   Array<AttackSwing> swings;
 };//}
 
 //@reflect{
@@ -183,7 +183,7 @@ struct AttackState {
    int swingDir;
    int combo;
 
-   std::vector<Dude*> hits;
+   Array<Dude*> hits;
 };
 
 struct CooldownState {
@@ -301,7 +301,7 @@ struct GameState {
    GameStateDebug DEBUG;
 
    Dude maindude;
-   std::vector<Dude> baddudes;
+   Array<Dude> baddudes;
 
    Time lastMouseMove;
    Time lastUpdate;

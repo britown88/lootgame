@@ -1,6 +1,9 @@
 #include "stdafx.h"
 
 #include "phy.h"
+
+static const int ResolveAttemptLimit = 16;
+
 enum CollisionType {
    CollisionType_CircleCircle = 0,
    CollisionType_CircleSegment,
@@ -15,7 +18,7 @@ struct PhyCollision {
    Float2 collisionPoint;
 };
 
-static void _detect_CircleCircle(PhyObject*a, PhyObject*b, std::vector<PhyCollision>& collisions, float &timeRemaining) {   
+static void _detect_CircleCircle(PhyObject*a, PhyObject*b, Array<PhyCollision>& collisions, float &timeRemaining) {   
    // first an early-out test to see if both positions plus both velocities can fall within their combioned radii
    auto combinedSize = a->circle.size + b->circle.size;
    float rangeCheck = //v2DistSquared(a->pos + a->velocity, b->pos + b->velocity);
@@ -43,7 +46,7 @@ static void _detect_CircleCircle(PhyObject*a, PhyObject*b, std::vector<PhyCollis
    }
 }
 
-static void _detect_CircleSegment(PhyObject*a, PhyObject*b, std::vector<PhyCollision>& collisions, float &timeRemaining) {
+static void _detect_CircleSegment(PhyObject*a, PhyObject*b, Array<PhyCollision>& collisions, float &timeRemaining) {
    float collisionRange = a->circle.size;
 
    // we need to find the point t in a's movement that causes a collision with line segment b
@@ -67,7 +70,7 @@ static void _detect_CircleSegment(PhyObject*a, PhyObject*b, std::vector<PhyColli
    float t1, t2;
    Float2 iPoint;
    bool intersect = segmentSegmentIntersect(p1, p2, q1, q2, t1, t2, iPoint);
-   //if (fabs(t2) < collisionRange*collisionRange) {
+   if (fabs(t2) < collisionRange*collisionRange) {
       float rayt;
       Float2 connectPoint;
       auto pdiff = p2 - p1;
@@ -76,7 +79,7 @@ static void _detect_CircleSegment(PhyObject*a, PhyObject*b, std::vector<PhyColli
          PhyCollision c = { a, b, (rayt / plen) * timeRemaining, CollisionType_CircleSegment, iPoint };
          collisions.push_back(c);
       }
-   //}
+   }
 
    //float s, t;
    //Float2 c1, c2;
@@ -98,7 +101,7 @@ static void _detect_CircleSegment(PhyObject*a, PhyObject*b, std::vector<PhyColli
 // THis is the collision preventative component to complenet overlap resolution
 // Based on the propsed new positions of two objects given their velocities, push back a collision object to the list
 // marking the time 0-1 it will happen as both objs move forward one frame
-void getAllPhyCollisions(std::vector<PhyObject*>& objs, std::vector<PhyCollision>& collisions, float &timeRemaining) {
+void getAllPhyCollisions(Array<PhyObject*>& objs, Array<PhyCollision>& collisions, float &timeRemaining) {
 
    auto oe = objs.end();
    for (auto i = objs.begin(); i != oe; ++i) {
@@ -125,12 +128,12 @@ void getAllPhyCollisions(std::vector<PhyObject*>& objs, std::vector<PhyCollision
 
 struct IslandPartition {
    int mailbox = 0;
-   std::vector<PhyObject*> objs;
+   Array<PhyObject*> objs;
 };
 
 struct IslandPartitionSet {
    int mailbox = 0;
-   std::vector<IslandPartition> islands;
+   Array<IslandPartition> islands;
 
    int next() {
       int i = 0;
@@ -296,7 +299,7 @@ colide this frame (based on positions and max velocity)
 overlap resolution is a failsafe for collision restituion failing and causing an overlap. velocity is not factored in here
 because the objs are alrerady overlapped, this attempts multiple times to solve the system (resolving one overlap may cause a new overlap)
 */
-void resolveOverlaps(std::vector<PhyObject*>& objs, IslandPartitionSet* pSet) {
+void resolveOverlaps(Array<PhyObject*>& objs, IslandPartitionSet* pSet) {
    bool overlap = false;
    int attemptsToResolve = 0;
 
@@ -345,7 +348,7 @@ void resolveOverlaps(std::vector<PhyObject*>& objs, IslandPartitionSet* pSet) {
          }
       }
       // continue to resolve until there are no overlaps (or we hit a attempt cap)
-   } while (overlap && attemptsToResolve++ < 32);
+   } while (overlap && attemptsToResolve++ < ResolveAttemptLimit);
 }
 
 void applyCollisionImpulse(Float2 pos1, Float2 pos2, Float2& vel1, Float2& vel2, float invMass1, float invMass2, float restitution)
@@ -366,10 +369,10 @@ void applyCollisionImpulse(Float2 pos1, Float2 pos2, Float2& vel1, Float2& vel2,
 }
 
 
-void updatePhyPositions(std::vector<PhyObject*>& objs) {
+void updatePhyPositions(Array<PhyObject*>& objs) {
 
    static IslandPartitionSet pSet;
-   std::vector<PhyCollision> collisions;
+   Array<PhyCollision> collisions;
 
    resolveOverlaps(objs, &pSet);
 
@@ -382,7 +385,7 @@ void updatePhyPositions(std::vector<PhyObject*>& objs) {
       float timeRemaining = 1.0f;
       int attemptsToResolve = 0;
 
-      while (timeRemaining > 0.0f && attemptsToResolve < 32) {
+      while (timeRemaining > 0.0f && attemptsToResolve < ResolveAttemptLimit) {
          collisions.clear();
          getAllPhyCollisions(island.objs, collisions, timeRemaining);
 
@@ -427,7 +430,7 @@ void updatePhyPositions(std::vector<PhyObject*>& objs) {
          timeRemaining -= c.time;
          ++attemptsToResolve;
 
-         if (attemptsToResolve == 32) {
+         if (attemptsToResolve == ResolveAttemptLimit) {
             break;
          }
       }

@@ -200,6 +200,9 @@
     <ClInclude Include="stdafx.h">
       <Filter>Precompiled</Filter>
     </ClInclude>
+    <ClInclude Include="array.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="uniforms.x">

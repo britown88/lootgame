@@ -232,8 +232,8 @@ struct TemplateSub {
 
 struct TemplateScope {   
    std::string tag;
-   std::vector<TemplateSub> subs;
-   std::vector<TemplateScope> scopes;
+   Array<TemplateSub> subs;
+   Array<TemplateScope> scopes;
 
    TemplateScope *previous = nullptr;
 };

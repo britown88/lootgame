@@ -12,7 +12,7 @@ struct TextureState {
 };
 
 struct TextureManagerState {
-   std::vector<TextureState> keyList;
+   Array<TextureState> keyList;
    bool keysDirty = true;
    Symbol* newkey;
    bool focusNewKey = false;

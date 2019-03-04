@@ -18,7 +18,7 @@ struct ParsedEnumMember {
 
 struct ParsedEnum {
    std::string name;
-   std::vector<ParsedEnumMember> members;
+   Array<ParsedEnumMember> members;
 
    bool bitfield = false;
 };
@@ -48,9 +48,9 @@ struct ParsedStructMember {
 struct ParsedStruct {
    std::string name;
    std::string anonMemberName;
-   std::vector<ParsedStructMember> members;
-   std::vector<ParsedStruct> children;
-   std::vector<ParsedEnum> enums;
+   Array<ParsedStructMember> members;
+   Array<ParsedStruct> children;
+   Array<ParsedEnum> enums;
 };
 
 /*
@@ -287,7 +287,7 @@ static bool _acceptConstructor(StringParser& p, std::string& output, char endCha
 }
 
 // rewinds to start if failed
-static bool _acceptMember(StringParser& p, std::vector<VexNode*>& modifiers, ParsedStruct &output) {
+static bool _acceptMember(StringParser& p, Array<VexNode*>& modifiers, ParsedStruct &output) {
    auto start = p.pos;
 
    ParsedStructMember newMember;
@@ -393,7 +393,7 @@ static bool _acceptStruct(StringParser& p, VexNode* vexChild, ParsedStruct &outp
       _acceptSkippable(p);
    }
 
-   std::vector<VexNode*> modifiers;
+   Array<VexNode*> modifiers;
 
    if (p.accept("struct")) {
       _acceptSkippable(p);
@@ -509,7 +509,7 @@ bool _acceptEnum(StringParser& p, VexNode* vexChild, ParsedEnum& output) {
       }
 
       if (p.accept('{')) {
-         std::vector<VexNode*> modifiers;
+         Array<VexNode*> modifiers;
 
          _acceptSkippable(p);
          while (!p.atEnd()) {
@@ -579,8 +579,8 @@ struct ParsedFile {
    std::filesystem::path path;
    FileType type;
 
-   std::vector<ParsedStruct> structs;
-   std::vector<ParsedEnum> enums;
+   Array<ParsedStruct> structs;
+   Array<ParsedEnum> enums;
 
    operator bool() { return !structs.empty() || !enums.empty(); }
 };
@@ -641,7 +641,7 @@ static ParsedFile _parseFile(std::filesystem::path path) {
    return file;
 }
 
-static void _generateMainHeader(std::vector<ParsedFile> &files) {
+static void _generateMainHeader(Array<ParsedFile> &files) {
    auto templt = fileReadString("reflection_gen.h.temp");
    auto t = vexTemplateCreate(templt.c_str());
 
@@ -676,7 +676,7 @@ static void _generateMainHeader(std::vector<ParsedFile> &files) {
    }
 }
 
-static void _generateMainHeaderImpl(std::vector<ParsedFile> &files) {
+static void _generateMainHeaderImpl(Array<ParsedFile> &files) {
    auto templt = fileReadString("reflection_gen.temp");
    auto t = vexTemplateCreate(templt.c_str());
 
@@ -898,7 +898,7 @@ static void _generateFileInline(ParsedFile &file) {
 
 
 void runReflectGen() {
-   std::vector<ParsedFile> files;
+   Array<ParsedFile> files;
 
    forEachFileInFolder(AppConfig.reflectTarget, [&](std::filesystem::path const& path) {
       if (auto file = _parseFile(path)) {

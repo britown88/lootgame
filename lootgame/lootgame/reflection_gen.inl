@@ -963,8 +963,8 @@ void reflectionStartup_generated() {
          StructMemberMetadata member;
          member.name = intern("points");
          member.offset = offsetof(Wall, points);
-         member.type = reflect<std::vector<Float2>>();
-         member.customUI = customUIRenderer<std::vector<Float2>>();
+         member.type = reflect<Array<Float2>>();
+         member.customUI = customUIRenderer<Array<Float2>>();
          
          structName->structMembers.push_back(member);
       }
@@ -985,8 +985,8 @@ void reflectionStartup_generated() {
          StructMemberMetadata member;
          member.name = intern("phyObjs");
          member.offset = offsetof(Wall, phyObjs);
-         member.type = reflect<std::vector<PhyObject>>();
-         member.customUI = customUIRenderer<std::vector<PhyObject>>();
+         member.type = reflect<Array<PhyObject>>();
+         member.customUI = customUIRenderer<Array<PhyObject>>();
          
          structName->structMembers.push_back(member);
       }
@@ -1020,8 +1020,8 @@ void reflectionStartup_generated() {
          StructMemberMetadata member;
          member.name = intern("walls");
          member.offset = offsetof(Map, walls);
-         member.type = reflect<std::vector<Wall>>();
-         member.customUI = customUIRenderer<std::vector<Wall>>();
+         member.type = reflect<Array<Wall>>();
+         member.customUI = customUIRenderer<Array<Wall>>();
          
          structName->structMembers.push_back(member);
       }
@@ -1134,8 +1134,8 @@ void reflectionStartup_generated() {
          StructMemberMetadata member;
          member.name = intern("swings");
          member.offset = offsetof(MoveSet, swings);
-         member.type = reflect<std::vector<AttackSwing>>();
-         member.customUI = customUIRenderer<std::vector<AttackSwing>>();
+         member.type = reflect<Array<AttackSwing>>();
+         member.customUI = customUIRenderer<Array<AttackSwing>>();
          
          structName->structMembers.push_back(member);
       }

@@ -24,7 +24,7 @@ void assets_textureMapSave() {
 
    // kill off deleted textures
    auto tmapCopy = TextureMap;
-   std::vector<Symbol*> toDelete;
+   Array<Symbol*> toDelete;
    for (auto&& kvp : tmapCopy.map) {
       if (kvp.second.markForDelete) {
          toDelete.push_back(kvp.first);
