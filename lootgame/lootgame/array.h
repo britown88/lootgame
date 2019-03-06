@@ -98,14 +98,7 @@ public:
    ~Array()
    {
       clear();
-
-#ifdef IS_PLUGIN
-      if (pal_memory_memory && freeFn) free(_first);
-#elif IS_LIBRARY
-      if (CONTEXT) free(_first);
-#else 
       free(_first);
-#endif
 
    }
 
@@ -385,14 +378,12 @@ public:
    template <typename InputIt>
    iterator insert(const_iterator pos, InputIt first, InputIt last)
    {
-      //this has optimized forms depending on the type of the iterator.
       typedef typename std::iterator_traits<InputIt>::iterator_category tag;
       return insert(pos, first, last, tag{});
    }
    template <typename InputIt, typename ItTag>
    iterator insert(const_iterator pos, InputIt first, InputIt last, ItTag)
    {
-      //insert into the end, and then rotate it up front.
       auto offset = pos - _first;
       auto startSz = size();
       while (first != last) push_back(*first++);
@@ -403,14 +394,12 @@ public:
    template <typename InputIt>
    iterator insert(const_iterator pos, InputIt first, InputIt last, std::random_access_iterator_tag)
    {
-      //we're inserting a random access iterator, so we can do some optimizations.
       auto newElems = std::distance(first, last);
       auto offset = pos - _first;
       reserve(size() + newElems);
       auto sz = size();
       if (offset == sz)
       {
-         //todo: this could be a bit more efficient directly using range calls.
          while (first != last) push_back(*first++);
          return _first + sz;
       }
@@ -541,8 +530,8 @@ private:
    }
    size_t _nextCapacity(size_t capacity) const
    {
-      if (capacity < 8) return 8;  //todo: is this size sensible?
-                                    //todo: replace with leading zero intrinsic
+      if (capacity < 8) return 8; 
+                                    
       auto sz = 8;
       while (sz < capacity) sz *= 2;
       return sz;

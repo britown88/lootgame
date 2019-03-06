@@ -444,6 +444,8 @@ void dudeUpdateVelocity(Dude& d) {
 
    // add the movevector scaled against acceleration to velocity and cap it
    d.phy.velocity = v2CapLength(d.phy.velocity + d.mv.moveVector , d.mv.moveSpeedCap);
+   //if (fabs(d.phy.velocity.x) < EPSILON) { d.phy.velocity.x = 0.0f; }
+   //if (fabs(d.phy.velocity.y) < EPSILON) { d.phy.velocity.y = 0.0f; }
 }
 
 // rotate facing vector toward the facevector
@@ -460,7 +462,7 @@ void dudeUpdateBehavior(Dude& dude) {
    if (dude.state != DudeState_FREE) {
       return;
    }
-
+   dude.ai.started += 16;
    auto& target = *dude.ai.target;
    auto dist = v2Dist(dude.phy.pos, target.phy.pos);
 
@@ -479,7 +481,8 @@ void dudeUpdateBehavior(Dude& dude) {
       return;
    }
 
-   if (dude.ai.started++ > (rand() % 3000) + 3000) {
+   
+   if (dude.ai.started > (rand() % 3000) + 3000) {
       dude.ai.dir = -dude.ai.dir;
       dude.ai.started = 0;
 
@@ -517,19 +520,13 @@ void dudeUpdateBehavior(Dude& dude) {
 
 
 
+void _buildPhySystem(GameState&game) {
+   game.phySys.objs.clear();
 
-
-struct FrameData {
-   Array<PhyObject*> phyObjs;
-};
-
-void buildFrameData(GameState&game, FrameData& fd) {
-   fd.phyObjs.clear();
-
-   fd.phyObjs.push_back(&game.maindude.phy);
+   game.phySys.objs.push_back(&game.maindude.phy);
    for (auto && d : game.baddudes) {
       if (dudeAlive(d)) {
-         fd.phyObjs.push_back(&d.phy);
+         game.phySys.objs.push_back(&d.phy);
       }
    }
 
@@ -553,13 +550,13 @@ void buildFrameData(GameState&game, FrameData& fd) {
          }
 
          for (auto&& po : w.phyObjs) {
-            fd.phyObjs.push_back(&po);
+            game.phySys.objs.push_back(&po);
          }
       }
    }
 
 
-   if (fd.phyObjs.size() == 1) {
+   if (game.phySys.objs.size() == 1) {
       ++game.waveSize;
       for (int i = 0; i < game.waveSize; ++i) {
          //DEBUG_gameSpawnDude(game);
@@ -568,45 +565,8 @@ void buildFrameData(GameState&game, FrameData& fd) {
 }
 
 
-void gameUpdateMilliStep(GameState& game, FrameData& fd) {
-   //static Milliseconds ms = 0;
-   //if (ms++ % 2 != 0) {
-   //   return;
-   //}
+void gameUpdateMilliStep(GameState& game) {
 
-   dudeUpdateState(game.maindude);
-
-   if (dudeAlive(game.maindude)) {
-      dudeApplyInput(game, game.maindude);
-   }
-
-   dudeUpdateRotation(game.maindude);
-   dudeUpdateVelocity(game.maindude);
-
-   mainDudeCheckAttackCollisions(game.maindude, game.baddudes);
-
-   for (auto && d : game.baddudes) {
-      dudeUpdateState(d);
-
-      if (dudeAlive(d)) {
-         dudeUpdateBehavior(d);
-      }
-
-      dudeUpdateRotation(d);
-      dudeUpdateVelocity(d);
-
-      if (dudeAlive(d)) {
-         badDudeCheckAttackCollision(game, d, game.maindude);
-      }
-   }
-
-   updatePhyPositions(fd.phyObjs);
-
-   if (game.mode.type == ModeType_YOUDIED) {
-      if (++game.mode.clock > 3000) {
-         //_gameInitNew();
-      }
-   }
 }
 
 
@@ -627,67 +587,67 @@ bool gameProcessEvent(GameState& g, SDL_Event* event) {
    switch (event->type) {
    case SDL_KEYUP:
    case SDL_KEYDOWN: {
-      bool pressed = event->type == SDL_KEYDOWN;
-      GameButton btn;
+      //bool pressed = event->type == SDL_KEYDOWN;
+      //GameButton btn;
 
-      switch (event->key.keysym.scancode) {
-      case SDL_SCANCODE_W:
-         btn = GameButton_UP;
+      //switch (event->key.keysym.scancode) {
+      //case SDL_SCANCODE_W:
+      //   btn = GameButton_UP;
 
-         if (pressed) {
-            if (!event->key.repeat) io.leftStick.y = -1.0f;
-         }
-         else if (!io.buttonDown[GameButton_DOWN]) {
-            io.leftStick.y = 0.0f;
-         }
+      //   if (pressed) {
+      //      if (!event->key.repeat) io.leftStick.y = -1.0f;
+      //   }
+      //   else if (!io.buttonDown[GameButton_DOWN]) {
+      //      io.leftStick.y = 0.0f;
+      //   }
 
-         break;
-      case SDL_SCANCODE_A:
-         btn = GameButton_LEFT;
+      //   break;
+      //case SDL_SCANCODE_A:
+      //   btn = GameButton_LEFT;
 
-         if (pressed) {
-            if (!event->key.repeat) io.leftStick.x = -1.0f;
-         }
-         else if (!io.buttonDown[GameButton_RIGHT]) {
-            io.leftStick.x = 0.0f;
-         }
-         break;
-      case SDL_SCANCODE_S:
-         btn = GameButton_DOWN;
+      //   if (pressed) {
+      //      if (!event->key.repeat) io.leftStick.x = -1.0f;
+      //   }
+      //   else if (!io.buttonDown[GameButton_RIGHT]) {
+      //      io.leftStick.x = 0.0f;
+      //   }
+      //   break;
+      //case SDL_SCANCODE_S:
+      //   btn = GameButton_DOWN;
 
-         if (pressed) {
-            if (!event->key.repeat) io.leftStick.y = 1.0f;
-         }
-         else if (!io.buttonDown[GameButton_UP]) {
-            io.leftStick.y = 0.0f;
-         }
-         break;
-      case SDL_SCANCODE_D:
-         btn = GameButton_RIGHT;
+      //   if (pressed) {
+      //      if (!event->key.repeat) io.leftStick.y = 1.0f;
+      //   }
+      //   else if (!io.buttonDown[GameButton_UP]) {
+      //      io.leftStick.y = 0.0f;
+      //   }
+      //   break;
+      //case SDL_SCANCODE_D:
+      //   btn = GameButton_RIGHT;
 
-         if (pressed) {
-            if (!event->key.repeat) io.leftStick.x = 1.0f;
-         }
-         else if (!io.buttonDown[GameButton_LEFT]) {
-            io.leftStick.x = 0.0f;
-         }
-         break;
-      default: return false;
-      }
+      //   if (pressed) {
+      //      if (!event->key.repeat) io.leftStick.x = 1.0f;
+      //   }
+      //   else if (!io.buttonDown[GameButton_LEFT]) {
+      //      io.leftStick.x = 0.0f;
+      //   }
+      //   break;
+      //default: return false;
+      //}
 
-      if (!event->key.repeat) {
-         io.leftStick = v2Normalized(io.leftStick);
-      }
+      //if (!event->key.repeat) {
+      //   io.leftStick = v2Normalized(io.leftStick);
+      //}
 
-      if (!io.buttonDown[btn] && pressed) {
-         io.buttonPressed[btn] = true;
-      }
-      if (io.buttonDown[btn] && !pressed) {
-         io.buttonReleased[btn] = true;
-      }
-      io.buttonDown[btn] = pressed;
+      //if (!io.buttonDown[btn] && pressed) {
+      //   io.buttonPressed[btn] = true;
+      //}
+      //if (io.buttonDown[btn] && !pressed) {
+      //   io.buttonReleased[btn] = true;
+      //}
+      //io.buttonDown[btn] = pressed;
 
-      return true;
+      //return true;
    }  break;
 
    case SDL_MOUSEMOTION:
@@ -772,45 +732,125 @@ bool gameProcessEvent(GameState& g, SDL_Event* event) {
    return false;
 }
 
-void gameUpdate(GameState& g) {
-   auto time = appGetTime();
-   auto dt = time - g.lastUpdate;
-   auto ms = dt.toMilliseconds();
 
-   auto&vp = g.camera.viewport;
-   auto&dudePos = g.maindude.phy.pos;
-   auto&dudeFace = g.maindude.mv.facing;
-
-   if (ms > 32) {
-      // something bad happened and we spiked hard
-      ms = 32;
-      g.lastUpdate = time - timeMillis(ms);
-   }
-
-   // build physics system
-
-   static FrameData fd;
-   buildFrameData(g, fd);
-
-   for (Milliseconds i = 0; i < ms; ++i) {
-      gameUpdateMilliStep(g, fd);
-   }
-
-
-
+static void _cameraFollowPlayer(GameState& g) {   
    if (!g.ui.editing) {
+      auto &vp = g.camera.viewport;
+      auto& dudePos = g.maindude.phy.pos;
+
       //camera follow on dude
       vp.x = clamp(dudePos.x - (vp.w / 2), 0, g.map.size.x - vp.w);
       vp.y = clamp(dudePos.y - (vp.h / 2), 0, g.map.size.y - vp.h);
       vp.w = Const.vpSize.x;
       vp.h = Const.vpSize.y;
    }
+}
 
-   g.lastUpdate += timeMillis(ms);
 
-   // imgui output
+static void _otherFrameStep(GameState& g) {
 
-   //gameDoUI(g);
+}
+
+static void _frameStep(GameState& g) {
+   mainDudeCheckAttackCollisions(g.maindude, g.baddudes);
+
+   for (auto && d : g.baddudes) {
+      if (dudeAlive(d)) {
+         dudeUpdateBehavior(d);
+         badDudeCheckAttackCollision(g, d, g.maindude);
+      }
+
+   }
+
+   _buildPhySystem(g);
+   
+}
+
+static void _milliStep(GameState& g) {
+   dudeUpdateState(g.maindude);
+
+   if (dudeAlive(g.maindude)) {
+      dudeApplyInput(g, g.maindude);
+   }
+
+   dudeUpdateRotation(g.maindude);
+   dudeUpdateVelocity(g.maindude);
+
+   
+
+   for (auto && d : g.baddudes) {
+      dudeUpdateState(d);
+
+      dudeUpdateRotation(d);
+      dudeUpdateVelocity(d);
+   }
+
+   if (g.mode.type == ModeType_YOUDIED) {
+      if (++g.mode.clock > 3000) {
+         //gameStartActionMode(g);
+      }
+   }
+
+   updatePhyPositions(g.phySys.objs); 
+
+   _cameraFollowPlayer(g);
+}
+
+static const int LastUpdateMSCap = 32;
+static const int FrameLength = 16;
+
+void gameUpdate(GameState& g) {
+   auto time = appGetTime();
+   auto dt = time - g.lastUpdate;
+   auto ms = dt.toMilliseconds();
+
+   if (ms > LastUpdateMSCap) {
+      // something bad happened and we spiked hard
+      ms = LastUpdateMSCap;
+      g.lastUpdate = time - timeMillis(ms);
+   }
+
+   g.lastUpdate += timeMillis(ms);   
+
+   g.otherFrameClock += ms;
+   g.frameClock += ms;
+   g.gameClock += ms;
+
+   while (g.otherFrameClock > FrameLength * 2) {
+      _otherFrameStep(g);
+      g.otherFrameClock -= FrameLength * 2;
+
+      for (int i = 0; i < 2; ++i) {
+         if (g.frameClock > FrameLength) {
+            _frameStep(g);
+            g.frameClock -= FrameLength;
+         }
+
+         for (int j = 0; j < FrameLength; ++j) {
+            if (g.gameClock > 0) {
+               _milliStep(g);
+               --g.gameClock;
+            }
+         }
+      }
+   }
+
+   while (g.frameClock > FrameLength) {
+      _frameStep(g);
+      g.frameClock -= FrameLength;
+
+      for (int j = 0; j < FrameLength; ++j) {
+         if (g.gameClock > 0) {
+            _milliStep(g);
+            --g.gameClock;
+         }
+      }
+   }
+
+   while (g.gameClock > 0) {
+      _milliStep(g);
+      --g.gameClock;
+   }
 }
 
 

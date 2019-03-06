@@ -85,6 +85,10 @@ Float2 v2FromAngle(float radians) {
    return { cosf(radians), sinf(radians) };
 }
 
+Float2 v2Perp(Float2 v) {
+   return Float2{ -v.y, v.x };
+}
+
 Float2 v2RotateTowards(Float2 direction, Float2 target, Float2 perFrame) {
 
    int det = SIGN(v2Determinant(direction, target));
@@ -242,6 +246,76 @@ bool polyConvex(Float2*pts, int vCount) {
    return true;
 }
 
+bool rayVsAABB(Float2 _p, Float2 _d, Rectf aabb, float& tmin, Float2& q) {
+   tmin = 0.0f;
+   float tmax = FLT_MAX;
+   float* p = (float*)&_p;
+   float* d = (float*)&_d;
+   float min[2] = { aabb.x, aabb.y };
+   float max[2] = { min[0] + aabb.w, min[1] + aabb.h };
+
+   for (int i = 0; i < 2; ++i) {
+      if (fabs(d[i]) < EPSILON) {
+         if (p[i] < min[i] || p[i] > max[i]) return false;
+      }
+      else {
+         float ood = 1.0f / d[i];
+         float t1 = (min[i] - p[i]) * ood;
+         float t2 = (max[i] - p[i]) * ood;
+
+         if (t1 > t2) std::swap(t1, t2);
+
+         tmin = MAX(tmin, t1);
+         tmax = MIN(tmax, t2);
+
+         if (tmin > tmax) return false;
+      }
+   }
+   q = _p + _d * tmin;
+   return true;
+}
+
+bool rayVsAABB2(Float2 p1, Float2 p2, Rectf aabb, float &tmin) {
+   float s, t;
+   Float2 connectPoint;
+
+   Float2 a = aabb.Min();
+   Float2 b = { a.x + aabb.w, a.y };
+   Float2 c = { a.x, a.y + aabb.h };
+   Float2 d = { b.x, c.y };
+
+   float shortest = FLT_MAX;
+   bool intersect = false;
+
+   if (segmentSegmentIntersect(p1, p2, a, b, s, t, connectPoint)) {
+      if (t < shortest) {
+         shortest = t;
+         intersect = true;
+      }
+   }
+   if (segmentSegmentIntersect(p1, p2, b, c, s, t, connectPoint)) {
+      if (t < shortest) {
+         shortest = t;
+         intersect = true;
+      }
+   }
+   if (segmentSegmentIntersect(p1, p2, c, d, s, t, connectPoint)) {
+      if (t < shortest) {
+         shortest = t;
+         intersect = true;
+      }
+   }
+   if (segmentSegmentIntersect(p1, p2, d, a, s, t, connectPoint)) {
+      if (t < shortest) {
+         shortest = t;
+         intersect = true;
+      }
+   }
+
+   return intersect;  
+
+}
+
 // Returns 1 if the lines intersect, otherwise 0. In addition, if the lines 
 // intersect the intersection point may be stored in the floats i_x and i_y.
 char get_line_intersection(float p0_x, float p0_y, float p1_x, float p1_y,
@@ -270,19 +344,20 @@ char get_line_intersection(float p0_x, float p0_y, float p1_x, float p1_y,
 
 // Returns 1 if the lines intersect, otherwise 0. In addition, if the lines 
 // intersect the intersection point may be stored in the floats i_x and i_y.
-bool segmentSegmentIntersect(Float2 p1, Float2 p2, Float2 q1, Float2 q2, float&t1, float& t2, Float2& i) {
-
+bool segmentSegmentIntersect(Float2 p1, Float2 p2, Float2 q1, Float2 q2, float&s, float& t, Float2& i) {
    auto ps = p2 - p1;
    auto qs = q2 - q1;
 
-   t1 = (-ps.y * (p1.x - q1.x) + ps.x * (p1.y - q1.y)) / (-qs.x * ps.y + ps.x * qs.y);
-   t2 = (qs.x * (p1.y - q1.y) - qs.y * (p1.x - q1.x)) / (-qs.x * ps.y + ps.x * qs.y);
+   s = (-ps.y * (p1.x - q1.x) + ps.x * (p1.y - q1.y)) / (-qs.x * ps.y + ps.x * qs.y);
+   t = (qs.x * (p1.y - q1.y) - qs.y * (p1.x - q1.x)) / (-qs.x * ps.y + ps.x * qs.y);
 
-   i.x = p1.x + (t2 * ps.x);
-   i.y = p1.y + (t2 * ps.y);
+   if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+      i.x = p1.x + (t * ps.x);
+      i.y = p1.y + (t * ps.y);
+      return true;
+   }
 
-   // return wither the t's are both 0-1
-   return t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1;
+   return false;
 }
 
 float segmentSegmentDistSquared(Float2 p1, Float2 q1, Float2 p2, Float2 q2, float& s, float& t, Float2& c1, Float2& c2) {

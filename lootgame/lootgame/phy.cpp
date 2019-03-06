@@ -1,8 +1,9 @@
 #include "stdafx.h"
 
 #include "phy.h"
+#include "coords.h"
 
-static const int ResolveAttemptLimit = 16;
+static const int ResolveAttemptLimit = 32;
 
 enum CollisionType {
    CollisionType_CircleCircle = 0,
@@ -15,8 +16,10 @@ struct PhyCollision {
    float time = 0.0f;
 
    CollisionType type;
-   Float2 collisionPoint;
+   Float2 collisionNormal;
 };
+
+
 
 static void _detect_CircleCircle(PhyObject*a, PhyObject*b, Array<PhyCollision>& collisions, float &timeRemaining) {   
    // first an early-out test to see if both positions plus both velocities can fall within their combioned radii
@@ -28,58 +31,214 @@ static void _detect_CircleCircle(PhyObject*a, PhyObject*b, Array<PhyCollision>& 
          });
 
    if (rangeCheck < combinedSize*combinedSize) {
-      float t = 0.0f;
+      float t;
       Float2 q = { 0,0 };
 
       auto avelscaled = a->velocity * timeRemaining;
       auto bvelscaled = b->velocity * timeRemaining;
 
       auto dirvec = avelscaled - bvelscaled;
-      auto len = v2Len(dirvec);
-      dirvec /= len;
+      auto dirlen = v2Len(dirvec);
+      auto dirnorm = dirvec / dirlen;
 
       //now we determine the time t in which a ray from obj a toward their combined velocities intersects b
-      if (intersectRaySphere(a->pos, dirvec, b->pos, combinedSize, t, q) && t <= len && t > EPSILON) {
-         PhyCollision c = { a, b, (t / len) * timeRemaining, CollisionType_CircleCircle };
-         collisions.push_back(c);
+      if (intersectRaySphere(a->pos, dirnorm, b->pos, combinedSize, t, q) && t <= dirlen) {
+         //auto distCheck = v2Len((b->pos) - (a->pos));
+
+         static bool errTripped = false;
+         if (t == 0.0f) {
+            //if (!errTripped) {
+               //ERR("IntersectRaySphere dist:%0.7f", distCheck);
+            //}            
+            //errTripped = true;
+         }
+         else {
+
+            //errTripped = false;
+            //WARN("IntersectRaySphere dist:%0.7f", distCheck);
+            //if (fabs(a->velocity.x) < 0.0001f) { a->velocity.x = 0.0f; }
+            //if (fabs(a->velocity.y) < 0.0001f) { a->velocity.y = 0.0f; }
+            //if (fabs(b->velocity.x) < 0.0001f) { b->velocity.x = 0.0f; }
+            //if (fabs(b->velocity.y) < 0.0001f) { b->velocity.y = 0.0f; }
+
+            auto dt = (t / dirlen) * timeRemaining;
+            PhyCollision c = { 
+               a, b, dt,
+               CollisionType_CircleCircle,
+               v2Normalized(b->pos  - a->pos) };
+
+            //LOG("Collision detected t:%0.7f", c.time);
+            collisions.push_back(c);
+         }
+         //if (t == 12.0f) {
+         //   t = 0;
+         //}
+         
       }
    }
 }
 
 static void _detect_CircleSegment(PhyObject*a, PhyObject*b, Array<PhyCollision>& collisions, float &timeRemaining) {
    float collisionRange = a->circle.size;
+   auto pv = a->velocity * timeRemaining;
+   auto qv = b->velocity * timeRemaining;
 
-   // we need to find the point t in a's movement that causes a collision with line segment b
-   // first we cast a ray from a'b pos in the direction of its velocity to determine the point it will will intersect b
    Float2 p1 = a->pos;
-   Float2 p2 = a->pos + a->velocity * timeRemaining;
+   Float2 p2Check = p1 + pv;
 
    Float2 q1 = b->pos;
    Float2 q2 = b->segment.b;
-
+   
+   // early out check from aabb around q
    bool aabbCheck =
-      (p2.x > MIN(q1.x, q2.x) - collisionRange) &&
-      (p2.y > MIN(q1.y, q2.y) - collisionRange) &&
-      (p2.x <= MAX(q1.x, q2.x) + collisionRange) &&
-      (p2.y <= MAX(q1.y, q2.y) + collisionRange);
+      (p2Check.x > MIN(q1.x + qv.x, q2.x + qv.x) - collisionRange) &&
+      (p2Check.y > MIN(q1.y + qv.y, q2.y + qv.y) - collisionRange) &&
+      (p2Check.x <= MAX(q1.x + qv.x, q2.x + qv.x) + collisionRange) &&
+      (p2Check.y <= MAX(q1.y + qv.y, q2.y + qv.y) + collisionRange);
 
    if (!aabbCheck) {
       return;
    }
 
-   float t1, t2;
-   Float2 iPoint;
-   bool intersect = segmentSegmentIntersect(p1, p2, q1, q2, t1, t2, iPoint);
-   if (fabs(t2) < collisionRange*collisionRange) {
-      float rayt;
-      Float2 connectPoint;
-      auto pdiff = p2 - p1;
-      auto plen = v2Len(pdiff);
-      if (intersectRaySphere(p1, pdiff/ plen, iPoint, collisionRange, rayt, connectPoint) && rayt <= plen && rayt > EPSILON) {
-         PhyCollision c = { a, b, (rayt / plen) * timeRemaining, CollisionType_CircleSegment, iPoint };
-         collisions.push_back(c);
-      }
+   // q is our segment, p is our circle
+   auto qdiff = q2 - q1;
+   auto qlen = v2Len(qdiff);
+   auto qdir = qdiff / qlen;
+
+   auto v = pv - qv;
+   auto vlen = v2Len(v);
+   auto vdir = v / vlen;
+
+   float t; Float2 c = { 0,0 };
+
+   float shortest = FLT_MAX;
+   PhyCollision col = { a, b, 0.0f, CollisionType_CircleSegment };
+   bool collision = false;
+
+   //if (intersectRaySphere(p1, vdir, q1, collisionRange, t, c) && t <= vlen && t > 0.0f) {
+   //   shortest = t;
+   //   collision = true;
+   //   col.time = (t / vlen);
+   //   col.collisionNormal = v2Normalized(q1 - p1);
+   //}
+
+   //if (intersectRaySphere(p1, vdir, q2, collisionRange, t, c) && t <= vlen && t > 0.0f) {
+   //   if (t < shortest) {
+   //      shortest = t;
+   //      collision = true;
+   //      col.time = (t / vlen);
+   //      col.collisionNormal = v2Normalized(q2 - p1);
+   //   }
+   //}
+
+   auto qconj = v2Conjugate(qdir);
+   // get p origin by rotating it around q1 by qconj
+   auto rp1 = v2Rotate(p1 - q1, qconj);
+   // just rotate the velocity normal by qconj
+   auto rvdir = v2Rotate(vdir, qconj);
+
+   // rotated aabb for q
+   Rectf aabb = { 0, -collisionRange, qlen, collisionRange * 2 };
+   if (rayVsAABB(rp1, rvdir, aabb, t, c) && t <= vlen && t > 0.0f) {
+      if (t < shortest) {
+         shortest = t;
+         collision = true;
+         col.time = (t / vlen);
+         col.collisionNormal = v2Perp(qdir) * -pointSideOfSegment(q1, q2, p1);
+      }      
    }
+
+   if (collision) {
+      collisions.push_back(col);
+   }
+
+
+
+
+   //// ok so we're going to treat the segment as a capsule with 2 spheres and an OBB
+   //// we'll check the ray against all 3 to find the closest
+
+   //auto pdiff = p2 - p1;
+   //auto plen = v2Len(pdiff);
+   //auto pnorm = pdiff / plen;
+
+   //float shortest = FLT_MAX;
+
+   //PhyCollision col = { a, b };
+   //col.type = CollisionType_CircleSegment;
+
+   //bool collision = false;
+   //float t;
+   //Float2 rayConnect;
+   //if (intersectRaySphere(p1, pnorm, q1, collisionRange, t, rayConnect) && t <= plen && t > 0.0f) {
+   //   t = (t / plen);
+   //   if (t < shortest) {
+   //      shortest = t;
+   //      col.time = t * timeRemaining * 0.95f;
+   //      //col.collisionPoint = q1;
+   //      collision = true;
+   //   }    
+   //}
+
+   //if (intersectRaySphere(p1, pnorm, q2, collisionRange, t, rayConnect) && t <= plen && t > 0.0f) {
+   //   t = (t / plen);
+   //   if (t < shortest) {
+   //      shortest = t;
+   //      col.time = t * timeRemaining * 0.95f;
+   //      //col.collisionPoint = q2;
+   //      collision = true;
+   //   }
+   //}
+
+   //auto qdiff = q2 - q1;
+   //auto qlen = v2Len(qdiff);
+   //auto qnorm = qdiff / qlen;
+
+   //auto rp1 = q1 + v2Rotate(p1 - q1, v2Conjugate(qnorm));
+   //auto rp2 = q1 + v2Rotate(p2 - q1, v2Conjugate(qnorm));
+   //auto rnorm = v2Normalized(rp2 - rp1);
+
+   //Rectf aabb = {
+   //   q1.x, q1.y - collisionRange,
+   //   qlen, collisionRange * 2
+   //};
+   //Float2 aabbpt;
+   //if (rayVsAABB(rp1, rnorm, aabb, t, aabbpt) && t > 0.0f) {
+   //   LOG("t:%0.7f plen: %0.3f", t, plen);
+
+   //   if (t < shortest) {
+   //      col.time = t * timeRemaining * 0.95f;
+
+   //      float ct;
+   //      Float2 closest;
+   //      pointClosestOnSegment(q1, q2, p1 + pnorm * col.time, ct, closest);
+   //      //col.collisionPoint = closest;
+   //      collision = true;
+   //   }
+   //}
+   //
+
+   //if (collision) {
+   //   collisions.push_back(col);
+   //}
+
+
+
+
+
+   //if (fabs(t2) < collisionRange*collisionRange) {
+   //   float rayt;
+   //   Float2 connectPoint;
+   //   auto pdiff = p2 - p1;
+   //   auto plen = v2Len(pdiff);
+   //   if (intersectRaySphere(p1, pdiff/ plen, iPoint, collisionRange, rayt, connectPoint) && rayt <= plen && rayt > EPSILON) {
+   //      float t; Float2 d;
+   //      pointClosestOnSegment(q1, q2, p2, t, d);
+   //      PhyCollision c = { a, b, (rayt / plen) * timeRemaining, CollisionType_CircleSegment, d
+   //      };
+   //      collisions.push_back(c);
+   //   }
+   //}
 
    //float s, t;
    //Float2 c1, c2;
@@ -227,11 +386,16 @@ static bool _resolveOverlap_CircleCircle(PhyObject*a, PhyObject*b, bool& islandC
 
       auto dist = sqrtf(distSquared);
       auto overlappedDist = collisionRange - dist;
-      auto impulse = (diff/dist) * (overlappedDist + EPSILON) / (a->invMass + b->invMass);
 
-      a->pos -= impulse * a->invMass;
-      b->pos += impulse * b->invMass;
-      return true;
+      if (overlappedDist > 0.1f) {
+         auto impulse = (diff / dist) * (overlappedDist * 1.1f) / (a->invMass + b->invMass);
+
+         a->pos -= impulse * a->invMass;
+         b->pos += impulse * b->invMass;
+         //a->velocity = { 0.0f, 0.0f };
+         //b->velocity = { 0.0f, 0.0f };
+         return true;
+      }
    }
 
    return false;
@@ -244,8 +408,8 @@ static bool _resolveOverlap_CircleSegment(PhyObject*a, PhyObject*b, bool& island
    float collisionRange = a->circle.size; // only a's radius matters for collision here
    float connectRange = collisionRange + (a->maxSpeed + b->maxSpeed);
 
-   auto &ba = b->pos;
-   auto &bb = b->segment.b;
+   auto ba = b->pos;
+   auto bb = b->segment.b;
    auto ap = a->pos;
 
    bool aabbCheck =
@@ -257,6 +421,10 @@ static bool _resolveOverlap_CircleSegment(PhyObject*a, PhyObject*b, bool& island
    if (!aabbCheck) {
       islandConnected = false;
       return false;
+   }
+
+   if (pointSideOfSegment(ba, bb, ap) > 0) {
+      std::swap(ba, bb);
    }
 
    // for segments, the point we're watching for for collisions is the point on b closest to a
@@ -279,11 +447,20 @@ static bool _resolveOverlap_CircleSegment(PhyObject*a, PhyObject*b, bool& island
 
       auto dist = sqrtf(distSquared);
       auto overlappedDist = collisionRange - dist;
-      auto impulse = (diff / dist) * (overlappedDist + EPSILON) / (a->invMass + b->invMass);
 
-      a->pos -= impulse * a->invMass;
-      b->pos += impulse * b->invMass;
-      return true;
+      if (overlappedDist > 0.1f) {
+         auto impulse = (diff / dist) * (overlappedDist  * 1.1f) / (a->invMass + b->invMass);
+
+         //auto side = pointSideOfSegment(ba, bb, ap);
+         //if(side != 0)
+         //   impulse *= -side;
+
+         //ERR("circle segment overlap");
+
+         a->pos -= impulse * a->invMass;
+         b->pos += impulse * b->invMass;
+         return true;
+      }
    }
 
    return false;
@@ -349,20 +526,28 @@ void resolveOverlaps(Array<PhyObject*>& objs, IslandPartitionSet* pSet) {
       }
       // continue to resolve until there are no overlaps (or we hit a attempt cap)
    } while (overlap && attemptsToResolve++ < ResolveAttemptLimit);
+
+   if (attemptsToResolve > 10) {
+      ERR("Overlaps found, resolved after %d attempts", attemptsToResolve);
+   }
+   else if(attemptsToResolve > 1) {
+      WARN("Overlaps found, resolved after %d attempts", attemptsToResolve);
+   }
 }
 
-void applyCollisionImpulse(Float2 pos1, Float2 pos2, Float2& vel1, Float2& vel2, float invMass1, float invMass2, float restitution)
+void applyCollisionImpulse(Float2 normal, Float2& vel1, Float2& vel2, float invMass1, float invMass2, float restitution)
 {
-   Float2 direction = v2Normalized(pos2 - pos1);
    Float2 relativeVelocity = vel2 - vel1;
 
-   float d = v2Dot(direction, relativeVelocity);
+   float d = v2Dot(normal, relativeVelocity);
    if (d > 0.0f) //moving away from each other?  nothing to do?
       return;
 
    float moveAmount = -(1 + restitution) * d / (invMass1 + invMass2);
 
-   Float2 impulse = direction * moveAmount;
+   Float2 impulse = normal * moveAmount;
+   //WARN("Impulse: %0.7f", v2Len(impulse));
+   
 
    vel1 -= impulse * invMass1;
    vel2 += impulse * invMass2;
@@ -375,7 +560,7 @@ void updatePhyPositions(Array<PhyObject*>& objs) {
    Array<PhyCollision> collisions;
 
    resolveOverlaps(objs, &pSet);
-
+   
    for (auto&& island : pSet.islands) {
       if (island.mailbox != pSet.mailbox) {
          continue;
@@ -385,16 +570,40 @@ void updatePhyPositions(Array<PhyObject*>& objs) {
       float timeRemaining = 1.0f;
       int attemptsToResolve = 0;
 
-      while (timeRemaining > 0.0f && attemptsToResolve < ResolveAttemptLimit) {
+      while (timeRemaining > EPSILON /*&& attemptsToResolve < ResolveAttemptLimit*/) {
          collisions.clear();
-         getAllPhyCollisions(island.objs, collisions, timeRemaining);
+         getAllPhyCollisions(island.objs, collisions, timeRemaining);         
 
          auto cCount = collisions.size();
 
          if (!cCount) {
+
+            //if (attemptsToResolve > 0 && island.objs.size() > 1) {
+            //   auto a = island.objs[0];
+            //   auto b = island.objs[1];
+
+            //   LOG("Resolved in %d", attemptsToResolve);
+            //   LOG("Stepping final by t:%0.7f", timeRemaining);
+            //   WARN("aVel=%07f bVel=%07f", v2Len(a->velocity), v2Len(b->velocity));
+            //}
+
             for (auto&& o : island.objs) {
                o->pos += o->velocity * timeRemaining;
+               if (o->type == PhyObject::PhyType_Segment) {
+                  o->segment.b += o->velocity * timeRemaining;
+               }
             }
+
+            //if (attemptsToResolve > 0 && island.objs.size() > 1) {
+            //   auto a = island.objs[0]->pos;
+            //   auto b = island.objs[1]->pos;
+            //   auto distCheck = v2Len(b - a);
+            //   LOG("Final A-B Distance: %0.7f", distCheck);
+            //   if (distCheck < island.objs[0]->circle.size * 2) {
+            //      ERR("Overlap!");
+            //   }
+            //   LOG("-------------------------------------------", cCount);
+            //}
 
             timeRemaining = 0.0f;
             break; //...yatta
@@ -415,27 +624,36 @@ void updatePhyPositions(Array<PhyObject*>& objs) {
 
          auto&a = *c.a;
          auto&b = *c.b;
+         auto step = c.time * 0.95f;
 
-         for (auto&& d : island.objs) {
-            d->pos += d->velocity * c.time;
+         //LOG("Stepping by t:%0.7f", step);
+         for (auto&& d : island.objs) {            
+            d->pos += d->velocity * step;
+            if (d->type == PhyObject::PhyType_Segment) {
+               d->segment.b += d->velocity * step;
+            }
          }
 
-         auto bpos = b.pos;
-         if (c.type == CollisionType_CircleSegment) {
-            bpos = c.collisionPoint;
-         }
-
-         applyCollisionImpulse(a.pos, bpos, a.velocity, b.velocity, a.invMass, b.invMass, 0.01f);
+         applyCollisionImpulse(c.collisionNormal, a.velocity, b.velocity, a.invMass, b.invMass, 0.01f);
 
          timeRemaining -= c.time;
+
+         //{
+         //   auto distCheck = v2Len((b.pos + b.velocity * timeRemaining) - (a.pos + a.velocity * timeRemaining));
+         //   WARN("After A-B impulse, dist should be: %0.7f", distCheck);
+         //   WARN("Assuming aVel=%07f && bVel=%07f", v2Len(a.velocity), v2Len(b.velocity));
+         //}
+
+         
          ++attemptsToResolve;
 
-         if (attemptsToResolve == ResolveAttemptLimit) {
-            break;
-         }
+         //if (attemptsToResolve == ResolveAttemptLimit) {
+         //   ERR("Failed to resolve system");
+         //   break;
+
+         //}
       }
    }
-
 
 
 }

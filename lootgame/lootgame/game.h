@@ -289,6 +289,10 @@ struct GameStateUI {
    Wall* editingWall = nullptr;
 };
 
+struct PhysicsSystem {
+   Array<PhyObject*> objs;
+};
+
 struct GameState {
 
    GameStateUI ui;
@@ -304,7 +308,15 @@ struct GameState {
    Array<Dude> baddudes;
 
    Time lastMouseMove;
-   Time lastUpdate;
+
+   Time lastUpdate; // appGetTime of last gameUpdate
+   bool paused = false;
+
+   Milliseconds gameClock = 0; // ticks since game started
+   Milliseconds frameClock = 0; // ticks since last frame step
+   Milliseconds otherFrameClock = 0; // ticks since last 'every other frame' step
+
+   PhysicsSystem phySys;
 
    int waveSize = 1;
 };

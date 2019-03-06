@@ -253,6 +253,19 @@ static void _doRightClickMenu(GameState&g) {
    if (ImGui::MenuItem("Spawn Test Dude")) {
       DEBUG_gameSpawnDude(g, g.io.mousePos);
    }
+   if (ImGui::MenuItem("Spawn 100 Test Dudes")) {
+      for(int i = 0; i < 10; ++i)
+         for (int j = 0; j < 10; ++j) {
+            auto coords = g.io.mousePos;
+
+            auto p = coords.toWorld();
+            p.x += i * 40;
+            p.y += j * 40;
+
+            DEBUG_gameSpawnDude(g, Coords::fromWorld(p));
+         }
+         
+   }
    ImGui::Separator();
 
    switch (g.ui.mode) {
@@ -337,33 +350,119 @@ static void _renderWalls(GameState& g) {
       badPoly = !_wallIsConvex(*g.ui.editingWall, mouse);
    }
 
+   for (auto&& p : g.phySys.objs) {
+      if (p->type == PhyObject::PhyType_Circle) {
+         auto center = Coords::fromWorld(p->pos).toScreen(g);
+         auto radius = Coords::fromWorld({ p->circle.size,  p->circle.size }).toScreen(g) - Coords::fromWorld({ 0,0 }).toScreen(g);
+         ImGui::GetWindowDrawList()->AddCircle(center, radius.x, IM_COL32_WHITE);
+
+         Float2 a = { center.x - 10, center.y };
+         Float2 b = { center.x + 10, center.y };
+         Float2 c = { center.x, center.y - 10 };
+         Float2 d = { center.x, center.y + 10 };
+         ImGui::GetWindowDrawList()->AddLine(a, b, IM_COL32_WHITE);
+         ImGui::GetWindowDrawList()->AddLine(c, d, IM_COL32_WHITE);
+
+      }
+   }
+
    for (auto&& wall : g.map.walls) {
       auto pCount = wall.points.size();
-      auto c = lineCol;
-      bool editing = &wall == g.ui.editingWall;
+      
 
-      if (badPoly && editing) {
-         c = badPolyCol;
-      }
+      /*
+      auto side = pointSideOfSegment(q1, q2, p2);
+   auto qnorm = v2Normalized(q2 - q1);
+   auto qnormperp = v2Perp(qnorm);
 
-      if (!editing && _pointInWall(wall, mouse)) {
-         c = hovCol;
-      }
+   auto obbq1 = q1;
+   auto obbq2 = q2;
+   auto delta = (qnormperp * collisionRange) * -side;
+
+   obbq1 += delta;
+   obbq2 += delta;
+
+   ImGui::GetOverlayDrawList()->AddLine(Coords::fromWorld(obbq1).toScreen(g);
+      */
 
       for (auto iter = wall.points.begin(); iter != wall.points.end(); ++iter) {
-         if (iter + 1 != wall.points.end()) {
-            auto a = Coords::fromWorld(*iter).toScreen(g);
-            auto b = Coords::fromWorld(*(iter + 1)).toScreen(g);
+         auto c = lineCol;
+         bool editing = &wall == g.ui.editingWall;
 
-            ImGui::GetWindowDrawList()->AddLine(a, b, c);
+         if (badPoly && editing) {
+            c = badPolyCol;
          }
-      }
 
-      if (pCount > 2) {
-         auto a = Coords::fromWorld(wall.points.front()).toScreen(g);
-         auto b = Coords::fromWorld(wall.points.back()).toScreen(g);
+         if (!editing && _pointInWall(wall, mouse)) {
+            //c = hovCol;
+         }
+
+         auto next = iter + 1;
+         if (next == wall.points.end()) {
+            next = wall.points.begin();
+         }
+
+         auto a = Coords::fromWorld(*iter).toScreen(g);
+         auto b = Coords::fromWorld(*next).toScreen(g);
+
+         auto norm = v2Perp(v2Normalized(b - a));
+
+         auto radius = Coords::fromWorld({ 10,10 }).toScreen(g) - Coords::fromWorld({ 0,0 }).toScreen(g);
+         norm = { norm.x * radius.x, norm.y * radius.y };
+
+         
+
+         auto mous = g.io.mousePos.toScreen(g);
+         auto rnorm = v2Normalized(b - a);
+         auto rotated = v2Rotate(mous - a, v2Conjugate(rnorm));
+
+         auto len = v2Len(b - a);
+
+         Rectf aabb = {
+            0, -radius.y,
+            len, radius.y * 2
+         };
+
+         
+         //mous = v2Rotate(mous - a, v2Conjugate(norm));
+
+         auto rmouse = rotated;
+
+         //ImGui::GetWindowDrawList()->AddCircle(rmouse, 5, IM_COL32_WHITE);
+
+         auto guideCol = IM_COL32(255, 255, 255, 128);
+
+         if (aabb.containsPoint(rmouse)) {
+            c = hovCol;
+            guideCol = hovCol;
+            
+         }
+
+         auto oa = a;
+         auto ob = b;
+         oa += norm;
+         ob += norm;
+         ImGui::GetWindowDrawList()->AddLine(oa, ob, guideCol);
+
+         oa = a; ob = b;
+         oa -= norm;
+         ob -= norm;
+         ImGui::GetWindowDrawList()->AddLine(oa, ob, guideCol);
+
+         ImGui::GetWindowDrawList()->AddCircle(a, radius.x, guideCol);
+         ImGui::GetWindowDrawList()->AddCircle(b, radius.x, guideCol);
+         
+         //ImGui::GetWindowDrawList()->AddRect(aabb.Min(), aabb.Max(), rCol);
+
+         
+
+         //ImGui::GetWindowDrawList()->AddLine(a, a + norm, IM_COL32_WHITE, 2.0f);
+
+
          ImGui::GetWindowDrawList()->AddLine(a, b, c);
       }
+
+
 
       //// draw bb
       //if (pCount >= 3) {
@@ -460,6 +559,12 @@ void uiDoGameDebugger(GameInstance& instance) {
       }
       if (ImGui::Button("Spawn Dude", ImVec2(ImGui::GetContentRegionAvailWidth(), 0))) {
          DEBUG_gameSpawnDude(g, Coords::fromWorld(Float2{(float)(rand()%100), (float)(rand()%100)}));
+      }
+      if (ImGui::Button("Spawn 100 Dudes", ImVec2(ImGui::GetContentRegionAvailWidth(), 0))) {
+         for (int i = 0; i < 100; ++i) {
+            DEBUG_gameSpawnDude(g, Coords::fromWorld(Float2{ (float)(rand() % 100), (float)(rand() % 100) }));
+         }
+         
       }
 
       auto&io = g.io;

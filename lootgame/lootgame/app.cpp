@@ -43,6 +43,9 @@ void _log(const char* file, LogLevel level, const char*msg) {
 
 
    g_logger.entries.push_back({ p.filename().string(), msg, level });
+   if (g_logger.entries.size() > 100) {
+      g_logger.entries.erase(g_logger.entries.begin(), g_logger.entries.begin() + 10);
+   }
    g_logger.pushBottom = true;
 }
 

@@ -5,7 +5,7 @@ static const float PI = 3.14159265359f;
 static const float RAD2DEG = 180.0f / PI;
 static const float DEG2RAD = PI / 180.0f;
 
-static const float EPSILON = 0.0001f;
+static const float EPSILON = 0.00001f;
 
 //@reflect{
 struct Int2 {
@@ -61,6 +61,7 @@ Float2 v2Scale(Float2 v, float s);
 float v2Determinant(Float2 a, Float2 b); //helper.  determines orientation of two vectors, positive vs. negative means clockwise/counterclockwise orientation
 Float2 v2Rotate(Float2 direction, Float2 rotation); //complex number rotation!!
 Float2 v2FromAngle(float radians);
+Float2 v2Perp(Float2 v);
 Float2 v2Conjugate(Float2 unit);
 float v2Angle(Float2 v);
 Float2 v2Orthogonal(Float2 v);
@@ -125,6 +126,8 @@ static bool rectiIntersects(Recti a, Recti b) {
 
 // collisions
 bool circleVsAabb(Float2 co, float cr, Rectf const& aabb);
+bool rayVsAABB(Float2 _p, Float2 _d, Rectf aabb, float& tmin, Float2& q);
+bool rayVsAABB2(Float2 p1, Float2 p2, Rectf aabb, float &tmin);
 
 Recti getProportionallyFitRect(Float2 srcSize, Float2 destSize);
 Recti getProportionallyFitRect(Int2 srcSize, Int2 destSize);
@@ -137,7 +140,7 @@ int pointSideOfSegment(Float2 a, Float2 b, Float2 p);
 bool pointInPoly(Float2 p, Float2*pts, int vCount);
 bool polyConvex(Float2*pts, int vCount);
 
-bool segmentSegmentIntersect(Float2 p1, Float2 p2, Float2 q1, Float2 q2, float&t1, float& t2, Float2& i);
+bool segmentSegmentIntersect(Float2 p1, Float2 p2, Float2 q1, Float2 q2, float&s, float& t, Float2& i);
 float segmentSegmentDistSquared(Float2 p1, Float2 q1, Float2 p2, Float2 q2, float& s, float& t, Float2& c1, Float2& c2);
 
 
