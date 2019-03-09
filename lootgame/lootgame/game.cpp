@@ -532,7 +532,7 @@ void _buildPhySystem(GameState&game) {
    }
 
    for (auto && w : game.map.walls) {
-      auto& pts = w.points;
+      auto& pts = w.poly.points;
       auto pCount = pts.size();
       if (pCount >= 3) {
          if (w.phyObjs.size() < pCount) {

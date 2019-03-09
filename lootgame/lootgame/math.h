@@ -74,6 +74,11 @@ Float2 v2RotateTowards(Float2 direction, Float2 target, Float2 perFrame);
 Float2 v2MoveTowards(Float2 position, Float2 target, float speed);
 
 //@reflect{
+struct ConvexPoly {
+   Array<Float2> points;
+};//}
+
+//@reflect{
 struct Recti{
    int32_t x, y, w, h;
 };//}

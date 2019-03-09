@@ -20,8 +20,9 @@
 #include "game.h"
 #include "lpp.h"
 #include "scf.h"
-
 #include "reflection_gen.h"
+
+GameState* DEBUG_CurrentGame = nullptr;
 
 _AppConfig AppConfig;
 static bool _gameInstanceStep(GameInstance& g);
@@ -305,6 +306,7 @@ void appBeginNewGameInstance() {
    ImGui::SetWindowFocus(inst->winTitle.c_str());
 
    appAddGUI(inst->winTitle.c_str(), [=]()mutable {
+      DEBUG_CurrentGame = &inst->state;
       return _gameInstanceStep(*inst);
    });
 }

@@ -222,6 +222,15 @@ struct Reflector<Float3>{
 };
 
 
+// ConvexPoly ----------------------------
+typedef struct ConvexPoly ConvexPoly;
+extern TypeMetadata* meta_ConvexPoly;
+template<>
+struct Reflector<ConvexPoly>{
+   static TypeMetadata const* type() { return meta_ConvexPoly; }
+};
+
+
 // Recti ----------------------------
 typedef struct Recti Recti;
 extern TypeMetadata* meta_Recti;

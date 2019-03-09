@@ -26,6 +26,7 @@ TypeMetadata* meta_Int2 = new TypeMetadata;
 TypeMetadata* meta_Int3 = new TypeMetadata;
 TypeMetadata* meta_Float2 = new TypeMetadata;
 TypeMetadata* meta_Float3 = new TypeMetadata;
+TypeMetadata* meta_ConvexPoly = new TypeMetadata;
 TypeMetadata* meta_Recti = new TypeMetadata;
 TypeMetadata* meta_Rectf = new TypeMetadata;
 TypeMetadata* meta_TextureFlag_ = new TypeMetadata;
@@ -961,10 +962,10 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
-         member.name = intern("points");
-         member.offset = offsetof(Wall, points);
-         member.type = reflect<Array<Float2>>();
-         member.customUI = customUIRenderer<Array<Float2>>();
+         member.name = intern("poly");
+         member.offset = offsetof(Wall, poly);
+         member.type = reflect<ConvexPoly>();
+         member.customUI = customUIRenderer<ConvexPoly>();
          
          structName->structMembers.push_back(member);
       }
@@ -1414,6 +1415,30 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Float3, z);
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
+      auto& structName = meta_ConvexPoly;
+      structName->name = intern("ConvexPoly");
+      structName->size = sizeof(ConvexPoly);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) ConvexPoly;};
+      structName->funcs.destroy = [](void* data) {((ConvexPoly*)data)->~ConvexPoly(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("points");
+         member.offset = offsetof(ConvexPoly, points);
+         member.type = reflect<Array<Float2>>();
+         member.customUI = customUIRenderer<Array<Float2>>();
          
          structName->structMembers.push_back(member);
       }

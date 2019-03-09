@@ -129,6 +129,9 @@
     <ClCompile Include="ui_viewer.cpp">
       <Filter>Source Files\ui</Filter>
     </ClCompile>
+    <ClCompile Include="shadows.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h">
@@ -229,5 +232,8 @@
     <None Include="config.ini">
       <Filter>Resource Files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="lootgame.natvis" />
   </ItemGroup>
 </Project>

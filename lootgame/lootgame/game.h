@@ -120,7 +120,7 @@ struct GameCamera {
 
 //@reflect{
 struct Wall {
-   Array<Float2> points;
+   ConvexPoly poly;
    Rectf bb;
    Array<PhyObject> phyObjs;
 }; //}
@@ -326,6 +326,8 @@ struct GameInstance {
    GameState state;
    FBO outputFbo;
 };
+
+extern GameState* DEBUG_CurrentGame;
 
 void gameBeginFrame(GameState& g);
 

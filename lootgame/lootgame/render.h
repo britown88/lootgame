@@ -169,4 +169,6 @@ namespace render{
    void meshDestroy(Mesh& m);
 
    void meshRender(Mesh const& m);
+
+   Array<Float2> buildShadowsBuffer(Float2 center, float radius, Array<ConvexPoly>& blockers, int circleSegmentCount = 24);
 }
