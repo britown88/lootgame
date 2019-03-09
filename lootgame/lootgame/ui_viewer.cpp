@@ -408,26 +408,14 @@ static void _renderWalls(GameState& g) {
    }
 
    for (auto&& wall : g.map.walls) {
-      auto pCount = wall.points.size();
-
-      for (auto iter = wall.points.begin(); iter != wall.points.end(); ++iter) {
-         auto c = lineCol;
-         bool editing = &wall == g.ui.editingWall;
-
-         if (badPoly && editing) {
-            c = badPolyCol;
-         }
-
-         auto next = iter + 1;
-         if (next == wall.points.end()) {
-            next = wall.points.begin();
-         }
-
-         auto a = Coords::fromWorld(*iter).toScreen(g);
-         auto b = Coords::fromWorld(*next).toScreen(g);
-         
-         ImGui::GetWindowDrawList()->AddLine(a, b, c);
+      Array<ImVec2> screenPts;
+      for (auto p : wall.points) {
+         screenPts.push_back(Coords::fromWorld(p).toScreen(g));
       }
+
+      auto drawlist = ImGui::GetWindowDrawList();
+      drawlist->AddConvexPolyFilled(screenPts.data(), screenPts.size(), IM_COL32(0,0,0,200));
+      drawlist->AddPolyline(screenPts.data(), screenPts.size(), lineCol, true, 2.0f);
    }
 
    // render the editing wall
@@ -525,7 +513,9 @@ static void _renderShadowCalc(GameState& g) {
    auto segmentCol2 = IM_COL32(255, 255, 128, 128);
    auto rayCol = IM_COL32(255, 0, 0, 128);
 
-   drawlist->AddCircle(ppos, radius, radiusCol, 50);
+   auto segCount = 10;
+   //drawlist->AddCircle(ppos, radius, radiusCol, segCount);
+   //drawlist->AddCircle(ppos, radius, IM_COL32(255, 255, 255, 64), 50);
 
    Array<ShadowCasterSegment> segments, orphanedSegments;
 
@@ -667,6 +657,28 @@ static void _renderShadowCalc(GameState& g) {
       ray.anglef = v2Angle(ray.dir);
    }
 
+
+   // now we litter our own distribution of edge rays to fill the circle out
+   // these are automatically ignored when une3cessary during traversal, it only costs us a little
+   // for the sort
+   rays.reserve(rays.size() + segCount);
+   auto angleMax = TAU * ((float)segCount) / (float)segCount;
+   for (int i = 0; i < segCount; ++i) {
+      auto a = (i / (float)segCount) * angleMax;
+
+      ShadowCastRay ray;
+      ray.dir = Float2{ cosf(a), sinf(a) };
+      ray.p = ppos + ray.dir * radius;
+      ray.dist = radius;
+      ray.anglef = v2Angle(ray.dir);
+      //ray.anglef = a;
+      
+      ray.onEdge = true;
+      rays.push_back(ray);
+
+      //drawlist->AddCircle(ppos + end * radius, 10, radiusCol);
+   }
+
    // sort in polar order
    std::sort(rays.begin(), rays.end(), [](ShadowCastRay const&a, ShadowCastRay const&b) {return a.anglef < b.anglef; });
 
@@ -796,50 +808,60 @@ static void _segmentClockwiseEnd(ShadowCasterSegment& segment, Float2 ppos, Floa
           }
        }
     }
-    
 
-    if (firstRay.type == ShadowRayType_RightAligned) {
-       if (shortestSegment >= 0) {
-          openList.erase(std::find(openList.begin(), openList.end(), shortestSegment));
-
-          active.p = shortestPoint;
-          active.dist = v2Dist(active.p, ppos);
-          active.segment = shortestSegment;
-          active.type = ShadowActiveNode_OnSegment;
-
-          _segmentClockwiseEnd(segments[active.segment], ppos, active.segmentEnd);
-       }
-       else {
-          active.p = endPoint;
-          active.dist = radius;
-          active.segment = shortestSegment;
-          active.type = ShadowActiveNode_OnEdge;
-
-          _segmentClockwiseEnd(segments[active.segment], ppos, active.segmentEnd);
-       }
-    }
-    else {
+    if (firstRay.onEdge) {
        active.p = firstRay.p;
        active.dist = firstRay.dist;
-       active.segment = _rayInnerSegment(firstRay, ppos);
-       active.type = ShadowActiveNode_EndPoint;
-
-       _segmentClockwiseEnd(segments[active.segment], ppos, active.segmentEnd);
-
-       if (firstRay.type == ShadowRayType_LeftAligned) {
-          auto otherSeg = -1;
-          if (firstRay.asegment >= 0 && firstRay.asegment != active.segment) { otherSeg = firstRay.asegment; }
-          else if (firstRay.bsegment >= 0 && firstRay.bsegment != active.segment) { otherSeg = firstRay.bsegment; }
-          if (otherSeg >= 0) {
-             openList.push_back(otherSeg);
-          }
-          
-       }
-
-       // push the other segment onto open
-       //if (firstRay.asegment >= 0 && firstRay.asegment != active.segment) { openList.push_back(firstRay.asegment); }
-       //else if (firstRay.bsegment >= 0 && firstRay.bsegment != active.segment) { openList.push_back(firstRay.bsegment); }
+       active.segment = -1;
+       active.type = ShadowActiveNode_OnEdge;
     }
+    else {
+       if (firstRay.type == ShadowRayType_RightAligned) {
+          if (shortestSegment >= 0) {
+             openList.erase(std::find(openList.begin(), openList.end(), shortestSegment));
+
+             active.p = shortestPoint;
+             active.dist = v2Dist(active.p, ppos);
+             active.segment = shortestSegment;
+             active.type = ShadowActiveNode_OnSegment;
+
+             _segmentClockwiseEnd(segments[active.segment], ppos, active.segmentEnd);
+          }
+          else {
+             active.p = endPoint;
+             active.dist = radius;
+             active.segment = shortestSegment;
+             active.type = ShadowActiveNode_OnEdge;
+
+             _segmentClockwiseEnd(segments[active.segment], ppos, active.segmentEnd);
+          }
+       }
+       else {
+          active.p = firstRay.p;
+          active.dist = firstRay.dist;
+          active.segment = _rayInnerSegment(firstRay, ppos);
+          active.type = ShadowActiveNode_EndPoint;
+
+          _segmentClockwiseEnd(segments[active.segment], ppos, active.segmentEnd);
+
+          if (firstRay.type == ShadowRayType_LeftAligned) {
+             auto otherSeg = -1;
+             if (firstRay.asegment >= 0 && firstRay.asegment != active.segment) { otherSeg = firstRay.asegment; }
+             else if (firstRay.bsegment >= 0 && firstRay.bsegment != active.segment) { otherSeg = firstRay.bsegment; }
+             if (otherSeg >= 0) {
+                openList.push_back(otherSeg);
+             }
+
+          }
+
+          // push the other segment onto open
+          //if (firstRay.asegment >= 0 && firstRay.asegment != active.segment) { openList.push_back(firstRay.asegment); }
+          //else if (firstRay.bsegment >= 0 && firstRay.bsegment != active.segment) { openList.push_back(firstRay.bsegment); }
+       }
+    }
+    
+
+   
 
     // helper draw out our active node and open List
     //drawlist->AddCircle(active.p, 5, IM_COL32(0, 255, 255, 255));
@@ -893,13 +915,15 @@ static void _segmentClockwiseEnd(ShadowCasterSegment& segment, Float2 ppos, Floa
 
        // if active and ray are both on circle's edge
        if (active.type == ShadowActiveNode_OnEdge && ray.onEdge) {
+          if (!openList.empty()) {
+             continue;
+          }
+
           _commitTriangle(ppos, active.p, ray.p);
           active.p = ray.p;
           active.dist = ray.dist;
-          active.segment = _rayInnerSegment(ray, ppos);
+          active.segment = -1;
           active.type = ShadowActiveNode_OnEdge;
-          _segmentClockwiseEnd(segments[active.segment], ppos, active.segmentEnd);
-
        }
        // if active is on edge and ray is not
        else if (active.type == ShadowActiveNode_OnEdge) {

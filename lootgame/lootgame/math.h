@@ -2,6 +2,7 @@
 #include "defs.h"
 
 static const float PI = 3.14159265359f;
+static const float TAU = 2 * PI;
 static const float RAD2DEG = 180.0f / PI;
 static const float DEG2RAD = PI / 180.0f;
 
