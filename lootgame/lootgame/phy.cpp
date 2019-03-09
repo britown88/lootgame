@@ -84,7 +84,7 @@ static void _detect_CircleSegment(PhyObject*a, PhyObject*b, Array<PhyCollision>&
    auto qv = b->velocity * timeRemaining;
 
    Float2 p1 = a->pos;
-   Float2 p2Check = p1 + pv;
+   Float2 p2Check = { p1.x + pv.x, p1.y + pv.y };
 
    Float2 q1 = b->pos;
    Float2 q2 = b->segment.b;
@@ -115,21 +115,21 @@ static void _detect_CircleSegment(PhyObject*a, PhyObject*b, Array<PhyCollision>&
    PhyCollision col = { a, b, 0.0f, CollisionType_CircleSegment };
    bool collision = false;
 
-   //if (intersectRaySphere(p1, vdir, q1, collisionRange, t, c) && t <= vlen && t > 0.0f) {
-   //   shortest = t;
-   //   collision = true;
-   //   col.time = (t / vlen);
-   //   col.collisionNormal = v2Normalized(q1 - p1);
-   //}
+   if (intersectRaySphere(p1, vdir, q1, collisionRange, t, c) && t <= vlen && t > 0.0f) {
+      shortest = t;
+      collision = true;
+      col.time = (t / vlen);
+      col.collisionNormal = v2Normalized(q1 - p1);
+   }
 
-   //if (intersectRaySphere(p1, vdir, q2, collisionRange, t, c) && t <= vlen && t > 0.0f) {
-   //   if (t < shortest) {
-   //      shortest = t;
-   //      collision = true;
-   //      col.time = (t / vlen);
-   //      col.collisionNormal = v2Normalized(q2 - p1);
-   //   }
-   //}
+   if (intersectRaySphere(p1, vdir, q2, collisionRange, t, c) && t <= vlen && t > 0.0f) {
+      if (t < shortest) {
+         shortest = t;
+         collision = true;
+         col.time = (t / vlen);
+         col.collisionNormal = v2Normalized(q2 - p1);
+      }
+   }
 
    auto qconj = v2Conjugate(qdir);
    // get p origin by rotating it around q1 by qconj
@@ -432,7 +432,7 @@ static bool _resolveOverlap_CircleSegment(PhyObject*a, PhyObject*b, bool& island
    Float2 bClosest;
    pointClosestOnSegment(b->pos, b->segment.b, a->pos, bt, bClosest);
 
-   auto diff = bClosest - a->pos;
+   Float2 diff = { bClosest.x - a->pos.x,  bClosest.y - a->pos.y };
    float distSquared = v2LenSquared(diff);
 
    // set whether these belong in the same island

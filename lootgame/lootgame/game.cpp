@@ -114,9 +114,10 @@ void dudeBeginFree(Dude&d) {
    d.free.nextTickAt = calcNextStaminaTickTime(d.status.stamina, d.status.staminaMax);
 }
 
-void dudeUpdateStateFree(Dude& d) {
+void dudeUpdateStateFree(Dude& d, Milliseconds tickSize) {
    // handle stamina regain
-   if (d.free.staminaClockStart++ > d.free.nextTickAt && d.status.stamina < d.status.staminaMax) {
+   d.free.staminaClockStart += tickSize;
+   if (d.free.staminaClockStart > d.free.nextTickAt && d.status.stamina < d.status.staminaMax) {
       //d.status.stamina = d.status.staminaMax;
       ++d.status.stamina;
       d.free.staminaClockStart = 0;
@@ -247,17 +248,17 @@ bool dudeCheckAttackCollision(Dude& attacker, Dude& defender) {
    return circleVsAabb(defendPos, defender.phy.circle.size, wbox);
 }
 
-void dudeUpdateState(Dude& d) {
+void dudeUpdateState(Dude& d, Milliseconds tickSize) {
 
    dudeUpdateShove(d);
 
    switch (d.state) {
-   case DudeState_FREE: dudeUpdateStateFree(d); break;
+   case DudeState_FREE: dudeUpdateStateFree(d, tickSize); break;
    case DudeState_COOLDOWN: dudeUpdateStateCooldown(d); break;
    case DudeState_DASH: dudeUpdateStateDash(d); break;
    case DudeState_ATTACKING: dudeUpdateStateAttack(d); break;
    }
-   ++d.stateClock;
+   d.stateClock += tickSize;
 }
 
 void mainDudeCheckAttackCollisions(Dude& dude, Array<Dude> &targets) {
@@ -457,12 +458,12 @@ void dudeUpdateRotation(Dude& d) {
 
 
 
-void dudeUpdateBehavior(Dude& dude) {
+void dudeUpdateBehavior(Dude& dude, Milliseconds tickSize) {
 
    if (dude.state != DudeState_FREE) {
       return;
    }
-   dude.ai.started += 16;
+   dude.ai.started += tickSize;
    auto& target = *dude.ai.target;
    auto dist = v2Dist(dude.phy.pos, target.phy.pos);
 
@@ -748,26 +749,26 @@ static void _cameraFollowPlayer(GameState& g) {
 
 
 static void _otherFrameStep(GameState& g) {
-
+   Milliseconds tickSize = 32;
 }
 
 static void _frameStep(GameState& g) {
+   Milliseconds tickSize = 16;
    mainDudeCheckAttackCollisions(g.maindude, g.baddudes);
 
    for (auto && d : g.baddudes) {
       if (dudeAlive(d)) {
-         dudeUpdateBehavior(d);
+         dudeUpdateBehavior(d, tickSize);
          badDudeCheckAttackCollision(g, d, g.maindude);
       }
-
    }
 
-   _buildPhySystem(g);
-   
+   _buildPhySystem(g);   
 }
 
 static void _milliStep(GameState& g) {
-   dudeUpdateState(g.maindude);
+   Milliseconds tickSize = 1;
+   dudeUpdateState(g.maindude, tickSize);
 
    if (dudeAlive(g.maindude)) {
       dudeApplyInput(g, g.maindude);
@@ -776,10 +777,8 @@ static void _milliStep(GameState& g) {
    dudeUpdateRotation(g.maindude);
    dudeUpdateVelocity(g.maindude);
 
-   
-
    for (auto && d : g.baddudes) {
-      dudeUpdateState(d);
+      dudeUpdateState(d, tickSize);
 
       dudeUpdateRotation(d);
       dudeUpdateVelocity(d);
@@ -792,7 +791,10 @@ static void _milliStep(GameState& g) {
    }
 
    updatePhyPositions(g.phySys.objs); 
+}
 
+static void _perRenderStep(GameState& g, Milliseconds ms) {
+   Milliseconds tickSize = ms;
    _cameraFollowPlayer(g);
 }
 
@@ -851,6 +853,8 @@ void gameUpdate(GameState& g) {
       _milliStep(g);
       --g.gameClock;
    }
+
+   _perRenderStep(g, ms);
 }
 
 
