@@ -2,8 +2,6 @@
 
 #include "math.h"
 #include "render.h"
-#include "coords.h"
-#include "game.h"
 
 enum ShadowRayType {
    ShadowRayType_LeftAligned = 0,
@@ -16,7 +14,6 @@ enum ShadowNodeType {
    ShadowNode_OnSegment,
    ShadowNode_OnEdge
 };
-
 
 struct ShadowSegment {
    Float2 a, b;
@@ -77,6 +74,7 @@ static ShadowSystem _buildSystem(Float2 center, float radius, Array<ConvexPoly>&
    // clip every blocker and add them to the segements list
    for (auto&& poly : blockers) {
       auto segStart = out.segments.size();
+      out.segments.reserve(segStart + poly.points.size() / 2);
 
       // evaluate each segment of the blocker
       // we want to store out all clipped-in-circle segments and also save some precalculated stats
@@ -158,6 +156,7 @@ static ShadowSystem _buildSystem(Float2 center, float radius, Array<ConvexPoly>&
    // these rays contain the vertex point, that point's distance to center, and 1 or more 
    // segment indices that the ray is an endpoint for
    int i = 0;
+   out.rays.reserve(out.segments.size() * 2);
    for (auto &segment : out.segments) {
       bool hasAConnect = segment.asegment >= 0;
       bool hasBConnect = segment.bsegment >= 0;
@@ -272,9 +271,6 @@ static ShadowSystem _buildSystem(Float2 center, float radius, Array<ConvexPoly>&
    return out;
 }
 
-
-
-
 static int _rayInnerSegment(ShadowRay&ray, Float2 ppos) {
    if (ray.asegment < 0) { return ray.bsegment; }
    if (ray.bsegment < 0) { return ray.asegment; }
@@ -292,7 +288,10 @@ static int _rayInnerSegment(ShadowRay&ray, Float2 ppos) {
 }
 
 static void _commitTriangle(Array<Float2> &buffer, Float2 a, Float2 b, Float2 c) {
-   buffer.push_back_array({ a, b, c });
+   buffer.push_back(a);
+   buffer.push_back(b);
+   buffer.push_back(c);
+   //buffer.push_back_array({ a, b, c });
 }
 
 static void _segmentClockwiseEnd(ShadowSegment& segment, Float2 ppos, Float2&endOut) {
@@ -556,7 +555,7 @@ void _solveSystem(ShadowSystem&sys, Float2 center, float radius, Array<Float2> &
 Array<Float2> render::buildShadowsBuffer(Float2 center, float radius, Array<ConvexPoly>& blockers, int circleSegmentCount) {   
    auto sys = _buildSystem(center, radius, blockers, circleSegmentCount);
    Array<Float2> out;
-   out.reserve(circleSegmentCount * 3);
+   out.reserve(sys.rays.size() * 3);
    _solveSystem(sys, center, radius, out);
    return out;
 }

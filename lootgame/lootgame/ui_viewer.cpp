@@ -458,12 +458,12 @@ static void _renderShadowCalc(GameState& g) {
    
    Array<ConvexPoly> blockers;
    for (auto w : g.map.walls) {
-      //if (w.poly.points.size() >= 3) {
+      if (w.poly.points.size() >= 3) {
          blockers.push_back(w.poly);
-      //}
+      }
    }
 
-   auto output = render::buildShadowsBuffer(g.maindude.phy.pos, SightRadius, blockers);
+   Array<Float2> output = render::buildShadowsBuffer(g.maindude.phy.pos, SightRadius, blockers);
 
    for (int i = 0; i < output.size()/3; ++i) {
       ImVec2 triangle[] = {
