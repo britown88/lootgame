@@ -50,7 +50,7 @@ struct EngineConstants {
    float lightHeight = 0.2f;
    float lightLinearPortion = 0.0f;
    float lightSmoothingFactor = 0.4f;
-   float lightIntensity = 100.0f;
+   float lightIntensity = 50.0f;
    float dudeAcceleration = 0.005f;
    float dudeRotationSpeed = 0.010f;
    float dudeMoveSpeed = 0.100f;
@@ -242,6 +242,12 @@ struct Dude {
    Milliseconds stateClock; // incremented by one every ms
 
    MoveSet moveset;
+};
+
+struct Light {
+   ColorRGBAf color;
+   float radius;
+
 };
 
 enum ModeType_ {

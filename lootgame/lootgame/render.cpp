@@ -512,6 +512,8 @@ void render::meshRender(Mesh const& m) {
    glVertexAttribPointer((uint32_t)VAttrib_Tex2, 2, GL_FLOAT, GL_FALSE, m.vSize, (void*)offsetof(Vertex, tex2));
 
    glDrawArrays(GL_TRIANGLES, 0, m.vCount);
+
+   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 

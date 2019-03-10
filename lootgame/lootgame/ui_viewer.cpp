@@ -394,7 +394,7 @@ static void _renderPhyObjs(GameState& g) {
 }
 
 static void _renderWalls(GameState& g) {
-   ImU32 lineCol = IM_COL32(50, 200, 50, 255);
+   ImU32 lineCol = IM_COL32(50, 200, 50, 64);
    ImU32 badPolyCol = IM_COL32(255, 0, 0, 255);
    ImU32 bbCol = IM_COL32(0, 255, 255, 128);
 
@@ -414,7 +414,7 @@ static void _renderWalls(GameState& g) {
       }
 
       auto drawlist = ImGui::GetWindowDrawList();
-      drawlist->AddConvexPolyFilled(screenPts.data(), screenPts.size(), IM_COL32(0,0,0,200));
+      //drawlist->AddConvexPolyFilled(screenPts.data(), screenPts.size(), IM_COL32(0,0,0,200));
       drawlist->AddPolyline(screenPts.data(), screenPts.size(), lineCol, true, 2.0f);
    }
 
@@ -480,7 +480,7 @@ static void _renderHelpers(GameState& g) {
       _renderGrid(g);
       _renderWalls(g);
       //_renderPhyObjs(g);
-      _renderShadowCalc(g);
+      //_renderShadowCalc(g);
       
    }
 }
@@ -566,6 +566,8 @@ void uiDoGameDebugger(GameInstance& instance) {
       }
 
       doTypeUI(&g.DEBUG);
+
+      doTypeUI(&Const);
 
    }
    ImGui::End();

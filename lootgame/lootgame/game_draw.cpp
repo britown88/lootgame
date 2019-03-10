@@ -199,21 +199,51 @@ void renderUnlitScene(GameState& game) {
    uber::set(Uniform_OutputNormals, false, true);
 }
 
-static void _addLight(float size, VPCoords pos, ColorRGBAf c) {
+static void _addLight(GameState& g, float size, Coords pos, ColorRGBAf c, Array<ConvexPoly>& blockers) {
    uber::set(Uniform_Color, c);
-   uber::set(Uniform_Alpha, 1.0f);
+   
    //uber::set(Uniform_PointLightRadius, size/2.0f);
    uber::set(Uniform_LightAttrs, Float3{
       Const.lightLinearPortion,
       Const.lightSmoothingFactor,
       Const.lightIntensity });
 
-   //uber::set(Uniform_LightIntensity, 1.0f);
-   uber::set(Uniform_ModelMatrix, Matrix::translate2f(pos) * Matrix::scale2f({ size, size }));
-   render::meshRender(Graphics.mesh);
+
+   auto p = pos.toWorld();
+   auto vertices = render::buildShadowsBuffer(p, size *0.5f, blockers);   
+   auto origin = p - Float2{ size*0.5f, size*0.5f };
+   
+   Array<Vertex> mesh;
+   mesh.reserve(vertices.size());
+   for (auto&& v : vertices) {
+      Float2 pos = v - origin;
+      Float2 tex = pos / size;
+      mesh.push_back({ Coords::fromWorld(v).toViewport(g), tex });
+   }
+
+
+   //uber::set(Uniform_Alpha, 0.5f);
+   //uber::set(Uniform_ModelMatrix, Matrix::translate2f(pos.toViewport(g)) * Matrix::scale2f({ size, size }));
+   //render::meshRender(Graphics.mesh);
+
+   auto mHandle = render::meshBuild(mesh.data(), mesh.size());
+
+   uber::set(Uniform_Alpha, 1.0f);
+   uber::set(Uniform_ModelMatrix, Matrix::identity());
+   render::meshRender(mHandle);
+
+   render::meshDestroy(mHandle);
 }
 
 void renderLightLayer(GameState& game) {
+
+   Array<ConvexPoly> blockers;
+   for (auto w : game.map.walls) {
+      if (w.poly.points.size() >= 3) {
+         blockers.push_back(w.poly);
+      }
+   }
+
    auto vp = game.camera.viewport;
    auto al = game.DEBUG.ambientLight;
 
@@ -233,19 +263,20 @@ void renderLightLayer(GameState& game) {
 
 
    //uber::set(Uniform_LightIntensity, cLightIntensity);
+   auto candleColor = sRgbToLinear(ColorRGB{ 255,147,41 });
 
    //_addLight({ vp.w,vp.w }, { vp.w / 2.0f, vp.h / 2.0f }, Yellow);
-   //_addLight({ 120, 120 }, game->maindude.phy.pos - Float2{ vp.x, vp.y }, Yellow);
+   //_addLight(game, 200, Coords::fromWorld(game.maindude.phy.pos), candleColor, blockers);
 
-   _addLight(150, Float2{ 200, 200 } -Float2{ vp.x, vp.y }, White);
+   _addLight(game, 150, Coords::fromWorld({ 200, 200 }), candleColor, blockers);
 
    int i = 0;
    for (auto&& d : game.baddudes) {
       static ColorRGBAf c[] = { Red, Green, Blue };
-      //_addLight(80, d.phy.pos - Float2{ vp.x, vp.y }, c[i++ % 3]);
+      _addLight(game, 80, Coords::fromWorld(d.phy.pos), candleColor, blockers);
    }
-   auto candleColor = sRgbToLinear(ColorRGB{ 255,147,41 });
-   _addLight(150, game.io.mousePos.toViewport(game), White);
+   
+   //_addLight(game, 300, game.io.mousePos, White, blockers);
 }
 
 void renderLitScene(GameState& game) {
