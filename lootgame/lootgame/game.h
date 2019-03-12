@@ -291,7 +291,7 @@ struct GameStateUI {
 
    GameEditMode mode = GameEditMode_None;
 
-   Wall* editingWall = nullptr;
+   Wall editingWall;
 };
 
 struct PhysicsSystem {
