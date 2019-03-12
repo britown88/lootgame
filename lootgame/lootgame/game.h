@@ -127,17 +127,21 @@ struct Wall {
 
 //@reflect{
 struct Light {
-   ColorRGBAf color;
+   ColorRGBAf color = White;
 
-   Float2 pos;
-   float radius;
-   float height, linearPortion, smoothingFactor, intensity;
+   Coords pos;
+   float radius = 100.0f;
+   float height = 0.2f, 
+      linearPortion = 0.5f, 
+      smoothingFactor = 0.4f, 
+      intensity = 1.0f;
 }; //}
 
 //@reflect{
 struct Map {
    Float2 size; 
    Array<Wall> walls;
+   Array<Light> lights;
 };//}
 
 //@reflect{
@@ -294,6 +298,7 @@ struct GameStateUI {
    GameEditMode mode = GameEditMode_None;
 
    Wall editingWall;
+   Light editingLight;
 };
 
 struct PhysicsSystem {
@@ -304,7 +309,7 @@ struct GameState {
 
    GameStateUI ui;
    IO io;
-   Map map = { { 10000, 10000 } };
+   Map map = { { 1000, 1000 } };
    GameCamera camera = { { 0, 0, (float)Const.vpSize.x, (float)Const.vpSize.y } }; // viewport into the world
    Rectf vpScreenArea = { 0, 0, 1, 1 }; // screen coordinates or the viewer image within the UI
    GameMode mode;

@@ -1022,8 +1022,8 @@ void reflectionStartup_generated() {
          StructMemberMetadata member;
          member.name = intern("pos");
          member.offset = offsetof(Light, pos);
-         member.type = reflect<Float2>();
-         member.customUI = customUIRenderer<Float2>();
+         member.type = reflect<Coords>();
+         member.customUI = customUIRenderer<Coords>();
          
          structName->structMembers.push_back(member);
       }
@@ -1114,6 +1114,17 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Map, walls);
          member.type = reflect<Array<Wall>>();
          member.customUI = customUIRenderer<Array<Wall>>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("lights");
+         member.offset = offsetof(Map, lights);
+         member.type = reflect<Array<Light>>();
+         member.customUI = customUIRenderer<Array<Light>>();
          
          structName->structMembers.push_back(member);
       }

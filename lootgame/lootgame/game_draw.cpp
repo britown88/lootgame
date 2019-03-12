@@ -235,6 +235,19 @@ static void _addLight(GameState& g, float size, Coords pos, ColorRGBAf c, Array<
    render::meshDestroy(mHandle);
 }
 
+static void _renderLight(GameState&g, Light& light) {
+   uber::set(Uniform_Color, light.color);
+   uber::set(Uniform_Alpha, 1.0f);
+
+   uber::set(Uniform_LightAttrs, Float3{
+      light.linearPortion,
+      light.smoothingFactor,
+      light.intensity });
+
+   uber::set(Uniform_ModelMatrix, Matrix::translate2f(light.pos.toViewport(g)) * Matrix::scale2f({ light.radius * 2, light.radius * 2 }));
+   render::meshRender(Graphics.mesh);
+}
+
 void renderLightLayer(GameState& game) {
 
    Array<ConvexPoly> blockers;
@@ -274,6 +287,13 @@ void renderLightLayer(GameState& game) {
    for (auto&& d : game.baddudes) {
       static ColorRGBAf c[] = { Red, Green, Blue };
       _addLight(game, 80, Coords::fromWorld(d.phy.pos), candleColor, blockers);
+   }
+
+   for (auto&&light : game.map.lights) {
+      _renderLight(game, light);
+   }
+   if (game.ui.editing && game.ui.mode == GameEditMode_Lights) {
+      _renderLight(game, game.ui.editingLight);
    }
    
    //_addLight(game, 300, game.io.mousePos, White, blockers);

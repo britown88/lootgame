@@ -812,7 +812,7 @@ ColorRGBA linearToSrgb(ColorRGBAf const& lin) {
 }
 
 ColorRGBAf linearToSrgbf(ColorRGBAf const& lin) {
-   return { lin2s(lin.r), lin2s(lin.g), lin2s(lin.b), lin.a * 255 };
+   return { lin2s(lin.r), lin2s(lin.g), lin2s(lin.b), lin.a };
 }
 
 ColorRGBA srgbPremultipleAlpha(ColorRGBA const& srgb) {

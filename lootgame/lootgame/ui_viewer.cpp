@@ -132,6 +132,10 @@ static void _viewerMenuBar(GameState& g) {
       if (ImGui::Button("Walls")) { _setEditMode(g, GameEditMode_Walls); }
       if (m == GameEditMode_Walls) {ImGui::PopStyleColor();}
 
+      if (m == GameEditMode_Lights) { ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive)); }
+      if (ImGui::Button("Lights")) { _setEditMode(g, GameEditMode_Lights); }
+      if (m == GameEditMode_Lights) { ImGui::PopStyleColor(); }
+
       if (m == GameEditMode_Move) { ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive)); }
       if (ImGui::Button("Move")) { _setEditMode(g, GameEditMode_Move); }
       if (m == GameEditMode_Move) { ImGui::PopStyleColor(); }
@@ -198,6 +202,14 @@ static void _handleWallInputs(GameState& g) {
 
                   
       }
+   }
+}
+
+static void _handleLightInputs(GameState& g) {
+   g.ui.editingLight.pos = g.io.mousePos;
+
+   if (ImGui::IsMouseClicked(MOUSE_LEFT)) {
+      g.map.lights.push_back(g.ui.editingLight);
    }
 }
 
@@ -318,6 +330,9 @@ static void _viewerHandleInput(GameState& g) {
       case GameEditMode_Walls:
          _handleWallInputs(g);
          break;
+      case GameEditMode_Lights:
+         _handleLightInputs(g);
+         break;
       }
    }
 }
@@ -337,11 +352,19 @@ static void _doRightClickMenu(GameState&g) {
    }
 
    if (g.ui.mode != GameEditMode_Walls) {
-      if (ImGui::MenuItem("Edit Walls")) {
+      if (ImGui::MenuItem("Add Walls")) {
          if (!g.ui.editing) {
             _toggleEditing(g);
          }
          _setEditMode(g, GameEditMode_Walls);
+      }
+   }
+   if (g.ui.mode != GameEditMode_Lights) {
+      if (ImGui::MenuItem("Add Lights")) {
+         if (!g.ui.editing) {
+            _toggleEditing(g);
+         }
+         _setEditMode(g, GameEditMode_Lights);
       }
    }
    if (g.ui.mode != GameEditMode_Move) {
@@ -605,7 +628,11 @@ static void _renderHelpers(GameState& g) {
          _renderCursor(g, "Wall");
          
          break;
+      case GameEditMode_Lights:
+         _renderCursor(g, "Light");
+         break;
       }
+
       _renderWalls(g);
       //_renderPhyObjs(g);
       //_renderShadowCalc(g);      
@@ -614,6 +641,16 @@ static void _renderHelpers(GameState& g) {
    ImGui::PopClipRect();
 }
 
+static void _doModeWindow(GameState& g) {
+   switch (g.ui.mode) {
+   case GameEditMode_Lights:
+      if (ImGui::Begin("Edit Light")) {
+         doTypeUI(&g.ui.editingLight);
+      }
+      ImGui::End();
+      break;
+   }
+}
 
 static bool _showWindowedViewer(GameInstance& gi) {
    bool p_open = true;
@@ -639,13 +676,17 @@ static bool _showWindowedViewer(GameInstance& gi) {
          ImGui::EndPopup();
       }
 
+      if (g.ui.editing) {
+         _doModeWindow(g);
+      }
+      
+      
+
       if (g.ui.focused && g.camera.viewport.containsPoint(g.io.mousePos.toWorld())) {
          _viewerHandleInput(g);
       }
-
          
       _renderHelpers(g);
-      
 
       ImGui::SetCursorPos(cPos);
       _statusBar(g);
