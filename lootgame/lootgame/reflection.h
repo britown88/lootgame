@@ -5,6 +5,8 @@
 #include "custom_ui_renders.h"
 
 
+
+
 void reflectionStartup();
 
 enum TypeVariety {
@@ -81,6 +83,13 @@ struct TypeMetadata {
    TypeMetadata const* value;
 
    TypeMetadataFunctions funcs;
+};
+
+static const char* TypePayload = "TypeMetaData";
+
+struct MetadataPayload {
+   TypeMetadata const* metadata;
+   void* data;
 };
 
 void serializeEX(SCFWriter* writer, TypeMetadata const* type, void* data);

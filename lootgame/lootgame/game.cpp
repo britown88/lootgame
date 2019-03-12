@@ -7,6 +7,8 @@
 
 #include "phy.h"
 
+Map _defaultMap = { {1000,1000} };
+
 
 
 #include <GL/glew.h>
@@ -531,7 +533,7 @@ void _buildPhySystem(GameState&game) {
       }
    }
 
-   for (auto && w : game.map.walls) {
+   for (auto && w : game.map->walls) {
       auto& pts = w.poly.points;
       auto pCount = pts.size();
       if (pCount >= 3) {
@@ -735,8 +737,8 @@ static void _cameraFollowPlayer(GameState& g) {
       auto& dudePos = g.maindude.phy.pos;
 
       //camera follow on dude
-      vp.x = clamp(dudePos.x - (vp.w / 2), 0, g.map.size.x - vp.w);
-      vp.y = clamp(dudePos.y - (vp.h / 2), 0, g.map.size.y - vp.h);
+      vp.x = clamp(dudePos.x - (vp.w / 2), 0, g.map->size.x - vp.w);
+      vp.y = clamp(dudePos.y - (vp.h / 2), 0, g.map->size.y - vp.h);
       vp.w = Const.vpSize.x;
       vp.h = Const.vpSize.y;
    }

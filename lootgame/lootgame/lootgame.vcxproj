@@ -189,6 +189,7 @@ xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
     <ClCompile Include="reflectgen.cpp" />
     <ClCompile Include="reflection.cpp" />
     <ClCompile Include="shadows.cpp" />
+    <ClCompile Include="ui_mapManager.cpp" />
     <ClCompile Include="ui_reflection.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

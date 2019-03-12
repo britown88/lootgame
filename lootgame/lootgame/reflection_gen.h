@@ -159,6 +159,15 @@ struct Reflector<Map>{
 };
 
 
+// _MapMap ----------------------------
+typedef struct _MapMap _MapMap;
+extern TypeMetadata* meta__MapMap;
+template<>
+struct Reflector<_MapMap>{
+   static TypeMetadata const* type() { return meta__MapMap; }
+};
+
+
 // AttackSwing ----------------------------
 typedef struct AttackSwing AttackSwing;
 extern TypeMetadata* meta_AttackSwing;

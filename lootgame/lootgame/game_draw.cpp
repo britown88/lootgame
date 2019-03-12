@@ -108,7 +108,7 @@ static void _renderTarget(Float2 pos, ColorRGBAf color) {
 static void _renderFloor(GameState& game) {
    auto& c = Const;
 
-   Float2 fres = { game.map.size.x, game.map.size.y };
+   Float2 fres = { game.map->size.x, game.map->size.y };
    Float2 tileSize = { 16, 16 };
 
    uber::resetToDefault();
@@ -252,7 +252,7 @@ static void _renderLight(GameState&g, Light& light) {
 void renderLightLayer(GameState& game) {
 
    Array<ConvexPoly> blockers;
-   for (auto w : game.map.walls) {
+   for (auto w : game.map->walls) {
       if (w.poly.points.size() >= 3) {
          blockers.push_back(w.poly);
       }
@@ -280,7 +280,7 @@ void renderLightLayer(GameState& game) {
    auto candleColor = sRgbToLinear(ColorRGB{ 255,147,41 });
 
    //_addLight({ vp.w,vp.w }, { vp.w / 2.0f, vp.h / 2.0f }, Yellow);
-   //_addLight(game, 200, Coords::fromWorld(game.maindude.phy.pos), candleColor, blockers);
+   _addLight(game, 80, Coords::fromWorld(game.maindude.phy.pos), Blue, blockers);
 
    _addLight(game, 150, Coords::fromWorld({ 200, 200 }), candleColor, blockers);
 
@@ -290,7 +290,7 @@ void renderLightLayer(GameState& game) {
       _addLight(game, 80, Coords::fromWorld(d.phy.pos), candleColor, blockers);
    }
 
-   for (auto&&light : game.map.lights) {
+   for (auto&&light : game.map->lights) {
       _renderLight(game, light);
    }
    if (game.ui.editing && game.ui.mode == GameEditMode_Lights) {

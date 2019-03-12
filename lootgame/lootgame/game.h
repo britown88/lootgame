@@ -122,7 +122,9 @@ struct GameCamera {
 struct Wall {
    ConvexPoly poly;
    Rectf bb;
+   //@ignore{
    Array<PhyObject> phyObjs;
+   //}
 }; //}
 
 //@reflect{
@@ -142,7 +144,25 @@ struct Map {
    Float2 size; 
    Array<Wall> walls;
    Array<Light> lights;
+
+   // @readonly
+   Symbol* id = nullptr;
+
+   //@ignore{
+   bool markForDelete = false;
+   //}
 };//}
+
+//@reflect{
+struct _MapMap {
+   std::unordered_map<Symbol*, Map> map;
+};//}
+
+extern _MapMap MapMap;
+
+void assets_mapMapSave();
+void assets_mapMapReload();
+void assets_mapMapLoad();
 
 //@reflect{
 enum SwingPhase {
@@ -305,11 +325,13 @@ struct PhysicsSystem {
    Array<PhyObject*> objs;
 };
 
+extern Map _defaultMap;
+
 struct GameState {
 
    GameStateUI ui;
    IO io;
-   Map map = { { 1000, 1000 } };
+   Map *map = &_defaultMap;
    GameCamera camera = { { 0, 0, (float)Const.vpSize.x, (float)Const.vpSize.y } }; // viewport into the world
    Rectf vpScreenArea = { 0, 0, 1, 1 }; // screen coordinates or the viewer image within the UI
    GameMode mode;

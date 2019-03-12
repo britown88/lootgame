@@ -9,9 +9,11 @@
 
 #include "reflection_gen.h"
 
+_MapMap MapMap;
 
 namespace Paths {
    static const std::filesystem::path assets = "assets.bin";
+   static const std::filesystem::path maps = "maps.bin";
 }
 
 
@@ -117,6 +119,94 @@ void assets_textureMapLoad() {
    }
 
 }
+
+
+void assets_mapMapSave() {
+   auto fpath = AppConfig.assetPath / Paths::maps;
+
+   auto writer = scfWriterCreate();
+   uint64_t sz = 0;
+
+   // kill off deleted textures
+   auto mapCopy = MapMap;
+   Array<Symbol*> toDelete;
+   for (auto&& kvp : mapCopy.map) {
+      if (kvp.second.markForDelete) {
+         toDelete.push_back(kvp.first);
+      }
+   }
+   for (auto&& td : toDelete) {
+      mapCopy.map.erase(td);
+   }
+
+   serialize(writer, &mapCopy);
+   auto output = scfWriteToBuffer(writer, &sz);
+
+   writeBinaryFile(fpath.string().c_str(), (byte*)output, sz);
+   scfWriterDestroy(writer);
+   delete[] output;
+
+   LOG("Map Map Saved");
+}
+
+
+void assets_mapMapReload() {
+   auto fpath = Paths::maps;
+   if (!std::filesystem::exists(fpath)) {
+      fpath = AppConfig.assetPath / fpath;
+   }
+
+   //assert(std::filesystem::exists(fpath) && "Assets file not found");
+
+   if (auto content = fileReadBinary(fpath.string().c_str(), nullptr)) {
+      auto reader = scfView(content);
+      _MapMap reloaded;
+      deserialize(reader, &reloaded);
+      delete[] content;
+
+      for (auto&&kvp : reloaded.map) {
+         auto result = MapMap.map.insert({ kvp.first, kvp.second });
+         if (!result.second) {
+            auto& existing = MapMap.map[kvp.first];            
+            existing = kvp.second;
+            existing.markForDelete = false;
+         }
+      }
+      LOG("Reloaded Map Map");
+   }
+   else {
+      ERR("Error reloading Map map");
+   }
+}
+
+
+
+void assets_mapMapLoad() {
+   auto fpath = Paths::maps;
+   if (!std::filesystem::exists(fpath)) {
+      fpath = AppConfig.assetPath / fpath;
+   }
+
+   //assert(std::filesystem::exists(fpath) && "Assets file not found");
+
+   if (auto content = fileReadBinary(fpath.string().c_str(), nullptr)) {
+      auto reader = scfView(content);
+      deserialize<_MapMap>(reader, &MapMap);
+      delete[] content;
+
+      for (auto&& kvp : MapMap.map) {
+         auto& t = kvp.second;
+         t.id = intern(kvp.first);
+      }
+
+      LOG("Loaded Map Map");
+   }
+   else {
+      ERR("Error reloading map map, assets file not found");
+   }
+
+}
+
 
 
 

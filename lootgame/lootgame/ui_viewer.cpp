@@ -191,7 +191,7 @@ static void _handleWallInputs(GameState& g) {
             if (current.poly.points.size() >= 3) {
                if (polyConvex(current.poly.points.data(), current.poly.points.size())) {
                   _rebuildWallBoundingBox(current);
-                  g.map.walls.push_back(current);
+                  g.map->walls.push_back(current);
                   current.poly.points.clear();
                }
             }
@@ -209,10 +209,9 @@ static void _handleWallInputs(GameState& g) {
 }
 
 static void _handleLightInputs(GameState& g) {
-   auto &light = g.ui.editingLight;
-   light.pos = g.io.mousePos;
+   
    if (ImGui::IsMouseClicked(MOUSE_LEFT)) {
-      g.map.lights.push_back(g.ui.editingLight);
+      g.map->lights.push_back(g.ui.editingLight);
    }
 }
 
@@ -229,7 +228,7 @@ static void _handleDragInputs(GameState& g) {
 
    auto mouse = g.io.mousePos.toWorld();
    if (ImGui::IsMouseClicked(MOUSE_LEFT)) {
-      for (auto&&w : g.map.walls) {
+      for (auto&&w : g.map->walls) {
          if (w.bb.containsPoint(mouse)) {
             dragging = true;
             type = DragType_Wall;
@@ -423,8 +422,8 @@ static void _renderGrid(GameState& g) {
 
    vpMin.x = clamp(vpMin.x, 0, vp.Max().x);
    vpMin.y = clamp(vpMin.y, 0, vp.Max().y);
-   vpMax.x = clamp(vpMax.x, 0, g.map.size.x);
-   vpMax.y = clamp(vpMax.y, 0, g.map.size.y);
+   vpMax.x = clamp(vpMax.x, 0, g.map->size.x);
+   vpMax.y = clamp(vpMax.y, 0, g.map->size.y);
 
    auto color = IM_COL32(255, 255, 255, 64);
 
@@ -464,7 +463,7 @@ static void _renderPhyObjs(GameState& g) {
       }
    }
 
-   for (auto&& wall : g.map.walls) {
+   for (auto&& wall : g.map->walls) {
       auto pCount = wall.poly.points.size();
       ImU32 lineCol = IM_COL32(50, 200, 50, 255);
       ImU32 badPolyCol = IM_COL32(255, 0, 0, 255);
@@ -513,7 +512,7 @@ static void _renderWalls(GameState& g) {
 
    auto drawlist = ImGui::GetWindowDrawList();
 
-   for (auto&& wall : g.map.walls) {
+   for (auto&& wall : g.map->walls) {
       Array<ImVec2> screenPts;
       for (auto p : wall.poly.points) {
          screenPts.push_back(Coords::fromWorld(p).toScreen(g));
@@ -564,7 +563,7 @@ static void _renderWalls(GameState& g) {
 
 static void _renderLights(GameState&g) {
    auto &light = g.ui.editingLight;
-   //light.pos = g.io.mousePos;
+   light.pos = g.io.mousePos;
 
    auto drawList = ImGui::GetWindowDrawList();
    auto mouse = g.io.mousePos.toScreen(g);
@@ -591,7 +590,7 @@ static void _renderShadowCalc(GameState& g) {
 
    
    Array<ConvexPoly> blockers;
-   for (auto w : g.map.walls) {
+   for (auto w : g.map->walls) {
       if (w.poly.points.size() >= 3) {
          blockers.push_back(w.poly);
       }
@@ -610,7 +609,7 @@ static void _renderShadowCalc(GameState& g) {
 }
 
 static void _renderMove(GameState& g) {
-   for (auto&& w : g.map.walls) {
+   for (auto&& w : g.map->walls) {
       auto c = IM_COL32(255, 255, 255, 128);
       if (w.bb.containsPoint(g.io.mousePos.toWorld())) {
          c = IM_COL32(255, 255, 255, 255);
@@ -683,7 +682,18 @@ static bool _showWindowedViewer(GameInstance& gi) {
       _renderViewerFBO(g, gi.outputFbo, viewsz);
       // wacky cursor shenanigans
       ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (g.vpScreenArea.y - ImGui::GetCursorScreenPos().y));
+      ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (g.vpScreenArea.x - ImGui::GetCursorScreenPos().x));
       ImGui::InvisibleButton("invisbtn", g.vpScreenArea.sz());
+
+      if (ImGui::BeginDragDropTarget()) {
+         if (auto pload = ImGui::AcceptDragDropPayload(TypePayload)) {
+            auto mdata = (MetadataPayload *)pload->Data;
+            if (mdata->metadata == reflect<Map>()) {
+               g.map = (Map*)mdata->data;
+            }
+         }
+         ImGui::EndDragDropTarget();
+      }
 
       auto cPos = ImGui::GetCursorPos();
 

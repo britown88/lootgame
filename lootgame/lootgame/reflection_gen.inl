@@ -19,6 +19,7 @@ TypeMetadata* meta_GameCamera = new TypeMetadata;
 TypeMetadata* meta_Wall = new TypeMetadata;
 TypeMetadata* meta_Light = new TypeMetadata;
 TypeMetadata* meta_Map = new TypeMetadata;
+TypeMetadata* meta__MapMap = new TypeMetadata;
 TypeMetadata* meta_AttackSwing = new TypeMetadata;
 TypeMetadata* meta_MoveSet = new TypeMetadata;
 TypeMetadata* meta_Movement = new TypeMetadata;
@@ -983,17 +984,6 @@ void reflectionStartup_generated() {
       }
 
       
-      {
-         StructMemberMetadata member;
-         member.name = intern("phyObjs");
-         member.offset = offsetof(Wall, phyObjs);
-         member.type = reflect<Array<PhyObject>>();
-         member.customUI = customUIRenderer<Array<PhyObject>>();
-         
-         structName->structMembers.push_back(member);
-      }
-
-      
    }
 
    
@@ -1125,6 +1115,42 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Map, lights);
          member.type = reflect<Array<Light>>();
          member.customUI = customUIRenderer<Array<Light>>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("id");
+         member.offset = offsetof(Map, id);
+         member.type = reflect<Symbol*>();
+         member.customUI = customUIRenderer<Symbol*>();
+         member.flags |= StructMemberFlags_ReadOnly;
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
+      auto& structName = meta__MapMap;
+      structName->name = intern("_MapMap");
+      structName->size = sizeof(_MapMap);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) _MapMap;};
+      structName->funcs.destroy = [](void* data) {((_MapMap*)data)->~_MapMap(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("map");
+         member.offset = offsetof(_MapMap, map);
+         member.type = reflect<std::unordered_map<Symbol*, Map>>();
+         member.customUI = customUIRenderer<std::unordered_map<Symbol*, Map>>();
          
          structName->structMembers.push_back(member);
       }
