@@ -277,7 +277,9 @@ struct GameStateDebug {
 
 enum GameEditMode {
    GameEditMode_None = 0,
-   GameEditMode_Walls
+   GameEditMode_Walls,
+   GameEditMode_Lights,
+   GameEditMode_Move,
 };
 
 struct GameStateUI {

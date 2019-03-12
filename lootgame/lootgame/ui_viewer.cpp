@@ -132,6 +132,10 @@ static void _viewerMenuBar(GameState& g) {
       if (ImGui::Button("Walls")) { _setEditMode(g, GameEditMode_Walls); }
       if (m == GameEditMode_Walls) {ImGui::PopStyleColor();}
 
+      if (m == GameEditMode_Move) { ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive)); }
+      if (ImGui::Button("Move")) { _setEditMode(g, GameEditMode_Move); }
+      if (m == GameEditMode_Move) { ImGui::PopStyleColor(); }
+
       if (!editing) {
          endDisabled();
       }
@@ -156,6 +160,17 @@ static void _statusBar(GameState&g) {
    ImGui::Text("Mouse (%0.1f, %0.1f)", mpos.x, mpos.y);
 }
 
+static void _rebuildWallBoundingBox(Wall&w) {
+   Float2 min = { FLT_MAX,FLT_MAX }, max = { -FLT_MAX,-FLT_MAX };
+   for (auto&&p : w.poly.points) {
+      min.x = MIN(min.x, p.x);
+      min.y = MIN(min.y, p.y);
+      max.x = MAX(max.x, p.x);
+      max.y = MAX(max.y, p.y);
+   }
+   w.bb = rectFromMinMax(min, max);
+}
+
 static void _handleWallInputs(GameState& g) {
    auto& current = g.ui.editingWall;
    bool editing = !current.poly.points.empty();
@@ -168,6 +183,7 @@ static void _handleWallInputs(GameState& g) {
          if (v2Dist(g.io.mousePos.toScreen(g), Coords::fromWorld(current.poly.points[0]).toScreen(g)) < 10.0f) {
             if (current.poly.points.size() >= 3) {
                if (polyConvex(current.poly.points.data(), current.poly.points.size())) {
+                  _rebuildWallBoundingBox(current);
                   g.map.walls.push_back(current);
                   current.poly.points.clear();
                }
@@ -177,21 +193,67 @@ static void _handleWallInputs(GameState& g) {
             auto mouse = g.io.mousePos.toWorld();
             if (_wallIsConvex(current.poly.points, mouse)) {
                current.poly.points.push_back(mouse);
-
-               Float2 min = { FLT_MAX,FLT_MAX }, max = { -FLT_MAX,-FLT_MAX };
-               for (auto&&p : current.poly.points) {
-                  min.x = MIN(min.x, p.x);
-                  min.y = MIN(min.y, p.y);
-                  max.x = MAX(max.x, p.x);
-                  max.y = MAX(max.y, p.y);
-               }
-               current.bb = rectFromMinMax(min, max);
             }
          }
 
                   
       }
    }
+}
+
+enum DragType {
+   DragType_Wall = 0
+};
+
+static void _handleDragInputs(GameState& g) {
+   static bool dragging = false;
+   static DragType type;
+   static Wall* dragWall;
+   static Float2 delta;
+
+
+   auto mouse = g.io.mousePos.toWorld();
+   if (ImGui::IsMouseClicked(MOUSE_LEFT)) {
+      for (auto&&w : g.map.walls) {
+         if (w.bb.containsPoint(mouse)) {
+            dragging = true;
+            type = DragType_Wall;
+            dragWall = &w;
+         }
+      }
+   }
+
+   if (dragging) {
+      if (ImGui::IsMouseReleased(MOUSE_LEFT)) {
+         switch (type) {
+         case DragType_Wall:
+            for (auto& p : dragWall->poly.points) {
+               p += delta;
+            }
+            _rebuildWallBoundingBox(*dragWall);
+            break;
+         }
+         dragging = false;
+      }
+
+      if (ImGui::IsMouseDragging(0, 0.0f)) {
+         auto imdelta = ImGui::GetMouseDragDelta(0, 0.0f);
+         delta = Coords::fromScreen(Float2{ imdelta.x, imdelta.y }, g).toWorld() - Coords::fromScreen(Float2{ 0,0 }, g).toWorld();
+
+         switch (type) {
+         case DragType_Wall: {
+            Array<ImVec2> screenPts;
+            for (auto& p : dragWall->poly.points) {
+               screenPts.push_back(Coords::fromWorld(p + delta).toScreen(g));
+            }
+            ImGui::GetWindowDrawList()->AddPolyline(screenPts.data(), screenPts.size(), IM_COL32_WHITE, true, 2.0f);
+         }  break;
+         }
+
+      }
+   }
+
+   
 }
 
 
@@ -250,6 +312,9 @@ static void _viewerHandleInput(GameState& g) {
       }
 
       switch (g.ui.mode) {
+      case GameEditMode_Move:
+         _handleDragInputs(g);
+         break;
       case GameEditMode_Walls:
          _handleWallInputs(g);
          break;
@@ -259,21 +324,33 @@ static void _viewerHandleInput(GameState& g) {
 
 static void _doRightClickMenu(GameState&g) {
 
-   
    switch (g.ui.mode) {
    case GameEditMode_None:
+      break;
+   case GameEditMode_Walls:
+      if (!g.ui.editingWall.poly.points.empty()) {
+         if (ImGui::MenuItem("Cancel Wall")) {
+            _setEditMode(g, GameEditMode_None);
+         }
+      }
+      break;
+   }
+
+   if (g.ui.mode != GameEditMode_Walls) {
       if (ImGui::MenuItem("Edit Walls")) {
          if (!g.ui.editing) {
             _toggleEditing(g);
          }
          _setEditMode(g, GameEditMode_Walls);
       }
-      break;
-   case GameEditMode_Walls:
-      if (ImGui::MenuItem("Cancel Wall")) {
-         _setEditMode(g, GameEditMode_None);
+   }
+   if (g.ui.mode != GameEditMode_Move) {
+      if (ImGui::MenuItem("Move Objects")) {
+         if (!g.ui.editing) {
+            _toggleEditing(g);
+         }
+         _setEditMode(g, GameEditMode_Move);
       }
-      break;
    }
 
    ImGui::Separator();
@@ -402,11 +479,11 @@ static void _renderPhyObjs(GameState& g) {
 }
 
 static void _renderWalls(GameState& g) {
-   ImU32 lineCol = IM_COL32(50, 255, 50, 255);
-   ImU32 badPolyCol = IM_COL32(255, 0, 0, 255);
-   ImU32 bbCol = IM_COL32(0, 255, 255, 128);
+   ImU32 greenLine = IM_COL32(0, 255, 0, 255);
+   ImU32 greenFill = IM_COL32(0, 15, 0, 128);
 
-   ImU32 hovCol = IM_COL32(255, 255, 0, 255);
+   ImU32 greenWorking = IM_COL32(0, 255, 0, 100);
+   ImU32 redWorking = IM_COL32(255, 0, 0, 100);
 
    auto drawlist = ImGui::GetWindowDrawList();
 
@@ -417,15 +494,13 @@ static void _renderWalls(GameState& g) {
       }
 
       
-      drawlist->AddConvexPolyFilled(screenPts.data(), screenPts.size(), IM_COL32(0,0,0,128));
-      drawlist->AddPolyline(screenPts.data(), screenPts.size(), lineCol, true, 2.0f);
+      drawlist->AddConvexPolyFilled(screenPts.data(), screenPts.size(), greenFill);
+      drawlist->AddPolyline(screenPts.data(), screenPts.size(), greenLine, true, 2.0f);
    }
 
    // render the editing wall
    auto& editing = g.ui.editingWall;
    if (!editing.poly.points.empty()) {
-      ImU32 lineCol = IM_COL32(50, 255, 50, 100);
-      ImU32 badPolyCol = IM_COL32(255, 50, 50, 100);
 
       Array<Float2> screenPts;
       for (auto p : editing.poly.points) {
@@ -435,19 +510,19 @@ static void _renderWalls(GameState& g) {
       auto startPt = screenPts[0];
       auto mouse = g.io.mousePos.toScreen(g);
 
-      auto c = lineCol;
+      auto c = greenWorking;
       if (!_wallIsConvex(screenPts, mouse)) {
-         c = badPolyCol;
+         c = redWorking;
       }
 
       bool closing = v2Dist(startPt, mouse) < 10.0f;
 
       if (closing) {
-         c = lineCol;
-         drawlist->AddCircleFilled(startPt, 10.0f, lineCol);
+         c = greenLine;
+         drawlist->AddCircleFilled(startPt, 10.0f, greenLine);
       }
       else {
-         drawlist->AddCircle(startPt, 10.0f, lineCol);
+         drawlist->AddCircle(startPt, 10.0f, greenLine);
       }
 
       
@@ -496,6 +571,20 @@ static void _renderShadowCalc(GameState& g) {
    }
 }
 
+static void _renderMove(GameState& g) {
+   for (auto&& w : g.map.walls) {
+      auto c = IM_COL32(255, 255, 255, 128);
+      if (w.bb.containsPoint(g.io.mousePos.toWorld())) {
+         c = IM_COL32(255, 255, 255, 255);
+      }
+
+      auto a = Coords::fromWorld(w.bb.Min()).toScreen(g);
+      auto b = Coords::fromWorld(w.bb.Max()).toScreen(g);
+
+      ImGui::GetWindowDrawList()->AddRect(a, b, c, 0, 15, 2.0f);
+   }
+}
+
 static void _renderHelpers(GameState& g) {
    auto a = g.vpScreenArea.Min();
    auto b = g.vpScreenArea.Max();
@@ -508,8 +597,13 @@ static void _renderHelpers(GameState& g) {
       }
       
       switch (g.ui.mode) {
+      case GameEditMode_Move:
+         _renderCursor(g, "Move");
+         _renderMove(g);
+         break;
       case GameEditMode_Walls:
          _renderCursor(g, "Wall");
+         
          break;
       }
       _renderWalls(g);
