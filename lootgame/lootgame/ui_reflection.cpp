@@ -13,8 +13,13 @@
 #include "ui.h"
 
 bool customUIRender_ColorRGBAf(TypeMetadata const* type, void* data, StructMemberMetadata const* parent, const char* label) {
-   auto c = (ColorRGBAf*)data;
-   return ImGui::ColorEdit4(label ? label : parent->name, (float*)c);
+   auto c = linearToSrgbf(*(ColorRGBAf*)data);
+   if (ImGui::ColorEdit4(label ? label : parent->name, (float*)&c)) {
+      *(ColorRGBAf*)data = sRgbToLinear(c);
+      return true;
+   }
+
+   return false;
 }
 bool customUIRender_Int2(TypeMetadata const* type, void* data, StructMemberMetadata const* member, const char* label) {
    auto str_label = "";

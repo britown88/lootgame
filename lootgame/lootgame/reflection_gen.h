@@ -141,6 +141,15 @@ struct Reflector<Wall>{
 };
 
 
+// Light ----------------------------
+typedef struct Light Light;
+extern TypeMetadata* meta_Light;
+template<>
+struct Reflector<Light>{
+   static TypeMetadata const* type() { return meta_Light; }
+};
+
+
 // Map ----------------------------
 typedef struct Map Map;
 extern TypeMetadata* meta_Map;

@@ -672,11 +672,6 @@ bool gameProcessEvent(GameState& g, SDL_Event* event) {
       //}
    }
 
-
-   case SDL_CONTROLLERDEVICEADDED:
-      SDL_GameControllerOpen(0);
-      return true;
-
    case SDL_CONTROLLERBUTTONUP:
    case SDL_CONTROLLERBUTTONDOWN:
       switch (event->cbutton.button) {

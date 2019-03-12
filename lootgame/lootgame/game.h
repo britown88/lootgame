@@ -126,6 +126,15 @@ struct Wall {
 }; //}
 
 //@reflect{
+struct Light {
+   ColorRGBAf color;
+
+   Float2 pos;
+   float radius;
+   float height, linearPortion, smoothingFactor, intensity;
+}; //}
+
+//@reflect{
 struct Map {
    Float2 size; 
    Array<Wall> walls;
@@ -244,12 +253,6 @@ struct Dude {
    MoveSet moveset;
 };
 
-struct Light {
-   ColorRGBAf color;
-   float radius;
-
-};
-
 enum ModeType_ {
    ModeType_ACTION = 0,
    ModeType_YOUDIED
@@ -281,10 +284,6 @@ struct GameStateUI {
    bool fullscreen = false;
    bool focused = false;
    bool editing = false;
-
-   bool draggingCamera = false;
-   Float2 cameraDragStart;
-   Float2 cameraDragVpStart = { 0,0 };
 
    bool showGameUI = true;
    Float2 gridSize = { 100.0f, 100.0f };

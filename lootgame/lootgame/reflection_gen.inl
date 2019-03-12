@@ -17,6 +17,7 @@ TypeMetadata* meta_EngineState = new TypeMetadata;
 TypeMetadata* meta_IO = new TypeMetadata;
 TypeMetadata* meta_GameCamera = new TypeMetadata;
 TypeMetadata* meta_Wall = new TypeMetadata;
+TypeMetadata* meta_Light = new TypeMetadata;
 TypeMetadata* meta_Map = new TypeMetadata;
 TypeMetadata* meta_AttackSwing = new TypeMetadata;
 TypeMetadata* meta_MoveSet = new TypeMetadata;
@@ -988,6 +989,96 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Wall, phyObjs);
          member.type = reflect<Array<PhyObject>>();
          member.customUI = customUIRenderer<Array<PhyObject>>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
+      auto& structName = meta_Light;
+      structName->name = intern("Light");
+      structName->size = sizeof(Light);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) Light;};
+      structName->funcs.destroy = [](void* data) {((Light*)data)->~Light(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("color");
+         member.offset = offsetof(Light, color);
+         member.type = reflect<ColorRGBAf>();
+         member.customUI = customUIRenderer<ColorRGBAf>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("pos");
+         member.offset = offsetof(Light, pos);
+         member.type = reflect<Float2>();
+         member.customUI = customUIRenderer<Float2>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("radius");
+         member.offset = offsetof(Light, radius);
+         member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("height");
+         member.offset = offsetof(Light, height);
+         member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("linearPortion");
+         member.offset = offsetof(Light, linearPortion);
+         member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("smoothingFactor");
+         member.offset = offsetof(Light, smoothingFactor);
+         member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("intensity");
+         member.offset = offsetof(Light, intensity);
+         member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
          
          structName->structMembers.push_back(member);
       }

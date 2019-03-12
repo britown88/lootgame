@@ -156,6 +156,7 @@ ColorRGBAf sRgbToLinear(ColorRGBA const& srgb);
 ColorRGBAf sRgbToLinear(ColorRGB const& srgb);
 
 ColorRGBA linearToSrgb(ColorRGBAf const& lin);
+ColorRGBAf linearToSrgbf(ColorRGBAf const& lin);
 ColorRGBA srgbPremultipleAlpha(ColorRGBA const& srgb);
 
 struct  Matrix {

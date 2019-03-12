@@ -205,26 +205,44 @@ static void _viewerHandleInput(GameState& g) {
    if (g.ui.editing) {
 
       //------------- camera drag with space
-      if (ImGui::IsWindowHovered() && ImGui::IsKeyPressed(keys[ImGuiKey_Space])) {
-         g.ui.cameraDragStart = g.io.mousePos.toWorld();
-         g.ui.cameraDragVpStart = g.camera.viewport.xy();
-         g.ui.draggingCamera = true;
-      }
-      if (g.ui.draggingCamera) {
-         auto start = g.ui.cameraDragStart;
-         auto end = g.io.mousePos.toWorld();
-         Float2 delta = { start.x - end.x, start.y - end.y };
+      //if (ImGui::IsWindowHovered() && ImGui::IsKeyPressed(keys[ImGuiKey_Space])) {
+      //   g.ui.cameraDragStart = g.io.mousePos.toWorld();
+      //   g.ui.cameraDragVpStart = g.camera.viewport.xy();
+      //   g.ui.draggingCamera = true;
+      //}
+      //if (g.ui.draggingCamera) {
+      //   auto start = g.ui.cameraDragStart;
+      //   auto end = g.io.mousePos.toWorld();
+      //   Float2 delta = { start.x - end.x, start.y - end.y };
 
-         auto&vp = g.camera.viewport;
-         vp.setPos(vp.xy() + delta);
+      //   auto&vp = g.camera.viewport;
+      //   vp.setPos(vp.xy() + delta);
 
-         if (ImGui::IsKeyReleased(keys[ImGuiKey_Space])) {
-            g.ui.draggingCamera = false ;
+      //   if (ImGui::IsKeyReleased(keys[ImGuiKey_Space])) {
+      //      g.ui.draggingCamera = false ;
+      //   }
+      //}
+
+      static bool cameraDragging = false;
+      static Rectf storedVp;
+      if (ImGui::IsMouseDragging(2, 0.0f)) {
+         if (!cameraDragging) {
+            storedVp = g.camera.viewport;
+            cameraDragging = true;
          }
+         auto delta = ImGui::GetMouseDragDelta(2, 0.0f);
+         auto vp = storedVp; // copy
+         Float2 dx = Coords::fromScreen({ delta.x, delta.y }, g).toWorld() - Coords::fromScreen({ 0,0 }, g).toWorld();
+         vp.x -= dx.x; vp.y -= dx.y;
+         g.camera.viewport = vp;
       }
+      else {
+         cameraDragging = false;
+      }
+      
 
       // ----------------- camera zoom with mouse
-      if (!g.ui.draggingCamera) {
+      if (!cameraDragging) {
          auto wheel = ImGui::GetIO().MouseWheel;
          if (wheel != 0.0f) {
 
@@ -506,7 +524,9 @@ static bool _showWindowedViewer(GameInstance& gi) {
       }
 
       if (g.ui.focused) {
-         _viewerHandleInput(g);
+         if (g.camera.viewport.containsPoint(g.io.mousePos.toWorld())) {
+            _viewerHandleInput(g);
+         }
       }
 
       auto a = g.vpScreenArea.Min();
@@ -582,3 +602,4 @@ bool gameDoUIWindow(GameInstance& inst) {
    }
    return _showWindowedViewer(inst);   
 }
+
