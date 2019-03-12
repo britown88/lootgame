@@ -216,13 +216,15 @@ static void _handleLightInputs(GameState& g) {
 }
 
 enum DragType {
-   DragType_Wall = 0
+   DragType_Wall = 0,
+   DragType_Light
 };
 
 static void _handleDragInputs(GameState& g) {
    static bool dragging = false;
    static DragType type;
    static Wall* dragWall;
+   static Light* dragLight;
    static Float2 delta;
 
 
@@ -230,9 +232,22 @@ static void _handleDragInputs(GameState& g) {
    if (ImGui::IsMouseClicked(MOUSE_LEFT)) {
       for (auto&&w : g.map->walls) {
          if (w.bb.containsPoint(mouse)) {
-            dragging = true;
-            type = DragType_Wall;
-            dragWall = &w;
+            if (pointInPoly(mouse, w.poly.points.data(), w.poly.points.size())) {
+               dragging = true;
+               type = DragType_Wall;
+               dragWall = &w;
+               break;
+            }            
+         }
+      }
+      if (!dragging) {
+         for (auto&& light : g.map->lights) {
+            if (v2DistSquared(light.pos.toWorld(), mouse) < light.radius * light.radius) {
+               dragging = true;
+               type = DragType_Light;
+               dragLight = &light;
+               break;
+            }
          }
       }
    }
@@ -244,7 +259,11 @@ static void _handleDragInputs(GameState& g) {
             for (auto& p : dragWall->poly.points) {
                p += delta;
             }
-            _rebuildWallBoundingBox(*dragWall);
+            dragWall->bb.x += delta.x;
+            dragWall->bb.y += delta.y;
+            break;
+         case DragType_Light:
+            dragLight->pos.world += delta;
             break;
          }
          dragging = false;
@@ -262,6 +281,13 @@ static void _handleDragInputs(GameState& g) {
             }
             ImGui::GetWindowDrawList()->AddPolyline(screenPts.data(), screenPts.size(), IM_COL32_WHITE, true, 2.0f);
          }  break;
+         case DragType_Light: {
+            auto p = dragLight->pos.world + delta;
+            p = Coords::fromWorld(p).toScreen(g);
+            auto r = Coords::worldToScreen(dragLight->radius, g);
+            ImGui::GetWindowDrawList()->AddCircle(p, r, IM_COL32_WHITE, 24, 2.0f);
+            break;
+         }
          }
 
       }
@@ -609,16 +635,35 @@ static void _renderShadowCalc(GameState& g) {
 }
 
 static void _renderMove(GameState& g) {
+   auto mouse = g.io.mousePos.toWorld();
+   auto outlineCol = IM_COL32(255, 255, 255, 128);
+   auto hoveredCol = IM_COL32(255, 255, 255, 255);
+
    for (auto&& w : g.map->walls) {
-      auto c = IM_COL32(255, 255, 255, 128);
-      if (w.bb.containsPoint(g.io.mousePos.toWorld())) {
-         c = IM_COL32(255, 255, 255, 255);
+      auto c = outlineCol;
+      
+      if (w.bb.containsPoint(mouse)) {
+         if (pointInPoly(mouse, w.poly.points.data(), w.poly.points.size())) {
+            c = hoveredCol;
+         }
       }
 
       auto a = Coords::fromWorld(w.bb.Min()).toScreen(g);
       auto b = Coords::fromWorld(w.bb.Max()).toScreen(g);
 
       ImGui::GetWindowDrawList()->AddRect(a, b, c, 0, 15, 2.0f);
+   }
+
+   for (auto&& light : g.map->lights) {
+      auto lp = light.pos.toScreen(g);
+      auto r = Coords::worldToScreen(light.radius, g);
+      auto c = outlineCol;
+
+      if (v2DistSquared(light.pos.toWorld(), mouse) < light.radius * light.radius) {
+         c = hoveredCol;
+      }
+      ImGui::GetWindowDrawList()->AddCircle(lp, r, c, 24, 2.0f);
+
    }
 }
 
@@ -702,11 +747,6 @@ static bool _showWindowedViewer(GameInstance& gi) {
          ImGui::EndPopup();
       }
 
-      if (g.ui.editing) {
-         _doModeWindow(g);
-      }
-      
-      
 
       if (g.ui.focused && ImGui::IsItemHovered() && g.camera.viewport.containsPoint(g.io.mousePos.toWorld())) {
          _viewerHandleInput(g);
@@ -770,6 +810,10 @@ void uiDoGameDebugger(GameInstance& instance) {
 
    }
    ImGui::End();
+
+   if (instance.state.ui.editing) {
+      _doModeWindow(instance.state);
+   }
 }
 
 

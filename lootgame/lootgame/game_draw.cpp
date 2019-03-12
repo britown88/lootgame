@@ -280,9 +280,9 @@ void renderLightLayer(GameState& game) {
    auto candleColor = sRgbToLinear(ColorRGB{ 255,147,41 });
 
    //_addLight({ vp.w,vp.w }, { vp.w / 2.0f, vp.h / 2.0f }, Yellow);
-   _addLight(game, 80, Coords::fromWorld(game.maindude.phy.pos), Blue, blockers);
+   _addLight(game, 80, Coords::fromWorld(game.maindude.phy.pos), Green, blockers);
 
-   _addLight(game, 150, Coords::fromWorld({ 200, 200 }), candleColor, blockers);
+   //_addLight(game, 150, Coords::fromWorld({ 200, 200 }), candleColor, blockers);
 
    int i = 0;
    for (auto&& d : game.baddudes) {
