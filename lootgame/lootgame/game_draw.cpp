@@ -239,6 +239,7 @@ static void _renderLight(GameState&g, Light& light) {
    uber::set(Uniform_Color, light.color);
    uber::set(Uniform_Alpha, 1.0f);
 
+   uber::set(Uniform_Height, light.height);
    uber::set(Uniform_LightAttrs, Float3{
       light.linearPortion,
       light.smoothingFactor,

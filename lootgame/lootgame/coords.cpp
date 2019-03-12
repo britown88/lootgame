@@ -61,3 +61,10 @@ Coords Coords::fromWorld(WorldCoords const& c) {
    return { c };
 }
 
+float Coords::screenToWorld(float f, GameState& g) {
+   return (Coords::fromScreen({ f, f }, g).toWorld() - Coords::fromScreen({ 0, 0 }, g).toWorld()).x;
+}
+float Coords::worldToScreen(float f, GameState& g) {
+   return (Coords::fromWorld({ f, f }).toScreen(g) - Coords::fromWorld({ 0, 0 }).toScreen(g)).x;
+}
+

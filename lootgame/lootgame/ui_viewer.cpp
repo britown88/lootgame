@@ -68,6 +68,9 @@ static void _showFullScreenViewer(GameInstance& g) {
 }
 
 static void _toggleEditing(GameState&g) {
+   if (g.ui.editing) {
+      g.ui.mode = GameEditMode_None;
+   }
    g.ui.editing = !g.ui.editing;
    LOG(g.ui.editing ? "Entered Edit Mode" : "Existing Edit Mode");
 }
@@ -206,8 +209,8 @@ static void _handleWallInputs(GameState& g) {
 }
 
 static void _handleLightInputs(GameState& g) {
-   g.ui.editingLight.pos = g.io.mousePos;
-
+   auto &light = g.ui.editingLight;
+   light.pos = g.io.mousePos;
    if (ImGui::IsMouseClicked(MOUSE_LEFT)) {
       g.map.lights.push_back(g.ui.editingLight);
    }
@@ -559,6 +562,18 @@ static void _renderWalls(GameState& g) {
    }
 }
 
+static void _renderLights(GameState&g) {
+   auto &light = g.ui.editingLight;
+   //light.pos = g.io.mousePos;
+
+   auto drawList = ImGui::GetWindowDrawList();
+   auto mouse = g.io.mousePos.toScreen(g);
+
+   auto r = Coords::worldToScreen(light.radius, g);
+
+   drawList->AddCircle(mouse, r, IM_COL32(255, 255, 0, 64), 24, 2.0f);
+}
+
 static void _renderShadowCalc(GameState& g) {
    const float SightRadius = 200;
 
@@ -630,6 +645,7 @@ static void _renderHelpers(GameState& g) {
          break;
       case GameEditMode_Lights:
          _renderCursor(g, "Light");
+         _renderLights(g);
          break;
       }
 
@@ -682,7 +698,7 @@ static bool _showWindowedViewer(GameInstance& gi) {
       
       
 
-      if (g.ui.focused && g.camera.viewport.containsPoint(g.io.mousePos.toWorld())) {
+      if (g.ui.focused && ImGui::IsItemHovered() && g.camera.viewport.containsPoint(g.io.mousePos.toWorld())) {
          _viewerHandleInput(g);
       }
          

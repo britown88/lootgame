@@ -24,4 +24,8 @@ struct Coords {
    static Coords fromViewport(VPCoords const& c, GameState& g);
    static Coords fromDialog(DlgCoords const& c, GameState& g);
    static Coords fromWorld(WorldCoords const& c);
+
+   // handy for simple distance conversions to the two main coord spaces
+   static float screenToWorld(float f, GameState& g);
+   static float worldToScreen(float f, GameState& g);
 }; //}
