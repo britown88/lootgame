@@ -89,6 +89,7 @@ static void _doMapManager(MapManagerState& state) {
             }
 
             if (open) {
+               ImGui::Indent();
                ImGui::PushID(k.sym);
                doTypeUIEX(reflect<Map>(), &tex);
                ImGui::PopID();

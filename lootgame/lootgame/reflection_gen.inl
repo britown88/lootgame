@@ -979,6 +979,7 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Wall, bb);
          member.type = reflect<Rectf>();
          member.customUI = customUIRenderer<Rectf>();
+         member.flags |= StructMemberFlags_ReadOnly;
          
          structName->structMembers.push_back(member);
       }

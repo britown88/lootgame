@@ -121,7 +121,10 @@ struct GameCamera {
 //@reflect{
 struct Wall {
    ConvexPoly poly;
+
+   //@readonly
    Rectf bb;
+
    //@ignore{
    Array<PhyObject> phyObjs;
    //}

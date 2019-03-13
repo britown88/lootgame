@@ -806,7 +806,9 @@ static void _doEditObjectWindow(GameState& g) {
          doTypeUI(g.ui.editLight);
       }
       else if (g.ui.editWall) {
-         doTypeUI(g.ui.editWall);
+         if (doTypeUI(g.ui.editWall)) {
+            _rebuildWallBoundingBox(*g.ui.editWall);
+         }
       }
    }
    ImGui::End();
