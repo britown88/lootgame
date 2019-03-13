@@ -317,8 +317,13 @@ struct GameStateUI {
 
    GameEditMode mode = GameEditMode_None;
 
-   Wall editingWall;
-   Light editingLight;
+   Wall newWall;
+   Wall* editWall = nullptr;
+
+   Light newLight;
+   Light* editLight = nullptr;
+
+   Coords rightClickMousePos;
 };
 
 struct PhysicsSystem {

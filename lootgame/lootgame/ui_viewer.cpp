@@ -78,7 +78,22 @@ static void _toggleEditing(GameState&g) {
 static void _setEditMode(GameState& g, GameEditMode mode) {
    switch (g.ui.mode) {
    case GameEditMode_Walls:
-      g.ui.editingWall.poly.points.clear();
+      g.ui.newWall.poly.points.clear();
+      g.ui.editWall = nullptr;
+      break;
+   case GameEditMode_Move:
+   case GameEditMode_Lights:
+      g.ui.editLight = nullptr;
+      g.ui.editWall = nullptr;
+      break;
+   }
+
+   switch (mode) {
+   case GameEditMode_Walls:
+      g.ui.editWall = &g.ui.newWall;
+      break;
+   case GameEditMode_Lights:
+      g.ui.editLight = &g.ui.newLight;
       break;
    }
 
@@ -140,7 +155,7 @@ static void _viewerMenuBar(GameState& g) {
       if (m == GameEditMode_Lights) { ImGui::PopStyleColor(); }
 
       if (m == GameEditMode_Move) { ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive)); }
-      if (ImGui::Button("Move")) { _setEditMode(g, GameEditMode_Move); }
+      if (ImGui::Button("Edit")) { _setEditMode(g, GameEditMode_Move); }
       if (m == GameEditMode_Move) { ImGui::PopStyleColor(); }
 
       if (!editing) {
@@ -179,7 +194,8 @@ static void _rebuildWallBoundingBox(Wall&w) {
 }
 
 static void _handleWallInputs(GameState& g) {
-   auto& current = g.ui.editingWall;
+   
+   auto& current = *g.ui.editWall;
    bool editing = !current.poly.points.empty();
 
    if (ImGui::IsItemClicked()) {
@@ -211,81 +227,123 @@ static void _handleWallInputs(GameState& g) {
 static void _handleLightInputs(GameState& g) {
    
    if (ImGui::IsMouseClicked(MOUSE_LEFT)) {
-      g.map->lights.push_back(g.ui.editingLight);
+      g.map->lights.push_back(*g.ui.editLight);
    }
 }
 
-enum DragType {
-   DragType_Wall = 0,
-   DragType_Light
+enum ObjectType {
+   ObjectType_None = 0,
+   ObjectType_Wall,
+   ObjectType_Light
 };
 
-static void _handleDragInputs(GameState& g) {
-   static bool dragging = false;
-   static DragType type;
-   static Wall* dragWall;
-   static Light* dragLight;
-   static Float2 delta;
+struct SelectedObject {
+   ObjectType type = ObjectType_None;
+   union {
+      Wall* wall = nullptr;
+      Light* light;
+   };
 
+   operator bool() { return type != ObjectType_None; }
+};
 
-   auto mouse = g.io.mousePos.toWorld();
-   if (ImGui::IsMouseClicked(MOUSE_LEFT)) {
-      for (auto&&w : g.map->walls) {
-         if (w.bb.containsPoint(mouse)) {
-            if (pointInPoly(mouse, w.poly.points.data(), w.poly.points.size())) {
-               dragging = true;
-               type = DragType_Wall;
-               dragWall = &w;
-               break;
-            }            
-         }
-      }
-      if (!dragging) {
-         for (auto&& light : g.map->lights) {
-            if (v2DistSquared(light.pos.toWorld(), mouse) < light.radius * light.radius) {
-               dragging = true;
-               type = DragType_Light;
-               dragLight = &light;
-               break;
-            }
+SelectedObject _getObjectAtCoords(GameState&g, Coords c) {
+   SelectedObject out;
+   auto mouse = c.toWorld();
+
+   for (auto&&w : g.map->walls) {
+      if (w.bb.containsPoint(mouse)) {
+         if (pointInPoly(mouse, w.poly.points.data(), w.poly.points.size())) {
+            out.type = ObjectType_Wall;
+            out.wall = &w;
+            return out;
          }
       }
    }
 
-   if (dragging) {
+   for (auto&& light : g.map->lights) {
+      if (v2DistSquared(light.pos.toWorld(), mouse) < light.radius * light.radius) {
+         out.type = ObjectType_Light;
+         out.light = &light;
+         return out;
+      }
+   }
+
+   return out;
+}
+
+
+static void _handleDragInputs(GameState& g) {
+   static SelectedObject obj;
+   static Float2 delta;
+
+   auto colDragPreview = IM_COL32(50, 255, 255, 64);
+
+
+   auto mouse = g.io.mousePos.toWorld();
+   if (ImGui::IsMouseClicked(MOUSE_LEFT) || ImGui::IsMouseClicked(MOUSE_RIGHT)) {
+      if (!obj) {
+         obj = _getObjectAtCoords(g, g.io.mousePos);
+
+         if (obj) {
+            if (obj.type == ObjectType_Wall) {
+               g.ui.editWall = obj.wall;
+            }
+            else {
+               g.ui.editWall = nullptr;
+            }
+
+            if (obj.type == ObjectType_Light) {
+               g.ui.editLight = obj.light;
+            }
+            else {
+               g.ui.editLight = nullptr;
+            }
+         }
+         else {
+            g.ui.editWall = nullptr;
+            g.ui.editLight = nullptr;
+         }
+      }
+   }
+
+   if (obj) {
+      if (ImGui::IsMouseReleased(MOUSE_RIGHT)) {
+         obj = {};
+      }
       if (ImGui::IsMouseReleased(MOUSE_LEFT)) {
-         switch (type) {
-         case DragType_Wall:
-            for (auto& p : dragWall->poly.points) {
+         switch (obj.type) {
+         case ObjectType_Wall:
+            for (auto& p : obj.wall->poly.points) {
                p += delta;
             }
-            dragWall->bb.x += delta.x;
-            dragWall->bb.y += delta.y;
+            obj.wall->bb.x += delta.x;
+            obj.wall->bb.y += delta.y;
             break;
-         case DragType_Light:
-            dragLight->pos.world += delta;
+         case ObjectType_Light:
+            obj.light->pos.world += delta;
             break;
          }
-         dragging = false;
+         obj = {};
       }
 
       if (ImGui::IsMouseDragging(0, 0.0f)) {
          auto imdelta = ImGui::GetMouseDragDelta(0, 0.0f);
          delta = Coords::fromScreen(Float2{ imdelta.x, imdelta.y }, g).toWorld() - Coords::fromScreen(Float2{ 0,0 }, g).toWorld();
 
-         switch (type) {
-         case DragType_Wall: {
+         switch (obj.type) {
+         case ObjectType_Wall: {
             Array<ImVec2> screenPts;
-            for (auto& p : dragWall->poly.points) {
+            for (auto& p : obj.wall->poly.points) {
                screenPts.push_back(Coords::fromWorld(p + delta).toScreen(g));
             }
-            ImGui::GetWindowDrawList()->AddPolyline(screenPts.data(), screenPts.size(), IM_COL32_WHITE, true, 2.0f);
+            ImGui::GetWindowDrawList()->AddPolyline(screenPts.data(), screenPts.size(), colDragPreview, true, 5.0f);
          }  break;
-         case DragType_Light: {
-            auto p = dragLight->pos.world + delta;
+         case ObjectType_Light: {
+            auto p = obj.light->pos.world + delta;
             p = Coords::fromWorld(p).toScreen(g);
-            auto r = Coords::worldToScreen(dragLight->radius, g);
-            ImGui::GetWindowDrawList()->AddCircle(p, r, IM_COL32_WHITE, 24, 2.0f);
+            auto r = Coords::worldToScreen(obj.light->radius, g);
+            ImGui::GetWindowDrawList()->AddCircle(p, r, colDragPreview, 24, 5.0f);
             break;
          }
          }
@@ -367,16 +425,38 @@ static void _viewerHandleInput(GameState& g) {
 
 static void _doRightClickMenu(GameState&g) {
 
+
+
    switch (g.ui.mode) {
    case GameEditMode_None:
       break;
    case GameEditMode_Walls:
-      if (!g.ui.editingWall.poly.points.empty()) {
+      if (!g.ui.newWall.poly.points.empty()) {
          if (ImGui::MenuItem("Cancel Wall")) {
             _setEditMode(g, GameEditMode_None);
          }
       }
       break;
+   case GameEditMode_Move: {
+      if (auto obj = _getObjectAtCoords(g, g.ui.rightClickMousePos)) {
+         if (ImGui::MenuItem("Delete")) {
+            switch (obj.type) {
+            case ObjectType_Light:
+               if (g.ui.editLight == obj.light) {
+                  g.ui.editLight = nullptr;
+               }
+               g.map->lights.erase(obj.light);
+               break;
+            case ObjectType_Wall:
+               if (g.ui.editWall == obj.wall) {
+                  g.ui.editWall = nullptr;
+               }
+               g.map->walls.erase(obj.wall);
+               break;
+            }            
+         }
+      }
+   }  break;
    }
 
    if (g.ui.mode != GameEditMode_Walls) {
@@ -396,7 +476,7 @@ static void _doRightClickMenu(GameState&g) {
       }
    }
    if (g.ui.mode != GameEditMode_Move) {
-      if (ImGui::MenuItem("Move Objects")) {
+      if (ImGui::MenuItem("Edit Objects")) {
          if (!g.ui.editing) {
             _toggleEditing(g);
          }
@@ -550,7 +630,7 @@ static void _renderWalls(GameState& g) {
    }
 
    // render the editing wall
-   auto& editing = g.ui.editingWall;
+   auto& editing = g.ui.newWall;
    if (!editing.poly.points.empty()) {
 
       Array<Float2> screenPts;
@@ -588,7 +668,11 @@ static void _renderWalls(GameState& g) {
 }
 
 static void _renderLights(GameState&g) {
-   auto &light = g.ui.editingLight;
+   if (!g.ui.editLight) {
+      return;
+   }
+
+   auto &light = *g.ui.editLight;
    light.pos = g.io.mousePos;
 
    auto drawList = ImGui::GetWindowDrawList();
@@ -638,14 +722,20 @@ static void _renderMove(GameState& g) {
    auto mouse = g.io.mousePos.toWorld();
    auto outlineCol = IM_COL32(255, 255, 255, 128);
    auto hoveredCol = IM_COL32(255, 255, 255, 255);
+   auto selectedCol = IM_COL32(255, 255, 0, 255);
+
+   auto hovered = _getObjectAtCoords(g, g.io.mousePos);
 
    for (auto&& w : g.map->walls) {
       auto c = outlineCol;
-      
-      if (w.bb.containsPoint(mouse)) {
-         if (pointInPoly(mouse, w.poly.points.data(), w.poly.points.size())) {
-            c = hoveredCol;
-         }
+
+      // a little silly, the pointers are unioned in so this check works without checking
+      // for type
+      if (&w == hovered.wall) {
+         c = hoveredCol;
+      }
+      if (&w == g.ui.editWall) {
+         c = selectedCol;
       }
 
       auto a = Coords::fromWorld(w.bb.Min()).toScreen(g);
@@ -659,8 +749,11 @@ static void _renderMove(GameState& g) {
       auto r = Coords::worldToScreen(light.radius, g);
       auto c = outlineCol;
 
-      if (v2DistSquared(light.pos.toWorld(), mouse) < light.radius * light.radius) {
+      if (&light == hovered.light) {
          c = hoveredCol;
+      }
+      if (&light == g.ui.editLight) {
+         c = selectedCol;
       }
       ImGui::GetWindowDrawList()->AddCircle(lp, r, c, 24, 2.0f);
 
@@ -668,10 +761,7 @@ static void _renderMove(GameState& g) {
 }
 
 static void _renderHelpers(GameState& g) {
-   auto a = g.vpScreenArea.Min();
-   auto b = g.vpScreenArea.Max();
-
-   ImGui::PushClipRect(a, b, false);
+   
 
    if (g.ui.editing){
       if (g.ui.showEditGrid) {
@@ -680,7 +770,7 @@ static void _renderHelpers(GameState& g) {
       
       switch (g.ui.mode) {
       case GameEditMode_Move:
-         _renderCursor(g, "Move");
+         _renderCursor(g, "Edit");
          _renderMove(g);
          break;
       case GameEditMode_Walls:
@@ -698,18 +788,29 @@ static void _renderHelpers(GameState& g) {
       //_renderShadowCalc(g);      
    }
 
-   ImGui::PopClipRect();
+   
 }
 
-static void _doModeWindow(GameState& g) {
-   switch (g.ui.mode) {
-   case GameEditMode_Lights:
-      if (ImGui::Begin("Edit Light")) {
-         doTypeUI(&g.ui.editingLight);
+static void _doEditObjectWindow(GameState& g) {
+
+   const char* id = "openeditobj";
+   std::string dlgLabel = "Open Edit Object";
+   if (g.ui.editLight) { dlgLabel = "Edit Light"; }
+   else if (g.ui.editWall) { dlgLabel = "Edit Wall"; };
+
+   dlgLabel += "###openeditobj";
+
+   if (ImGui::Begin(dlgLabel.c_str(), nullptr, ImGuiWindowFlags_NoFocusOnAppearing)) {
+
+      if (g.ui.editLight) {
+         doTypeUI(g.ui.editLight);
       }
-      ImGui::End();
-      break;
+      else if (g.ui.editWall) {
+         doTypeUI(g.ui.editWall);
+      }
    }
+   ImGui::End();
+
 }
 
 static bool _showWindowedViewer(GameInstance& gi) {
@@ -742,10 +843,19 @@ static bool _showWindowedViewer(GameInstance& gi) {
 
       auto cPos = ImGui::GetCursorPos();
 
+      if (ImGui::IsMouseReleased(MOUSE_RIGHT) && 
+         ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
+         g.ui.rightClickMousePos = g.io.mousePos;
+      }
       if (ImGui::BeginPopupContextItem()) {
+         
          _doRightClickMenu(g);
          ImGui::EndPopup();
       }
+
+      auto a = g.vpScreenArea.Min();
+      auto b = g.vpScreenArea.Max();
+      ImGui::PushClipRect(a, b, false);
 
 
       if (g.ui.focused && ImGui::IsItemHovered() && g.camera.viewport.containsPoint(g.io.mousePos.toWorld())) {
@@ -753,6 +863,8 @@ static bool _showWindowedViewer(GameInstance& gi) {
       }
          
       _renderHelpers(g);
+
+      ImGui::PopClipRect();
 
       ImGui::SetCursorPos(cPos);
       _statusBar(g);
@@ -812,7 +924,7 @@ void uiDoGameDebugger(GameInstance& instance) {
    ImGui::End();
 
    if (instance.state.ui.editing) {
-      _doModeWindow(instance.state);
+      _doEditObjectWindow(instance.state);
    }
 }
 

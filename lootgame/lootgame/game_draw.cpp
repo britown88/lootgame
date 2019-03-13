@@ -294,7 +294,7 @@ void renderLightLayer(GameState& game) {
       _renderLight(game, light);
    }
    if (game.ui.editing && game.ui.mode == GameEditMode_Lights) {
-      _renderLight(game, game.ui.editingLight);
+      _renderLight(game, game.ui.newLight);
    }
    
    //_addLight(game, 300, game.io.mousePos, White, blockers);
