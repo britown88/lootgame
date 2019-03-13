@@ -110,11 +110,11 @@ static void _setEditMode(GameState& g, GameEditMode mode) {
 static bool _wallIsConvex(Array<Float2>& w, Float2 mouse) {
    auto polycopy = w;
    polycopy.push_back(mouse);
-   return polyConvex(polycopy.data(), polycopy.size());
+   return polyConvex(polycopy.data(), (int)polycopy.size());
 }
 
 static bool _pointInWall(Wall& w, Float2 mouse) {
-   return pointInPoly(mouse, w.poly.points.data(), w.poly.points.size());
+   return pointInPoly(mouse, w.poly.points.data(), (int)w.poly.points.size());
 }
 
 
@@ -205,7 +205,7 @@ static void _handleWallInputs(GameState& g) {
       else {
          if (v2Dist(g.io.mousePos.toScreen(g), Coords::fromWorld(current.poly.points[0]).toScreen(g)) < 10.0f) {
             if (current.poly.points.size() >= 3) {
-               if (polyConvex(current.poly.points.data(), current.poly.points.size())) {
+               if (polyConvex(current.poly.points.data(), (int)current.poly.points.size())) {
                   _rebuildWallBoundingBox(current);
                   g.map->walls.push_back(current);
                   current.poly.points.clear();
@@ -253,7 +253,7 @@ SelectedObject _getObjectAtCoords(GameState&g, Coords c) {
 
    for (auto&&w : g.map->walls) {
       if (w.bb.containsPoint(mouse)) {
-         if (pointInPoly(mouse, w.poly.points.data(), w.poly.points.size())) {
+         if (pointInPoly(mouse, w.poly.points.data(), (int)w.poly.points.size())) {
             out.type = ObjectType_Wall;
             out.wall = &w;
             return out;
@@ -337,7 +337,7 @@ static void _handleDragInputs(GameState& g) {
             for (auto& p : obj.wall->poly.points) {
                screenPts.push_back(Coords::fromWorld(p + delta).toScreen(g));
             }
-            ImGui::GetWindowDrawList()->AddPolyline(screenPts.data(), screenPts.size(), colDragPreview, true, 5.0f);
+            ImGui::GetWindowDrawList()->AddPolyline(screenPts.data(), (int)screenPts.size(), colDragPreview, true, 5.0f);
          }  break;
          case ObjectType_Light: {
             auto p = obj.light->pos.world + delta;
@@ -625,8 +625,8 @@ static void _renderWalls(GameState& g) {
       }
 
       
-      drawlist->AddConvexPolyFilled(screenPts.data(), screenPts.size(), greenFill);
-      drawlist->AddPolyline(screenPts.data(), screenPts.size(), greenLine, true, 2.0f);
+      drawlist->AddConvexPolyFilled(screenPts.data(), (int)screenPts.size(), greenFill);
+      drawlist->AddPolyline(screenPts.data(), (int)screenPts.size(), greenLine, true, 2.0f);
    }
 
    // render the editing wall
@@ -637,7 +637,7 @@ static void _renderWalls(GameState& g) {
       for (auto p : editing.poly.points) {
          screenPts.push_back(Coords::fromWorld(p).toScreen(g));
       }
-      auto pCount = screenPts.size();
+      auto pCount = (int)screenPts.size();
       auto startPt = screenPts[0];
       auto mouse = g.io.mousePos.toScreen(g);
 

@@ -226,7 +226,7 @@ static void _addLight(GameState& g, float size, Coords pos, ColorRGBAf c, Array<
    //uber::set(Uniform_ModelMatrix, Matrix::translate2f(pos.toViewport(g)) * Matrix::scale2f({ size, size }));
    //render::meshRender(Graphics.mesh);
 
-   auto mHandle = render::meshBuild(mesh.data(), mesh.size());
+   auto mHandle = render::meshBuild(mesh.data(), (int)mesh.size());
 
    uber::set(Uniform_Alpha, 1.0f);
    uber::set(Uniform_ModelMatrix, Matrix::identity());

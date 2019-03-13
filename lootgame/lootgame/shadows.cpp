@@ -73,7 +73,7 @@ static ShadowSystem _buildSystem(Float2 center, float radius, Array<ConvexPoly>&
 
    // clip every blocker and add them to the segements list
    for (auto&& poly : blockers) {
-      auto segStart = out.segments.size();
+      auto segStart = (int)out.segments.size();
       out.segments.reserve(segStart + poly.points.size() / 2);
 
       // evaluate each segment of the blocker
@@ -128,9 +128,9 @@ static ShadowSystem _buildSystem(Float2 center, float radius, Array<ConvexPoly>&
       // assuming the blocker is correctly convex, we can iterate over all the segments we just added
       // and link up their a-b connections so that each segment has appropriate indices into the final segment list for
       // segments they attach to
-      auto segCount = out.segments.size() - segStart;
+      auto segCount = (int)out.segments.size() - segStart;
       if (segCount > 0) {
-         for (size_t s = segStart; s < segStart + segCount; ++s) {
+         for (int s = segStart; s < segStart + segCount; ++s) {
             auto &seg = out.segments[s];
 
             if (!seg.aclipped) {

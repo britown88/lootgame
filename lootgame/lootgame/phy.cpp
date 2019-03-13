@@ -144,7 +144,7 @@ static void _detect_CircleSegment(PhyObject*a, PhyObject*b, Array<PhyCollision>&
          shortest = t;
          collision = true;
          col.time = (t / vlen);
-         col.collisionNormal = v2Perp(qdir) * -pointSideOfSegment(q1, q2, p1);
+         col.collisionNormal = v2Perp(qdir) * -(float)pointSideOfSegment(q1, q2, p1);
       }      
    }
 
