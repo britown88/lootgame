@@ -61,6 +61,7 @@ Coords Coords::fromWorld(WorldCoords const& c) {
    return { c };
 }
 
+// these funcitons ar every wasteful but i dont care
 float Coords::screenToWorld(float f, GameState& g) {
    return (Coords::fromScreen({ f, f }, g).toWorld() - Coords::fromScreen({ 0, 0 }, g).toWorld()).x;
 }

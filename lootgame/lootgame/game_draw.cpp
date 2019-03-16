@@ -71,40 +71,6 @@ static void _renderDude(GameState& g, Dude& dude) {
    }
 }
 
-static void _renderDudeCollision(GameState& g, Dude& dude) {
-   auto& vp = g.camera.viewport;
-
-   auto model = Matrix::identity();
-   
-   model = Matrix::translate2f(dude.phy.pos - Float2{ (float)vp.x, (float)vp.y });
-   model *= Matrix::scale2f({ dude.phy.circle.size * 2, dude.phy.circle.size * 2 });
-   uber::set(Uniform_Color, DkGreen);
-   uber::set(Uniform_Alpha, 0.25f);
-   uber::set(Uniform_ModelMatrix, model);
-   
-   uber::bindTexture(Uniform_DiffuseTexture, TextureMap.map[intern("Circle")].handle);
-   render::meshRender(Graphics.mesh);
-}
-
-
-
-static void _renderTarget(Float2 pos, ColorRGBAf color) {
-   auto model = Matrix::identity();
-
-   auto& t = TextureMap.map[intern("Target")];
-
-   auto sz = t.sz;
-
-   model *= Matrix::translate2f(pos);
-   model *= Matrix::scale2f({ (float)sz.x, (float)sz.y });
-
-   uber::resetToDefault();
-   uber::set(Uniform_Color, color);
-   uber::set(Uniform_ModelMatrix, model);
-   uber::bindTexture(Uniform_DiffuseTexture, t.handle);
-   render::meshRender(Graphics.mesh);
-}
-
 static void _renderFloor(GameState& game) {
    auto& c = Const;
 
@@ -202,11 +168,9 @@ void renderUnlitScene(GameState& game) {
 static void _addLight(GameState& g, float size, Coords pos, ColorRGBAf c, Array<ConvexPoly>& blockers) {
    uber::set(Uniform_Color, c);
    
-   //uber::set(Uniform_PointLightRadius, size/2.0f);
-   uber::set(Uniform_LightAttrs, Float3{
-      Const.lightLinearPortion,
-      Const.lightSmoothingFactor,
-      Const.lightIntensity });
+   //TODO: old const values, this function goes away
+   uber::set(Uniform_LightAttrs, Float3{ 0.0f, 0.4f, 50.0f });
+   uber::set(Uniform_Height, 0.2f);
 
 
    auto p = pos.toWorld();
@@ -273,7 +237,7 @@ void renderLightLayer(GameState& game) {
    uber::set(Uniform_PointLight, true);
    uber::set(Uniform_NormalLighting, true);
 
-   uber::set(Uniform_Height, Const.lightHeight);
+   
 
 
    //uber::set(Uniform_LightIntensity, cLightIntensity);
@@ -319,8 +283,8 @@ void renderLitScene(GameState& game) {
 
 }
 
-void renderUI(GameState& game) {
-   auto& vp = game.camera.viewport;
+void renderUI(GameState& g) {
+   auto& vp = g.camera.viewport;
 
    render::fboBind(Graphics.UI);
 
@@ -328,6 +292,7 @@ void renderUI(GameState& game) {
    render::clear(Cleared);
 
    render::setBlendMode(BlendMode_NORMAL);
+   
 
    Float2 fbosz = { (float)Const.vpSize.x, (float)Const.vpSize.y };
    uber::set(Uniform_ViewMatrix, Matrix::ortho(0, fbosz.x, 0, fbosz.y, 1, -1));
@@ -341,21 +306,43 @@ void renderUI(GameState& game) {
 
       auto tsz = tfilled.sz;
       Float2 gemSize = { (float)tsz.x, (float)tsz.y };
-      float gemSpace = 0.0f;
-      auto w = (gemSize.x + gemSpace) * game.maindude.status.staminaMax;
+      float gemSpace = 1.0f;
+      float hpstamSpace = 5.0f;
+      auto w = (gemSize.x + gemSpace) * (g.maindude.status.staminaMax + g.maindude.status.healthMax) + hpstamSpace;
+
+
+      auto dudePos = Coords::fromWorld(g.maindude.phy.pos).toViewport(g);
+      float heightOffset = g.maindude.phy.circle.size + 20.0f;
+      //Float2 staminaCorner = dudePos + Float2{-w/2.0f, heightOffset };
 
       //Float2 staminaCorner = { game->maindude.phy.pos.x - w / 2.0f, game->maindude.phy.pos.y + game->maindude.phy.circle.size + 20 };
-      Float2 staminaCorner = { 10,10 };
+      Float2 staminaCorner ={ 10,10 };// Coords::fromWorld(g.maindude.phy.pos).toViewport(g);
 
-      if (game.maindude.status.stamina == 0) {
-         uber::set(Uniform_Alpha, 1.0f);
-         uber::set(Uniform_Color, Red);
+      if (g.maindude.status.stamina != 0) {
+         uber::set(Uniform_Alpha, 0.5f);
+         //uber::set(Uniform_Color, Red);
       }
-      for (int i = 0; i < game.maindude.status.staminaMax; ++i) {
+
+      for (int i = 0; i < g.maindude.status.healthMax; ++i) {
 
          auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
          uber::set(Uniform_ModelMatrix, model);
-         uber::bindTexture(Uniform_DiffuseTexture, i < game.maindude.status.stamina ? tfilled.handle : tempty.handle);
+         uber::bindTexture(Uniform_DiffuseTexture, i < g.maindude.status.health ? thfilled.handle : thempty.handle);
+         render::meshRender(Graphics.meshUncentered);
+
+         staminaCorner.x += gemSize.x + gemSpace;
+      }
+      staminaCorner.x += hpstamSpace;
+
+      if (g.maindude.status.stamina == 0) {
+         uber::set(Uniform_Alpha, 1.0f);
+         uber::set(Uniform_Color, Red);
+      }
+      for (int i = 0; i < g.maindude.status.staminaMax; ++i) {
+
+         auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
+         uber::set(Uniform_ModelMatrix, model);
+         uber::bindTexture(Uniform_DiffuseTexture, i < g.maindude.status.stamina ? tfilled.handle : tempty.handle);
          render::meshRender(Graphics.meshUncentered);
 
          staminaCorner.x += gemSize.x + gemSpace;
@@ -364,47 +351,7 @@ void renderUI(GameState& game) {
       //uber::resetToDefault();
       //uber::set(Uniform_ViewMatrix, Matrix::ortho(0, fbosz.x, 0, fbosz.y, 1, -1));
 
-      if (game.maindude.status.stamina != 0) {
-         uber::set(Uniform_Alpha, 0.5f);
-         //uber::set(Uniform_Color, Red);
-      }
-
-      for (int i = 0; i < game.maindude.status.healthMax; ++i) {
-
-         auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
-         uber::set(Uniform_ModelMatrix, model);
-         uber::bindTexture(Uniform_DiffuseTexture, i < game.maindude.status.health ? thfilled.handle: thempty.handle);
-         render::meshRender(Graphics.meshUncentered);
-
-         staminaCorner.x += gemSize.x + gemSpace;
-      }
-   }
-
-   if (game.DEBUG.showCollisionDebugging) {
-      for (auto&& d : game.baddudes) {
-         _renderDudeCollision(game, d);
-      }
-      _renderDudeCollision(game, game.maindude);
       
-   }
-
-
-   if (game.DEBUG.showMovementDebugging) {
-      const static float moveTargetDist = 50.0f;
-      const static float aimTargetDist = 100.0f;
-      auto &io = game.io;
-      auto &dude = game.maindude;
-
-      auto pos = dude.phy.pos - Float2{ (float)vp.x, (float)vp.y };
-
-      _renderTarget(pos + dude.phy.velocity * 100, Cyan);
-      _renderTarget(pos + v2Normalized(dude.mv.facing) * aimTargetDist, Red);
-
-      _renderTarget(pos + io.leftStick * moveTargetDist, DkGreen);
-      _renderTarget(pos + dude.mv.moveVector * 10, Magenta);
-
-      //_renderTarget(pos + io.rightStick * aimTargetDist, Yellow);
-      _renderTarget(pos + dude.mv.faceVector * aimTargetDist, LtGray);
    }
 }
 
@@ -423,6 +370,7 @@ static void renderOutput(GameState& game, FBO& output) {
    render::meshRender(Graphics.meshUncentered);
 
    if (game.ui.showGameUI) {
+
       uber::bindTexture(Uniform_DiffuseTexture, Graphics.UI.out[0].handle);
       render::meshRender(Graphics.meshUncentered);
    }

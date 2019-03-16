@@ -345,27 +345,6 @@ void uiEditDude(Dude& dude) {
    if (ImGui::Begin("Dude Editor", 0)) {
 
       ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
-      if (ImGui::CollapsingHeader("Lighting")) {
-         ImGui::Indent();
-
-         //ImGui::InputFloat("Floor Height", &cFloorHeight, 0.01f, 0.1f, 4);
-         //ImGui::InputFloat("Dude Height", &cDudeHeight, 0.01f, 1.0f, 4);
-         //ImGui::InputFloat("Light Height", &cLightHeight, 0.01f, 1.0f, 4);
-
-         ImGui::DragFloat("Floor Height", &c.floorHeight, 0.01f, 0.0f, 2.0f);
-         ImGui::DragFloat("Dude Height", &c.dudeHeight, 0.01f, 0.0f, 2.0f);
-         ImGui::DragFloat("Light Height", &c.lightHeight, 0.01f, 0.0f, 2.0f);
-
-         ImGui::DragFloat("Linear Portion", &c.lightLinearPortion, 0.1f, 0.0f, 1.0f);
-         ImGui::DragFloat("Smoothness Factor", &c.lightSmoothingFactor, 0.1f, 0.0f, 50.0f);
-         ImGui::DragFloat("Intensity Scalar", &c.lightIntensity, 0.1f, 1.0f, 100.0f);
-
-
-
-         ImGui::Unindent();
-      }
-
-      ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
       if (ImGui::CollapsingHeader("Movement")) {
          ImGui::Indent();
 

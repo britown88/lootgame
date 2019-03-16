@@ -54,7 +54,7 @@ static Dude _createDude(GameState& game) {
    out.c = White;
    out.moveset = _createMoveSet();
    out.phy.type = PhyObject::PhyType_Circle;
-   out.phy.pos = { 10,10 };
+   out.phy.pos = { 270,150 };
    out.phy.circle.size = 10.0f;
    out.phy.maxSpeed = Const.dudeMoveSpeed;
    out.phy.invMass =  0.01f;
@@ -92,6 +92,10 @@ static Dude _createEnemy(Float2 pos) {
 void gameStartActionMode(GameState &g) {
    g = {};
 
+   auto m = MapMap.map.find(intern("test"));
+   if (m != MapMap.map.end()) {
+      g.map = &(Map&)m->second;
+   }
    g.mode.type = ModeType_ACTION;
    g.lastUpdate = appGetTime();
 

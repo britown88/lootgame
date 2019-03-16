@@ -16,6 +16,8 @@ Map _defaultMap = { {1000,1000} };
 #include <stb/stb_image.h>
 
 #define AXIS_DEADZONE 0.25f
+
+// our aim stick normalizes so we need a harsher deadzone to prevent bounce-back
 #define AXIS_AIM_DEADZONE 0.5f
 
 
@@ -338,14 +340,8 @@ void badDudeCheckAttackCollision(GameState& g, Dude& dude, Dude& t) {
 
 
 
-static bool rightStickActive(GameState& g) {
-   auto &io = g.io;
-   return fabs(io.rightStick.x) > AXIS_AIM_DEADZONE || fabs(io.rightStick.y) > AXIS_AIM_DEADZONE;
-}
-static bool leftStickActive(GameState& g) {
-   auto &io = g.io;
-   return fabs(io.leftStick.x) > AXIS_DEADZONE || fabs(io.leftStick.y) > AXIS_DEADZONE;
-}
+static bool rightStickActive(GameState& g) { return v2LenSquared(g.io.rightStick) != 0.0f; }
+static bool leftStickActive(GameState& g) { return v2LenSquared(g.io.leftStick) != 0.0f; }
 
 void dudeApplyInputMovement(GameState& g, Dude& d) {
    auto& io = g.io;
@@ -373,7 +369,7 @@ void dudeApplyInputAiming(GameState& g, Dude& d) {
    //aimStick = io.mousePos - d.phy.pos;
    //}
 
-   if (v2LenSquared(aimStick) > 0) {
+   if (v2Len(aimStick) > AXIS_AIM_DEADZONE) {
       d.mv.faceVector = v2Normalized(aimStick);
    }
 }
@@ -428,7 +424,9 @@ void dudeUpdateVelocity(Dude& d) {
    if (!d.shoved) {
       // scale mvspeed based on facing;
       float facedot = v2Dot(v2Normalized(d.phy.velocity), d.mv.facing);
-      auto scaledSpeed = (d.phy.maxSpeed * (1 - Const.dudeBackwardsPenalty)) + (d.phy.maxSpeed * Const.dudeBackwardsPenalty * facedot);
+      auto scaledSpeed = 
+         (d.phy.maxSpeed * (1 - Const.dudeBackwardsPenalty)) + 
+         (d.phy.maxSpeed * Const.dudeBackwardsPenalty * facedot);
 
       // set the target speed
       d.mv.moveSpeedCapTarget = scaledSpeed * v2Len(d.mv.moveVector);
@@ -701,18 +699,17 @@ bool gameProcessEvent(GameState& g, SDL_Event* event) {
       bool pressed = true;
       GameButton btn;
       if (fabs(value) < AXIS_DEADZONE) {
-         value = 0.0f;
+         //value = 0.0f;
          pressed = false;
       }
 
       switch (event->caxis.axis) {
-      case SDL_CONTROLLER_AXIS_LEFTX: io.leftStick.x = value; btn = value < 0.0f ? GameButton_LEFT : GameButton_RIGHT; break;
-      case SDL_CONTROLLER_AXIS_LEFTY: io.leftStick.y = value; btn = value < 0.0f ? GameButton_UP : GameButton_DOWN; break;
-      case SDL_CONTROLLER_AXIS_RIGHTX: io.rightStick.x = value; btn = value < 0.0f ? GameButton_LEFT : GameButton_RIGHT; break;
-      case SDL_CONTROLLER_AXIS_RIGHTY: io.rightStick.y = value; btn = value < 0.0f ? GameButton_UP : GameButton_DOWN; break;
+      case SDL_CONTROLLER_AXIS_LEFTX: io.leftStick_RAW.x = value; btn = value < 0.0f ? GameButton_LEFT : GameButton_RIGHT; break;
+      case SDL_CONTROLLER_AXIS_LEFTY: io.leftStick_RAW.y = value; btn = value < 0.0f ? GameButton_UP : GameButton_DOWN; break;
+      case SDL_CONTROLLER_AXIS_RIGHTX: io.rightStick_RAW.x = value; btn = value < 0.0f ? GameButton_LEFT : GameButton_RIGHT; break;
+      case SDL_CONTROLLER_AXIS_RIGHTY: io.rightStick_RAW.y = value; btn = value < 0.0f ? GameButton_UP : GameButton_DOWN; break;
       case SDL_CONTROLLER_AXIS_TRIGGERLEFT: io.leftTrigger = value; btn = GameButton_LT; break;
       case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: io.rightTrigger = value; btn = GameButton_RT; break;
-      default: return false;
       }
 
       if (!io.buttonDown[btn] && pressed) {
@@ -724,10 +721,28 @@ bool gameProcessEvent(GameState& g, SDL_Event* event) {
       }
 
       io.buttonDown[btn] = pressed;
-   } return true;;
+
+   } return true;
    }
 
    return false;
+}
+
+static Float2 _scaleStick(Float2&stick) {
+   auto len = v2Len(stick);
+   if (len < AXIS_DEADZONE) {
+      return { 0, 0 };
+   }
+
+   return stick;
+   //else {
+   //   stick = v2Normalized(stick) * ((len - AXIS_AIM_DEADZONE) / (1 / AXIS_AIM_DEADZONE));
+   //}
+}
+
+static void _postProcessInputs(GameState&g) {
+   g.io.leftStick = _scaleStick(g.io.leftStick_RAW);
+   g.io.rightStick = _scaleStick(g.io.rightStick_RAW);
 }
 
 
@@ -795,6 +810,7 @@ static void _perRenderStep(GameState& g, Milliseconds ms) {
    _cameraFollowPlayer(g);
 }
 
+
 static const int LastUpdateMSCap = 32;
 static const int FrameLength = 16;
 
@@ -802,6 +818,8 @@ void gameUpdate(GameState& g) {
    auto time = appGetTime();
    auto dt = time - g.lastUpdate;
    auto ms = dt.toMilliseconds();
+
+   _postProcessInputs(g);
 
    if (ms > LastUpdateMSCap) {
       // something bad happened and we spiked hard

@@ -378,7 +378,8 @@ void appPollEvents(App* app) {
       switch (event.type)
       {
       case SDL_CONTROLLERDEVICEADDED:
-         SDL_GameControllerOpen(0);
+         SDL_GameControllerOpen(event.cdevice.which);
+         LOG("Controller %d opened", event.cdevice.which);
          return;
       case SDL_QUIT: {
          app->running = false;

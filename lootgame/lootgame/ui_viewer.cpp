@@ -760,6 +760,33 @@ static void _renderMove(GameState& g) {
    }
 }
 
+static void _renderDudeDebug(GameState&g, Dude&d) {
+   auto pos = Coords::fromWorld(d.phy.pos).toScreen(g);
+   auto r = Coords::worldToScreen(d.phy.circle.size, g);
+
+   auto drawlist = ImGui::GetWindowDrawList();
+
+   drawlist->AddCircle(pos, r, IM_COL32(255, 255, 255, 64));
+
+   auto faceVectorPos = pos + d.mv.faceVector * 50;
+   auto facingPos = pos + d.mv.facing * 50;
+   drawlist->AddLine(pos, facingPos, IM_COL32(0, 0, 255, 255), 3.0f);
+   drawlist->AddLine(pos, faceVectorPos, IM_COL32(0, 128, 0, 255), 2.0f);
+
+   
+
+   auto moveVectorPos = pos + d.mv.moveVector * 100;
+   auto moveVectorPosScaled = pos + d.mv.moveVector * 500 * d.mv.moveSpeedCap;
+   drawlist->AddLine(pos, moveVectorPos, IM_COL32(128, 0, 0, 128), 2.0f);
+   drawlist->AddLine(pos, moveVectorPosScaled, IM_COL32(255, 0, 0, 255), 5.0f);
+
+
+   
+   //drawlist->AddText(pos + Float2{ 40,40 }, IM_COL32_WHITE, format("%0.4f", d.mv.moveSpeedCapTarget).c_str());
+   
+}
+
+
 static void _renderHelpers(GameState& g) {
    
 
@@ -785,11 +812,14 @@ static void _renderHelpers(GameState& g) {
 
       _renderWalls(g);
       //_renderPhyObjs(g);
-      //_renderShadowCalc(g);      
+      //_renderShadowCalc(g);     
+
+      _renderDudeDebug(g, g.maindude);
    }
 
    
 }
+
 
 static void _doEditObjectWindow(GameState& g) {
 
@@ -803,7 +833,9 @@ static void _doEditObjectWindow(GameState& g) {
    if (ImGui::Begin(dlgLabel.c_str(), nullptr, ImGuiWindowFlags_NoFocusOnAppearing)) {
 
       if (g.ui.editLight) {
-         doTypeUI(g.ui.editLight);
+         if (doTypeUI(g.ui.editLight)) {
+            g.ui.newLight = *g.ui.editLight;
+         }
       }
       else if (g.ui.editWall) {
          if (doTypeUI(g.ui.editWall)) {

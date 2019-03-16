@@ -587,50 +587,6 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
-         member.name = intern("lightHeight");
-         member.offset = offsetof(EngineConstants, lightHeight);
-         member.type = reflect<float>();
-         member.customUI = customUIRenderer<float>();
-         
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("lightLinearPortion");
-         member.offset = offsetof(EngineConstants, lightLinearPortion);
-         member.type = reflect<float>();
-         member.customUI = customUIRenderer<float>();
-         
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("lightSmoothingFactor");
-         member.offset = offsetof(EngineConstants, lightSmoothingFactor);
-         member.type = reflect<float>();
-         member.customUI = customUIRenderer<float>();
-         
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("lightIntensity");
-         member.offset = offsetof(EngineConstants, lightIntensity);
-         member.type = reflect<float>();
-         member.customUI = customUIRenderer<float>();
-         
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
          member.name = intern("dudeAcceleration");
          member.offset = offsetof(EngineConstants, dudeAcceleration);
          member.type = reflect<float>();
@@ -837,6 +793,28 @@ void reflectionStartup_generated() {
          member.offset = offsetof(IO, mousePos);
          member.type = reflect<Coords>();
          member.customUI = customUIRenderer<Coords>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("leftStick_RAW");
+         member.offset = offsetof(IO, leftStick_RAW);
+         member.type = reflect<Float2>();
+         member.customUI = customUIRenderer<Float2>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("rightStick_RAW");
+         member.offset = offsetof(IO, rightStick_RAW);
+         member.type = reflect<Float2>();
+         member.customUI = customUIRenderer<Float2>();
          
          structName->structMembers.push_back(member);
       }
@@ -1350,28 +1328,6 @@ void reflectionStartup_generated() {
 
       structName->funcs.create = [](void* data) {new (data) GameStateDebug;};
       structName->funcs.destroy = [](void* data) {((GameStateDebug*)data)->~GameStateDebug(); };
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("showMovementDebugging");
-         member.offset = offsetof(GameStateDebug, showMovementDebugging);
-         member.type = reflect<bool>();
-         member.customUI = customUIRenderer<bool>();
-         
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("showCollisionDebugging");
-         member.offset = offsetof(GameStateDebug, showCollisionDebugging);
-         member.type = reflect<bool>();
-         member.customUI = customUIRenderer<bool>();
-         
-         structName->structMembers.push_back(member);
-      }
 
       
       {

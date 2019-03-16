@@ -39,6 +39,8 @@ void assets_textureMapRefreshAll();
 void assets_textureMapReload();
 void assets_textureMapLoad();
 
+
+
 //@reflect{
 struct EngineConstants {
    //@readonly
@@ -47,16 +49,14 @@ struct EngineConstants {
 
    float floorHeight = 0.0f;
    float dudeHeight = 0.1f;
-   float lightHeight = 0.2f;
-   float lightLinearPortion = 0.0f;
-   float lightSmoothingFactor = 0.4f;
-   float lightIntensity = 50.0f;
    float dudeAcceleration = 0.005f;
-   float dudeRotationSpeed = 0.010f;
+   float dudeRotationSpeed = 0.010f; // radian per frame angle the character can rotate by
    float dudeMoveSpeed = 0.100f;
    float dudeDashSpeed = 0.300f;
-   float dudeSpeedCapEasing = 0.0003f;
-   float dudeBackwardsPenalty = 0.250f;
+
+   float dudeSpeedCapEasing = 0.0003f; // linear rate the speed cap moves toward the target cap
+   float dudeBackwardsPenalty = 0.250f; // percentage of movespeed max removed by moving perfectly away from facing
+
    float dudeDashDistance = 50.0f;
    float dudeKnockbackDistance = 0.0f;
    Milliseconds dudePostDashCooldown = 100;
@@ -100,6 +100,9 @@ typedef byte GameButton;
 //@reflect{
 struct IO {
    Coords mousePos = { { 0,0 } };
+
+   Float2 leftStick_RAW;
+   Float2 rightStick_RAW;
 
    Float2 leftStick;   // unit vector of left stick
    Float2 rightStick;  // unit vector of right stick
@@ -193,13 +196,34 @@ struct MoveSet {
    Array<AttackSwing> swings;
 };//}
 
+
+  /*
+  MOVEMENT PRIMER
+
+  // movement
+   moveVector is best thought as the analogue movement stick, its length is 0-1
+
+   Velocity accelerates by moveVector every frame, with a capped length of moveSpeedCap
+
+   moveSpeedCap linearly grows/shrinks by Const.MoveSpeedEasing toward a targetCap
+   targetCap is defined by the character's speed multiplied by the length of moveVector
+   speed is the character's max speed reduced by up to dudeBackwardsPenalty% depending on face direciton vs move direction
+
+  // rotation
+   faceVector is the normalized direction to face, this is the target to face
+   facing is the curent normalized vector the character is facing.  
+   facing will rotate by Const.rotationSpeed radians every frame toward faceVector
+
+  */
+
+
 //@reflect{
 struct Movement {
    float moveSpeedCap = 0.0f;       // updated per frame, interpolates toward moveSpeedCapTarget
    float moveSpeedCapTarget = 0.0f; // updated per frame, max speed based on length of move vector and velocity direction vs facing
    Float2 moveVector = { 0.0f, 0.0f };   // vector length 0-1 for movement amount/direction
    Float2 faceVector = { 0.0f, 0.0f };  // unit vector for target facing, facing will interpolate toward this angle
-   Float2 facing = { 1, 0 };  // unit vector for character facing  
+   Float2 facing = { 1, 0 };  // unit vector for character facing, interpolated every frame toward faceVector
 };//}
 
 struct Dude;
@@ -294,8 +318,8 @@ struct GameMode {
 
 //@reflect{
 struct GameStateDebug {
-   bool showMovementDebugging = false;
-   bool showCollisionDebugging = false;
+   //bool showMovementDebugging = false;
+   //bool showCollisionDebugging = false;
 
    //@ui(min=0 max=1)
    float ambientLight = 0.2f;
