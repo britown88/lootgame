@@ -52,7 +52,7 @@ struct EngineConstants {
 
                                     // frame equivalent to ~16ms
    float dudeRotationSpeed = 0.15f; // radian per-frame angle the character can rotate by
-   float dudeMoveSpeed = 0.100f;    // default starting max movespeed, measured per frame
+   float dudeMoveSpeed = 0.080f;    // default starting max movespeed, measured per frame
    float dudeDashSpeed = 0.200f;    // max move speed during dash
 
    float dudeAccelerationRate = 0.0015f; // linear rate the speed cap increases toward the target cap
@@ -62,7 +62,7 @@ struct EngineConstants {
 
    float dudeDashDistance = 40.0f;
    float dudeKnockbackDistance = 0.0f;
-   Milliseconds dudePostDashCooldown = 100;
+   Milliseconds dudePostDashCooldown = 400;
    Milliseconds dudeBaseStaminaTickRecoveryTime = 500;
    Milliseconds cooldownOnDamagedStaminaEmpty = 1000;
    Milliseconds cooldownOnDamagedStamina = 250;
@@ -254,6 +254,7 @@ struct CooldownState {
 };
 
 struct DashState {
+   bool postDashAttack = false;
 };
 
 struct FreeState {
@@ -261,13 +262,14 @@ struct FreeState {
    Milliseconds nextTickAt;
 };
 
+//@reflect{
 enum DudeState {
    DudeState_FREE = 0,
    DudeState_COOLDOWN,
    DudeState_DASH,
    DudeState_ATTACKING,
    DudeState_DEAD
-};
+};//}
 
 struct Status {
    int stamina, staminaMax;

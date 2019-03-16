@@ -11,6 +11,7 @@ TypeMetadata* meta_ColorRGBf = new TypeMetadata;
 TypeMetadata* meta_ColorHSV = new TypeMetadata;
 TypeMetadata* meta_ColorRGBAf = new TypeMetadata;
 TypeMetadata* meta_SwingPhase = new TypeMetadata;
+TypeMetadata* meta_DudeState = new TypeMetadata;
 TypeMetadata* meta__TextureMap = new TypeMetadata;
 TypeMetadata* meta_EngineConstants = new TypeMetadata;
 TypeMetadata* meta_EngineState = new TypeMetadata;
@@ -74,6 +75,57 @@ void reflectionStartup_generated() {
          EnumEntryMetadata entry;
          entry.name = intern("SwingPhase_Cooldown");
          entry.value = SwingPhase_Cooldown;
+         enumName->enumEntries.push_back(entry);
+      }
+
+      
+   }
+
+   
+   {
+      auto& enumName = meta_DudeState;
+      enumName->name = intern("DudeState");
+      enumName->size = sizeof(DudeState);
+      enumName->variety = TypeVariety_Enum;
+      
+
+      
+      {
+         EnumEntryMetadata entry;
+         entry.name = intern("DudeState_FREE");
+         entry.value = DudeState_FREE;
+         enumName->enumEntries.push_back(entry);
+      }
+
+      
+      {
+         EnumEntryMetadata entry;
+         entry.name = intern("DudeState_COOLDOWN");
+         entry.value = DudeState_COOLDOWN;
+         enumName->enumEntries.push_back(entry);
+      }
+
+      
+      {
+         EnumEntryMetadata entry;
+         entry.name = intern("DudeState_DASH");
+         entry.value = DudeState_DASH;
+         enumName->enumEntries.push_back(entry);
+      }
+
+      
+      {
+         EnumEntryMetadata entry;
+         entry.name = intern("DudeState_ATTACKING");
+         entry.value = DudeState_ATTACKING;
+         enumName->enumEntries.push_back(entry);
+      }
+
+      
+      {
+         EnumEntryMetadata entry;
+         entry.name = intern("DudeState_DEAD");
+         entry.value = DudeState_DEAD;
          enumName->enumEntries.push_back(entry);
       }
 

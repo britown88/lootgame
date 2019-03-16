@@ -781,6 +781,9 @@ static void _renderDudeDebug(GameState&g, Dude&d) {
    drawlist->AddLine(pos, moveVectorPosScaled, IM_COL32(255, 0, 0, 255), 5.0f);
 
 
+
+
+   drawlist->AddText(pos + Float2{ 40,40 }, IM_COL32_WHITE, reflect<DudeState>()->enumEntries[d.state].name);
    
    //drawlist->AddText(pos + Float2{ 40,40 }, IM_COL32_WHITE, format("%0.4f", d.mv.moveSpeedCapTarget).c_str());
    

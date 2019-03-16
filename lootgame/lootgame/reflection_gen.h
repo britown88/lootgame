@@ -14,6 +14,15 @@ struct Reflector<SwingPhase>{
 };
 
 
+// DudeState ----------------------------
+extern TypeMetadata* meta_DudeState;
+typedef enum DudeState DudeState;
+template<>
+struct Reflector<DudeState>{
+   static TypeMetadata const* type() { return meta_DudeState; }
+};
+
+
 // TextureFlag_ ----------------------------
 extern TypeMetadata* meta_TextureFlag_;
 typedef enum TextureFlag_ TextureFlag_;

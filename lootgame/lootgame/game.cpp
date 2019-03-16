@@ -162,13 +162,22 @@ void dudeBeginDash(Dude& d, float speed) {
    //}
 }
 
+void dudeBeginAttack(Dude& d, int swingDir, int combo);
 
 // dude will begin dash state by being shoved, this will start a cooldown
 // once the shove is complete
 void dudeUpdateStateDash(Dude& d) {
    if (!d.shoved) {
-      Milliseconds cd = Const.dudePostDashCooldown;
-      dudeBeginCooldown(d, cd);
+      // cancel the cooldown by attacking before the end of the dash
+      if (d.dash.postDashAttack) {
+         dudeBeginAttack(d, 1, 0);
+         d.dash.postDashAttack = false;
+      }
+      else {
+         Milliseconds cd = Const.dudePostDashCooldown;
+         dudeBeginCooldown(d, cd);
+      }
+      
    }
 }
 
@@ -378,10 +387,18 @@ void dudeApplyInputAiming(GameState& g, Dude& d) {
 void dudeApplyInputFreeActions(GameState& g, Dude& d) {
    auto& io = g.io;
    if (io.buttonPressed[GameButton_LT]){
+      LOG("Dash pressed while free");
       dudeBeginDash(d, Const.dudeDashSpeed);
    }
    else if (io.buttonPressed[GameButton_RT]) {
       dudeBeginAttack(d, 1, 0);
+   }
+}
+
+void dudeApplyInputDashingAttack(GameState& g, Dude& d) {
+   auto& io = g.io;
+   if (io.buttonPressed[GameButton_RT]) {
+      d.dash.postDashAttack = true;
    }
 }
 
@@ -405,13 +422,14 @@ void dudeApplyInputAttack(GameState& g, Dude& d) {
 }
 
 void dudeApplyInput(GameState& g, Dude& d) {
-   switch (d.state) {
+   switch (d.state) {      
    case DudeState_FREE:
       dudeApplyInputMovement(g, d);
       dudeApplyInputAiming(g, d);
       dudeApplyInputFreeActions(g, d);
       break;
    case DudeState_DASH:
+      dudeApplyInputDashingAttack(g, d);
       break;
    case DudeState_ATTACKING:
       dudeApplyInputAttack(g, d);
@@ -738,9 +756,13 @@ static Float2 _scaleStick(Float2&stick) {
    //}
 }
 
-static void _postProcessInputs(GameState&g) {
+static void _applyInputs(GameState&g) {
    g.io.leftStick = _scaleStick(g.io.leftStick_RAW);
    g.io.rightStick = _scaleStick(g.io.rightStick_RAW);
+
+   if (dudeAlive(g.maindude)) {
+      dudeApplyInput(g, g.maindude);
+   }
 }
 
 
@@ -760,17 +782,15 @@ static void _cameraFollowPlayer(GameState& g) {
 
 static void _otherFrameStep(GameState& g) {
    Milliseconds tickSize = 32;
+   //LOG("32 milis step");
 }
 
 static void _frameStep(GameState& g) {
    Milliseconds tickSize = 16;
+   //LOG("16 milis step");
+   
 
    dudeUpdateState(g.maindude, tickSize);
-
-   if (dudeAlive(g.maindude)) {
-      dudeApplyInput(g, g.maindude);
-   }
-
    mainDudeCheckAttackCollisions(g.maindude, g.baddudes);
 
    dudeUpdateRotation(g.maindude);
@@ -793,6 +813,7 @@ static void _frameStep(GameState& g) {
 
 static void _milliStep(GameState& g) {
    Milliseconds tickSize = 1;
+   //LOG("1 mili step");
 
    updatePhyPositions(g.phySys.objs); 
 }
@@ -800,6 +821,7 @@ static void _milliStep(GameState& g) {
 static void _perRenderStep(GameState& g, Milliseconds ms) {
    Milliseconds tickSize = ms;
    _cameraFollowPlayer(g);
+   //LOG("PerFrame step");
 }
 
 
@@ -811,7 +833,7 @@ void gameUpdate(GameState& g) {
    auto dt = time - g.lastUpdate;
    auto ms = dt.toMilliseconds();
 
-   _postProcessInputs(g);
+   _applyInputs(g);
 
    if (ms > LastUpdateMSCap) {
       // something bad happened and we spiked hard
