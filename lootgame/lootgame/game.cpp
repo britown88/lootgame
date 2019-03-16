@@ -98,9 +98,10 @@ void dudeShove(Dude&d, Float2 dir, float speed, float distance) {
    d.phy.velocity = d.mv.moveVector * d.mv.moveSpeedCap;
 
 }
-void dudeUpdateShove(Dude& d) {
+void dudeUpdateShove(Dude& d, Milliseconds tickSize) {
    if (d.shoved) {
-      if (d.shove.start++ >= d.shove.dur) {
+      d.shove.start += tickSize;
+      if (d.shove.start >= d.shove.dur) {
          d.mv.moveVector = { 0,0 };
          if (d.shove.speed > Const.dudeMoveSpeed) {
             d.phy.maxSpeed = Const.dudeMoveSpeed;
@@ -144,7 +145,8 @@ void dudeUpdateStateCooldown(Dude& d) {
 }
 
 void dudeBeginDash(Dude& d, float speed) {
-   if (dudeSpendStamina(d, 1)) {
+   // gonna try making dashing free for a while
+   //if (dudeSpendStamina(d, 1)) {
       
       dudeSetState(d, DudeState_DASH);
 
@@ -157,17 +159,15 @@ void dudeBeginDash(Dude& d, float speed) {
       }
 
       dudeShove(d, dashDir, Const.dudeDashSpeed, Const.dudeDashDistance );
-   }
+   //}
 }
 
 
+// dude will begin dash state by being shoved, this will start a cooldown
+// once the shove is complete
 void dudeUpdateStateDash(Dude& d) {
    if (!d.shoved) {
       Milliseconds cd = Const.dudePostDashCooldown;
-      //if (d.status.stamina == 0) {
-      //   cd = cDudeStaminaEmptyCooldown;
-      //}
-
       dudeBeginCooldown(d, cd);
    }
 }
@@ -195,7 +195,7 @@ void dudeBeginAttack(Dude& d, int swingDir, int combo) {
    }
 }
 
-void dudeUpdateStateAttack(Dude& d) {
+void dudeUpdateStateAttack(Dude& d, Milliseconds tickSize) {
 
    switch (d.atk.swingPhase) {
    case SwingPhase_Windup:
@@ -224,7 +224,7 @@ void dudeUpdateStateAttack(Dude& d) {
    case SwingPhase_Swing: {
 
       auto radsPerMs = (d.atk.swing.swipeAngle * DEG2RAD) / d.atk.swing.swingDur;
-      d.atk.weaponVector = v2Rotate(d.atk.weaponVector, v2FromAngle(-d.atk.swingDir * radsPerMs));
+      d.atk.weaponVector = v2Rotate(d.atk.weaponVector, v2FromAngle(-d.atk.swingDir * radsPerMs * tickSize));
 
       if (d.stateClock >= d.atk.swing.swingDur) {
          d.stateClock -= d.atk.swing.swingDur;
@@ -253,16 +253,17 @@ bool dudeCheckAttackCollision(Dude& attacker, Dude& defender) {
 }
 
 void dudeUpdateState(Dude& d, Milliseconds tickSize) {
+   d.stateClock += tickSize;
 
-   dudeUpdateShove(d);
+   dudeUpdateShove(d, tickSize);
 
    switch (d.state) {
    case DudeState_FREE: dudeUpdateStateFree(d, tickSize); break;
    case DudeState_COOLDOWN: dudeUpdateStateCooldown(d); break;
    case DudeState_DASH: dudeUpdateStateDash(d); break;
-   case DudeState_ATTACKING: dudeUpdateStateAttack(d); break;
+   case DudeState_ATTACKING: dudeUpdateStateAttack(d, tickSize); break;
    }
-   d.stateClock += tickSize;
+   
 }
 
 void mainDudeCheckAttackCollisions(Dude& dude, Array<Dude> &targets) {
@@ -420,7 +421,6 @@ void dudeApplyInput(GameState& g, Dude& d) {
 
 void dudeUpdateVelocity(Dude& d) {
    // we assume at this point the moveVector is current
-
    if (!d.shoved) {
       // scale mvspeed based on facing;
       float facedot = v2Dot(v2Normalized(d.phy.velocity), d.mv.facing);
@@ -432,16 +432,20 @@ void dudeUpdateVelocity(Dude& d) {
       d.mv.moveSpeedCapTarget = scaledSpeed * v2Len(d.mv.moveVector);
 
       // ease speed cap toward target
+
       if (d.mv.moveSpeedCap < d.mv.moveSpeedCapTarget) {
-         d.mv.moveSpeedCap += Const.dudeSpeedCapEasing;
+         d.mv.moveSpeedCap += Const.dudeAccelerationRate;
+         if (d.mv.moveSpeedCap > d.mv.moveSpeedCapTarget) {
+            d.mv.moveSpeedCap = d.mv.moveSpeedCapTarget;
+         }
       }
       else {
-         d.mv.moveSpeedCap -= Const.dudeSpeedCapEasing;
-      }
-      clamp(d.mv.moveSpeedCap, 0, d.mv.moveSpeedCapTarget);
+         d.mv.moveSpeedCap -= Const.dudeDeccelerationRate;
+         if (d.mv.moveSpeedCap < d.mv.moveSpeedCapTarget) {
+            d.mv.moveSpeedCap = d.mv.moveSpeedCapTarget;
+         }
+      }      
    }
-
-   
 
    // add the movevector scaled against acceleration to velocity and cap it
    d.phy.velocity = v2CapLength(d.phy.velocity + d.mv.moveVector , d.mv.moveSpeedCap);
@@ -455,8 +459,6 @@ void dudeUpdateRotation(Dude& d) {
       d.mv.facing = v2Normalized(v2RotateTowards(d.mv.facing, d.mv.faceVector, v2FromAngle(Const.dudeRotationSpeed)));
    }
 }
-
-
 
 void dudeUpdateBehavior(Dude& dude, Milliseconds tickSize) {
 
@@ -516,10 +518,6 @@ void dudeUpdateBehavior(Dude& dude, Milliseconds tickSize) {
       }
    }
 }
-
-
-
-
 
 void _buildPhySystem(GameState&game) {
    game.phySys.objs.clear();
@@ -766,13 +764,28 @@ static void _otherFrameStep(GameState& g) {
 
 static void _frameStep(GameState& g) {
    Milliseconds tickSize = 16;
+
+   dudeUpdateState(g.maindude, tickSize);
+
+   if (dudeAlive(g.maindude)) {
+      dudeApplyInput(g, g.maindude);
+   }
+
    mainDudeCheckAttackCollisions(g.maindude, g.baddudes);
+
+   dudeUpdateRotation(g.maindude);
+   dudeUpdateVelocity(g.maindude);
 
    for (auto && d : g.baddudes) {
       if (dudeAlive(d)) {
          dudeUpdateBehavior(d, tickSize);
          badDudeCheckAttackCollision(g, d, g.maindude);
       }
+
+      dudeUpdateState(d, tickSize);
+
+      dudeUpdateRotation(d);
+      dudeUpdateVelocity(d);
    }
 
    _buildPhySystem(g);   
@@ -780,27 +793,6 @@ static void _frameStep(GameState& g) {
 
 static void _milliStep(GameState& g) {
    Milliseconds tickSize = 1;
-   dudeUpdateState(g.maindude, tickSize);
-
-   if (dudeAlive(g.maindude)) {
-      dudeApplyInput(g, g.maindude);
-   }
-
-   dudeUpdateRotation(g.maindude);
-   dudeUpdateVelocity(g.maindude);
-
-   for (auto && d : g.baddudes) {
-      dudeUpdateState(d, tickSize);
-
-      dudeUpdateRotation(d);
-      dudeUpdateVelocity(d);
-   }
-
-   if (g.mode.type == ModeType_YOUDIED) {
-      if (++g.mode.clock > 3000) {
-         //gameStartActionMode(g);
-      }
-   }
 
    updatePhyPositions(g.phySys.objs); 
 }

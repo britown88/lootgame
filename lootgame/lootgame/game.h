@@ -49,15 +49,18 @@ struct EngineConstants {
 
    float floorHeight = 0.0f;
    float dudeHeight = 0.1f;
-   float dudeAcceleration = 0.005f;
-   float dudeRotationSpeed = 0.010f; // radian per frame angle the character can rotate by
-   float dudeMoveSpeed = 0.100f;
-   float dudeDashSpeed = 0.300f;
 
-   float dudeSpeedCapEasing = 0.0003f; // linear rate the speed cap moves toward the target cap
+                                    // frame equivalent to ~16ms
+   float dudeRotationSpeed = 0.15f; // radian per-frame angle the character can rotate by
+   float dudeMoveSpeed = 0.100f;    // default starting max movespeed, measured per frame
+   float dudeDashSpeed = 0.200f;    // max move speed during dash
+
+   float dudeAccelerationRate = 0.0015f; // linear rate the speed cap increases toward the target cap
+   float dudeDeccelerationRate = 0.003f; // linear rate the speed cap decreases toward the target cap
+
    float dudeBackwardsPenalty = 0.250f; // percentage of movespeed max removed by moving perfectly away from facing
 
-   float dudeDashDistance = 50.0f;
+   float dudeDashDistance = 40.0f;
    float dudeKnockbackDistance = 0.0f;
    Milliseconds dudePostDashCooldown = 100;
    Milliseconds dudeBaseStaminaTickRecoveryTime = 500;

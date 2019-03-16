@@ -344,69 +344,69 @@ void uiEditDude(Dude& dude) {
    auto& c = Const;
    if (ImGui::Begin("Dude Editor", 0)) {
 
-      ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
-      if (ImGui::CollapsingHeader("Movement")) {
-         ImGui::Indent();
+      //ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
+      //if (ImGui::CollapsingHeader("Movement")) {
+      //   ImGui::Indent();
 
-         //ImGui::InputFloat("Acceleration", &cDudeAcceleration, 0.001f, 0.01f, 4);
-         ImGui::InputFloat("Rotation Speed", &c.dudeRotationSpeed, 0.01f, 0.1f, 4);
-         if (ImGui::InputFloat("Move Speed", &dude.phy.maxSpeed, 0.01f, 0.1f, 4)) {
-            c.dudeMoveSpeed = dude.phy.maxSpeed;
-         }
-         ImGui::InputFloat("Dash Speed", &c.dudeDashSpeed, 0.01f, 0.1f, 4);
-         ImGui::InputFloat("Dash Distance", &c.dudeDashDistance, 10.0f, 10.0f, 0);
-         ImGui::InputFloat("Knockback Distance", &c.dudeKnockbackDistance, 10.0f, 10.0f, 0);
-         ImGui::InputFloat("Speed Cap Accel", &c.dudeSpeedCapEasing, 0.001f, 0.01f, 4);
-         ImGui::InputFloat("Backward Penalty", &c.dudeBackwardsPenalty, 0.1f, 0.01f, 4);
+      //   //ImGui::InputFloat("Acceleration", &cDudeAcceleration, 0.001f, 0.01f, 4);
+      //   ImGui::InputFloat("Rotation Speed", &c.dudeRotationSpeed, 0.01f, 0.1f, 4);
+      //   if (ImGui::InputFloat("Move Speed", &dude.phy.maxSpeed, 0.01f, 0.1f, 4)) {
+      //      c.dudeMoveSpeed = dude.phy.maxSpeed;
+      //   }
+      //   ImGui::InputFloat("Dash Speed", &c.dudeDashSpeed, 0.01f, 0.1f, 4);
+      //   ImGui::InputFloat("Dash Distance", &c.dudeDashDistance, 10.0f, 10.0f, 0);
+      //   ImGui::InputFloat("Knockback Distance", &c.dudeKnockbackDistance, 10.0f, 10.0f, 0);
+      //   ImGui::InputFloat("Speed Cap Accel", &c.dudeSpeedCapEasing, 0.001f, 0.01f, 4);
+      //   ImGui::InputFloat("Backward Penalty", &c.dudeBackwardsPenalty, 0.1f, 0.01f, 4);
 
-         float ratio = dude.mv.moveSpeedCap / 0.5f;
-         ImGui::ProgressBar(ratio, ImVec2(-1, 0), "Speed Cap");
+      //   float ratio = dude.mv.moveSpeedCap / 0.5f;
+      //   ImGui::ProgressBar(ratio, ImVec2(-1, 0), "Speed Cap");
 
-         ImGui::Unindent();
-      }
+      //   ImGui::Unindent();
+      //}
 
-      ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
-      if (ImGui::CollapsingHeader("Timing")) {
-         ImGui::Indent();
+      //ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
+      //if (ImGui::CollapsingHeader("Timing")) {
+      //   ImGui::Indent();
 
-         Milliseconds shrt = 50, lng = 100;
-         ImGui::InputScalar("Post-Dash CD", ImGuiDataType_U64, &c.dudePostDashCooldown, &shrt, &lng);
-         ImGui::InputScalar("Stamina Base Tick Speed", ImGuiDataType_U64, &c.dudeBaseStaminaTickRecoveryTime, &shrt, &lng);
+      //   Milliseconds shrt = 50, lng = 100;
+      //   ImGui::InputScalar("Post-Dash CD", ImGuiDataType_U64, &c.dudePostDashCooldown, &shrt, &lng);
+      //   ImGui::InputScalar("Stamina Base Tick Speed", ImGuiDataType_U64, &c.dudeBaseStaminaTickRecoveryTime, &shrt, &lng);
 
-         ImGui::InputScalar("Damaged Stamina Empty CD", ImGuiDataType_U64, &c.cooldownOnDamagedStaminaEmpty, &shrt, &lng);
-         ImGui::InputScalar("Damaged Stamina CD", ImGuiDataType_U64, &c.cooldownOnDamagedStamina, &shrt, &lng);
-         ImGui::InputScalar("Damaged Health CD", ImGuiDataType_U64, &c.cooldownOnDamagedHealth, &shrt, &lng);
-         ImGui::Unindent();
+      //   ImGui::InputScalar("Damaged Stamina Empty CD", ImGuiDataType_U64, &c.cooldownOnDamagedStaminaEmpty, &shrt, &lng);
+      //   ImGui::InputScalar("Damaged Stamina CD", ImGuiDataType_U64, &c.cooldownOnDamagedStamina, &shrt, &lng);
+      //   ImGui::InputScalar("Damaged Health CD", ImGuiDataType_U64, &c.cooldownOnDamagedHealth, &shrt, &lng);
+      //   ImGui::Unindent();
 
-      }
+      //}
 
-      ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
-      if (ImGui::CollapsingHeader("Attack")) {
-         ImGui::Indent();
-         int i = 0;
-         for (auto &&swing : dude.moveset.swings) {
-            ImGui::PushID(&swing);
+      //ImGui::SetNextTreeNodeOpen(true, ImGuiCond_Appearing);
+      //if (ImGui::CollapsingHeader("Attack")) {
+      //   ImGui::Indent();
+      //   int i = 0;
+      //   for (auto &&swing : dude.moveset.swings) {
+      //      ImGui::PushID(&swing);
 
-            if (ImGui::CollapsingHeader(format("Swing %d", i++).c_str())) {
-               ImGui::Indent();
+      //      if (ImGui::CollapsingHeader(format("Swing %d", i++).c_str())) {
+      //         ImGui::Indent();
 
-               ImGui::InputFloat("Angle", &swing.swipeAngle, 10.0f, 10.0f, 1);
-               Milliseconds shrt = 50, lng = 100;
-               ImGui::InputFloat("Lunge Speed", &swing.lungeSpeed, 0.01f, 0.1f, 4);
-               ImGui::InputFloat("Lunge Distance", &swing.lungeDist, 10.0f, 10.0f, 0);
-               ImGui::InputScalar("Swing Duration", ImGuiDataType_U64, &swing.swingDur, &shrt, &lng);
-               ImGui::InputScalar("Windup Duration", ImGuiDataType_U64, &swing.windupDur, &shrt, &lng);
-               ImGui::InputScalar("Cooldown Duration", ImGuiDataType_U64, &swing.cooldownDur, &shrt, &lng);
+      //         ImGui::InputFloat("Angle", &swing.swipeAngle, 10.0f, 10.0f, 1);
+      //         Milliseconds shrt = 50, lng = 100;
+      //         ImGui::InputFloat("Lunge Speed", &swing.lungeSpeed, 0.01f, 0.1f, 4);
+      //         ImGui::InputFloat("Lunge Distance", &swing.lungeDist, 10.0f, 10.0f, 0);
+      //         ImGui::InputScalar("Swing Duration", ImGuiDataType_U64, &swing.swingDur, &shrt, &lng);
+      //         ImGui::InputScalar("Windup Duration", ImGuiDataType_U64, &swing.windupDur, &shrt, &lng);
+      //         ImGui::InputScalar("Cooldown Duration", ImGuiDataType_U64, &swing.cooldownDur, &shrt, &lng);
 
-               ImGui::Unindent();
-            }
+      //         ImGui::Unindent();
+      //      }
 
-            ImGui::PopID();
-         }
+      //      ImGui::PopID();
+      //   }
 
-         ImGui::Unindent();
+      //   ImGui::Unindent();
 
-      }
+      //}
    }
    ImGui::End();
 }

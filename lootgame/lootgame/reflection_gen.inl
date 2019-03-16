@@ -587,17 +587,6 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
-         member.name = intern("dudeAcceleration");
-         member.offset = offsetof(EngineConstants, dudeAcceleration);
-         member.type = reflect<float>();
-         member.customUI = customUIRenderer<float>();
-         
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
          member.name = intern("dudeRotationSpeed");
          member.offset = offsetof(EngineConstants, dudeRotationSpeed);
          member.type = reflect<float>();
@@ -631,8 +620,19 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
-         member.name = intern("dudeSpeedCapEasing");
-         member.offset = offsetof(EngineConstants, dudeSpeedCapEasing);
+         member.name = intern("dudeAccelerationRate");
+         member.offset = offsetof(EngineConstants, dudeAccelerationRate);
+         member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("dudeDeccelerationRate");
+         member.offset = offsetof(EngineConstants, dudeDeccelerationRate);
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
