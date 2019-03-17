@@ -35,21 +35,56 @@ bool dudeAlive(Dude&d) {
    return d.state != DudeState_DEAD;
 }
 
-bool dudeSpendStamina(Dude &d, int stam) {
-   if (d.status.stamina == 0) {
-      return false;
+
+
+bool dudeSpendStamina(Dude &d, int stam, PipState spendType) {
+   auto stamAvail = 0;
+   for (auto&&s : d.status.stamina) { if (s.state == PipState_Full) ++stamAvail; else break; }
+
+   bool hasEnough = stamAvail >= stam;
+
+   for (int i = stamAvail - 1; i >= 0 && stam > 0; --i, --stam) {
+      d.status.stamina[i].state = spendType;
+      d.status.stamina[i].charge = 0;
+
+      Milliseconds fullCharge = 0;
+      switch (spendType) {
+      case PipState_Cracked:fullCharge = Const.dudeCrackedStaminaRecoveryTime; break;
+      case PipState_Spent:fullCharge = Const.dudeSpentStaminaRecoveryTime; break;
+      }
+      d.status.stamina[i].fullCharge = fullCharge;
    }
 
-   d.status.stamina = MAX(0, d.status.stamina - stam);
-   return true;
+   return hasEnough;
 }
 
-void dudeDoDamage(Dude&d) {
-   auto& c = Const;
-   if (d.status.stamina > 0) {
-      --d.status.stamina;
+void dudeRecoverStamina(Dude&d, Milliseconds ticks) {
+   for (auto&&s : d.status.stamina) {
+      if (s.state == PipState_Full) {
+         continue;
+      }
 
-      if (d.status.stamina == 0) {
+      s.charge += ticks;
+      if (s.charge > s.fullCharge) {
+         s.state = PipState_Full;
+         ticks = s.charge - s.fullCharge;
+      }
+      else {
+         break;
+      }
+   }
+}
+
+bool dudeStaminaEmpty(Dude&d) {
+   return d.status.stamina[0].state != PipState_Full;
+}
+
+void dudeDoDamage(Dude&d, AttackSwing&atk, bool overExtended) {
+   auto& c = Const;
+   if (!dudeStaminaEmpty(d)) {
+      dudeSpendStamina(d, atk.staminaDamage, PipState_Cracked);
+
+      if (dudeStaminaEmpty(d)) {
          dudeBeginCooldown(d, c.cooldownOnDamagedStaminaEmpty);
       }
       else {
@@ -61,7 +96,8 @@ void dudeDoDamage(Dude&d) {
    }
    else {
       // damaged health
-      if (--d.status.health == 0) {
+      d.status.health -= atk.healthDamage;
+      if (d.status.health <= 0) {
          dudeSetState(d, DudeState_DEAD);
       }
       else {
@@ -115,19 +151,20 @@ void dudeUpdateShove(Dude& d, Milliseconds tickSize) {
 
 void dudeBeginFree(Dude&d) {
    dudeSetState(d, DudeState_FREE);
-   d.free.staminaClockStart = 0;
-   d.free.nextTickAt = calcNextStaminaTickTime(d.status.stamina, d.status.staminaMax);
+   //d.free.staminaClockStart = 0;
+   //d.free.nextTickAt = calcNextStaminaTickTime(d.status.stamina, d.status.staminaMax);
 }
 
 void dudeUpdateStateFree(Dude& d, Milliseconds tickSize) {
    // handle stamina regain
-   d.free.staminaClockStart += tickSize;
-   if (d.free.staminaClockStart > d.free.nextTickAt && d.status.stamina < d.status.staminaMax) {
-      //d.status.stamina = d.status.staminaMax;
-      ++d.status.stamina;
-      d.free.staminaClockStart = 0;
-      d.free.nextTickAt = calcNextStaminaTickTime(d.status.stamina, d.status.staminaMax);
-   }
+   dudeRecoverStamina(d, tickSize);
+   //d.free.staminaClockStart += tickSize;
+   //if (d.free.staminaClockStart > d.free.nextTickAt && d.status.stamina < d.status.staminaMax) {
+   //   //d.status.stamina = d.status.staminaMax;
+   //   ++d.status.stamina;
+   //   d.free.staminaClockStart = 0;
+   //   d.free.nextTickAt = calcNextStaminaTickTime(d.status.stamina, d.status.staminaMax);
+   //}
 }
 
 void dudeBeginCooldown(Dude&d, Milliseconds duration) {
@@ -182,9 +219,19 @@ void dudeUpdateStateDash(Dude& d) {
 }
 
 void dudeBeginAttack(Dude& d, int swingDir, int combo) {
-   if (dudeSpendStamina(d, 1)) {
+   bool hadStamina = dudeSpendStamina(d, 1, PipState_Spent);
+   bool overExtend = !hadStamina && (combo > 0 && combo < d.moveset.swings.size());
+   if (hadStamina || overExtend) {
       dudeSetState(d, DudeState_ATTACKING);
       d.atk.hits.clear();
+
+      if (!combo) {
+         d.atk.overExtended = false;
+      }
+
+      if (combo > 0 && overExtend) {
+         d.atk.overExtended = true;
+      }
 
       if (combo >= d.moveset.swings.size()) {
          combo = 0;
@@ -243,6 +290,11 @@ void dudeUpdateStateAttack(Dude& d, Milliseconds tickSize) {
    }  break;
    case SwingPhase_Cooldown:
       if (d.stateClock >= d.atk.swing.cooldownDur) {
+
+         // at the end of an attack cooldown, check to see if we over extended
+         if (d.atk.overExtended && dudeStaminaEmpty(d)) {
+            d.status.stamina[0].fullCharge += Const.overExtendedStaminaRecoveryTime;
+         }
          dudeBeginFree(d);
       }
       break;
@@ -301,7 +353,7 @@ void mainDudeCheckAttackCollisions(Dude& dude, Array<Dude> &targets) {
       }
 
       if (dudeCheckAttackCollision(dude, t)) {
-         dudeDoDamage(t);
+         dudeDoDamage(t, dude.atk.swing, dude.atk.overExtended);
          auto pushdir = v2Normalized(t.phy.pos - dude.phy.pos);
          dudeShove(t, pushdir, Const.dudeDashSpeed, Const.dudeKnockbackDistance);
          dude.atk.hits.push_back(&t);
@@ -334,20 +386,12 @@ void badDudeCheckAttackCollision(GameState& g, Dude& dude, Dude& t) {
    }
 
    if (dudeCheckAttackCollision(dude, t)) {
-      dudeDoDamage(t);
+      dudeDoDamage(t, dude.atk.swing, dude.atk.overExtended);
       auto pushdir = v2Normalized(t.phy.pos - dude.phy.pos);
       dudeShove(t, pushdir, Const.dudeDashSpeed, Const.dudeKnockbackDistance);
       dude.atk.hits.push_back(&t);
-
-      if (!dudeAlive(t)) {
-         g.mode.type = ModeType_YOUDIED;
-         g.mode.clock = 0;
-         t.mv.moveVector = { 0,0 };
-      }
    }
 }
-
-
 
 
 static bool rightStickActive(GameState& g) { return v2LenSquared(g.io.rightStick) != 0.0f; }
@@ -415,7 +459,9 @@ void dudeApplyInputAttack(GameState& g, Dude& d) {
    if (io.buttonPressed[GameButton_RT]) {
       switch (d.atk.swingPhase) {
       case SwingPhase_Cooldown:
-         dudeBeginAttack(d, -d.atk.swingDir, d.atk.combo + 1);
+         if (d.atk.combo + 1 < d.moveset.swings.size()) {
+            dudeBeginAttack(d, -d.atk.swingDir, d.atk.combo + 1);
+         }
          break;
       }
    }
@@ -496,7 +542,7 @@ void dudeUpdateBehavior(Dude& dude, Milliseconds tickSize) {
          dude.mv.moveVector = dude.mv.faceVector = vec;
       }
       else {
-         //dudeBeginAttack(dude, 1, 0);
+         dudeBeginAttack(dude, 1, 0);
          dude.ai.attack = false;
       }
       return;
@@ -785,10 +831,17 @@ static void _otherFrameStep(GameState& g) {
    //LOG("32 milis step");
 }
 
+static void _updateMode(GameState&g, Milliseconds tickSize) {
+   g.mode.clock += tickSize;
+   switch (g.mode.type) {
+   case ModeType_ACTION: gameUpdateActionMode(g); break;
+   case ModeType_YOUDIED: gameUpdateYouDiedMode(g); break;
+   }
+}
+
 static void _frameStep(GameState& g) {
    Milliseconds tickSize = 16;
    //LOG("16 milis step");
-   
 
    dudeUpdateState(g.maindude, tickSize);
    mainDudeCheckAttackCollisions(g.maindude, g.baddudes);
@@ -883,6 +936,7 @@ void gameUpdate(GameState& g) {
       --g.gameClock;
    }
 
+   _updateMode(g, ms);
    _perRenderStep(g, ms);
 }
 

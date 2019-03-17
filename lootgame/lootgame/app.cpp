@@ -41,6 +41,7 @@ static Logger g_logger;
 void _log(const char* file, LogLevel level, const char*msg) {
 
    std::filesystem::path p = file;
+   printf(msg);
 
 
    g_logger.entries.push_back({ p.filename().string(), msg, level });
@@ -481,6 +482,12 @@ static void _doGameDebugger(App* app) {
 }
 
 static void _updateFrame(App* app) {
+
+#ifndef _DEBUG
+   app->instances[0]->state.ui.fullscreen = true;
+   app->instances[0]->state.ui.focused = true;
+
+#endif
 
    // first we look for a fullscreen instance and only render that
    bool fscreenupdate = false;

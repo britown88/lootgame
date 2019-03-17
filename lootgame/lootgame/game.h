@@ -64,6 +64,13 @@ struct EngineConstants {
    float dudeKnockbackDistance = 0.0f;
    Milliseconds dudePostDashCooldown = 400;
    Milliseconds dudeBaseStaminaTickRecoveryTime = 500;
+
+   Milliseconds dudeSpentStaminaRecoveryTime = 400;
+   Milliseconds dudeCrackedStaminaRecoveryTime = 800;
+   Milliseconds overExtendedStaminaRecoveryTime = 2000;
+
+
+
    Milliseconds cooldownOnDamagedStaminaEmpty = 1000;
    Milliseconds cooldownOnDamagedStamina = 250;
    Milliseconds cooldownOnDamagedHealth = 500;
@@ -192,6 +199,10 @@ struct AttackSwing {
    Milliseconds cooldownDur; // period before user is free again
    Rectf hitbox; // axis-aligned, The origin here is the bottom center of the attack while facing up
                  // attack will rotate around that origin
+
+   int staminaDamage = 1;
+   int healthDamage = 1;
+   int armorDamage = 1;
 };//}
 
 //@reflect{
@@ -247,6 +258,7 @@ struct AttackState {
    int combo;
 
    Array<Dude*> hits;
+   bool overExtended = false;
 };
 
 struct CooldownState {
@@ -258,8 +270,8 @@ struct DashState {
 };
 
 struct FreeState {
-   Milliseconds staminaClockStart;
-   Milliseconds nextTickAt;
+   //Milliseconds staminaClockStart;
+   //Milliseconds nextTickAt;
 };
 
 //@reflect{
@@ -271,8 +283,19 @@ enum DudeState {
    DudeState_DEAD
 };//}
 
+enum PipState {
+   PipState_Full,
+   PipState_Spent,
+   PipState_Cracked
+};
+struct StaminaPip {
+   Milliseconds charge = 0;
+   Milliseconds fullCharge = 0;
+   PipState state = PipState_Full;
+};
+
 struct Status {
-   int stamina, staminaMax;
+   Array<StaminaPip> stamina;
    int health, healthMax;
 };
 
@@ -315,9 +338,14 @@ enum ModeType_ {
 };
 typedef uint16_t ModeType;
 
+struct GameModeStateAction {
+   int waveSize = 1;
+};
+
 struct GameMode {
    ModeType type = ModeType_ACTION;
 
+   GameModeStateAction action;
    Milliseconds clock;
 };
 
@@ -412,5 +440,7 @@ bool dudeAlive(Dude&d);
 
 
 void gameStartActionMode(GameState &g);
+void gameUpdateActionMode(GameState &g);
+void gameUpdateYouDiedMode(GameState &g);
 
 void DEBUG_gameSpawnDude(GameState& game, Coords location);

@@ -749,6 +749,39 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
+         member.name = intern("dudeSpentStaminaRecoveryTime");
+         member.offset = offsetof(EngineConstants, dudeSpentStaminaRecoveryTime);
+         member.type = reflect<Milliseconds>();
+         member.customUI = customUIRenderer<Milliseconds>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("dudeCrackedStaminaRecoveryTime");
+         member.offset = offsetof(EngineConstants, dudeCrackedStaminaRecoveryTime);
+         member.type = reflect<Milliseconds>();
+         member.customUI = customUIRenderer<Milliseconds>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("overExtendedStaminaRecoveryTime");
+         member.offset = offsetof(EngineConstants, overExtendedStaminaRecoveryTime);
+         member.type = reflect<Milliseconds>();
+         member.customUI = customUIRenderer<Milliseconds>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
          member.name = intern("cooldownOnDamagedStaminaEmpty");
          member.offset = offsetof(EngineConstants, cooldownOnDamagedStaminaEmpty);
          member.type = reflect<Milliseconds>();
@@ -1272,6 +1305,39 @@ void reflectionStartup_generated() {
          member.offset = offsetof(AttackSwing, hitbox);
          member.type = reflect<Rectf>();
          member.customUI = customUIRenderer<Rectf>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("staminaDamage");
+         member.offset = offsetof(AttackSwing, staminaDamage);
+         member.type = reflect<int>();
+         member.customUI = customUIRenderer<int>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("healthDamage");
+         member.offset = offsetof(AttackSwing, healthDamage);
+         member.type = reflect<int>();
+         member.customUI = customUIRenderer<int>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("armorDamage");
+         member.offset = offsetof(AttackSwing, armorDamage);
+         member.type = reflect<int>();
+         member.customUI = customUIRenderer<int>();
          
          structName->structMembers.push_back(member);
       }

@@ -766,7 +766,7 @@ static void _renderDudeDebug(GameState&g, Dude&d) {
 
    auto drawlist = ImGui::GetWindowDrawList();
 
-   drawlist->AddCircle(pos, r, IM_COL32(255, 255, 255, 64));
+   drawlist->AddCircle(pos, r, IM_COL32(255, 255, 255, 255));
 
    auto faceVectorPos = pos + d.mv.faceVector * 50;
    auto facingPos = pos + d.mv.facing * 50;
@@ -866,7 +866,12 @@ static bool _showWindowedViewer(GameInstance& gi) {
       // wacky cursor shenanigans
       ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (g.vpScreenArea.y - ImGui::GetCursorScreenPos().y));
       ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (g.vpScreenArea.x - ImGui::GetCursorScreenPos().x));
-      ImGui::InvisibleButton("invisbtn", g.vpScreenArea.sz());
+
+      if (g.vpScreenArea.w > 0.0f && g.vpScreenArea.h > 0.0f) {
+         ImGui::InvisibleButton("invisbtn", g.vpScreenArea.sz());
+      }
+
+      
 
       if (ImGui::BeginDragDropTarget()) {
          if (auto pload = ImGui::AcceptDragDropPayload(TypePayload)) {

@@ -250,8 +250,10 @@ void renderLightLayer(GameState& game) {
 
    int i = 0;
    for (auto&& d : game.baddudes) {
-      static ColorRGBAf c[] = { Red, Green, Blue };
-      _addLight(game, 80, Coords::fromWorld(d.phy.pos), candleColor, blockers);
+      if (dudeAlive(d)) {
+         static ColorRGBAf c[] = { Red, Green, Blue };
+         _addLight(game, 80, Coords::fromWorld(d.phy.pos), candleColor, blockers);
+      }
    }
 
    for (auto&&light : game.map->lights) {
@@ -308,7 +310,14 @@ void renderUI(GameState& g) {
       Float2 gemSize = { (float)tsz.x, (float)tsz.y };
       float gemSpace = 1.0f;
       float hpstamSpace = 5.0f;
-      auto w = (gemSize.x + gemSpace) * (g.maindude.status.staminaMax + g.maindude.status.healthMax) + hpstamSpace;
+
+      auto stamCount = g.maindude.status.stamina.size();
+      auto stamina = 0;
+      for (auto&& s : g.maindude.status.stamina) {
+         if (s.state == PipState_Full) { ++stamina; }
+      }
+
+      auto w = (gemSize.x + gemSpace) * (stamCount + g.maindude.status.healthMax) + hpstamSpace;
 
 
       auto dudePos = Coords::fromWorld(g.maindude.phy.pos).toViewport(g);
@@ -318,7 +327,7 @@ void renderUI(GameState& g) {
       //Float2 staminaCorner = { game->maindude.phy.pos.x - w / 2.0f, game->maindude.phy.pos.y + game->maindude.phy.circle.size + 20 };
       Float2 staminaCorner ={ 10,10 };// Coords::fromWorld(g.maindude.phy.pos).toViewport(g);
 
-      if (g.maindude.status.stamina != 0) {
+      if (stamina != 0) {
          uber::set(Uniform_Alpha, 0.5f);
          //uber::set(Uniform_Color, Red);
       }
@@ -334,15 +343,15 @@ void renderUI(GameState& g) {
       }
       staminaCorner.x += hpstamSpace;
 
-      if (g.maindude.status.stamina == 0) {
+      if (stamina == 0) {
          uber::set(Uniform_Alpha, 1.0f);
          uber::set(Uniform_Color, Red);
       }
-      for (int i = 0; i < g.maindude.status.staminaMax; ++i) {
+      for (int i = 0; i < stamCount; ++i) {
 
          auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
          uber::set(Uniform_ModelMatrix, model);
-         uber::bindTexture(Uniform_DiffuseTexture, i < g.maindude.status.stamina ? tfilled.handle : tempty.handle);
+         uber::bindTexture(Uniform_DiffuseTexture, i < stamina ? tfilled.handle : tempty.handle);
          render::meshRender(Graphics.meshUncentered);
 
          staminaCorner.x += gemSize.x + gemSpace;
