@@ -49,7 +49,7 @@ static MoveSet _createMoveSet() {
 static Dude _createDude(GameState& game) {
    Dude out;
    
-   out.texture = &Textures[intern("Dude")];
+   out.texture = Textures.Dude;
 
    out.c = White;
    out.moveset = _createMoveSet();
@@ -69,7 +69,7 @@ static Dude _createDude(GameState& game) {
 static Dude _createEnemy(Float2 pos) {
    Dude out;
 
-   out.texture = &Textures[intern("Dude")];
+   out.texture = Textures.Dude;
 
    out.moveset = _createMoveSet();
    out.c = White;// {1.0f, 0.3f, 0.3f, 1.0f};
@@ -91,8 +91,8 @@ static Dude _createEnemy(Float2 pos) {
 void gameStartActionMode(GameState &g) {
    g = {};
 
-   auto m = Maps.find(intern("test"));
-   if (m != Maps.end()) {
+   auto m = Assets.maps.find(intern("test"));
+   if (m != Assets.maps.end()) {
       g.map = &(Map&)m->second;
    }
    g.mode.type = ModeType_ACTION;

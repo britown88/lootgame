@@ -102,9 +102,9 @@ static void _textureInitHandle(Texture&t) {
 
 static void _mergeMaps(GameAssets& from) {
    for (auto&&kvp : from.maps) {
-      auto result = Maps.insert({ kvp.first, kvp.second });
+      auto result = Assets.maps.insert({ kvp.first, kvp.second });
       if (!result.second) {
-         auto& existing = Maps[kvp.first];
+         auto& existing = Assets.maps[kvp.first];
          existing = kvp.second;
          existing.markForDelete = false;
       }
@@ -113,9 +113,9 @@ static void _mergeMaps(GameAssets& from) {
 
 static void _mergeTextures(GameAssets& from) {
    for (auto&&kvp : from.textures) {
-      auto result = Textures.insert({ kvp.first, kvp.second });
+      auto result = Assets.textures.insert({ kvp.first, kvp.second });
       if (!result.second) {
-         auto& existing = Textures[kvp.first];
+         auto& existing = Assets.textures[kvp.first];
          render::textureDestroy(existing.handle);
          existing = kvp.second;
          existing.markForDelete = false;

@@ -17,6 +17,9 @@ static void _parseArgs(int argc, char** argv) {
          AppConfig.reflectgen = true;
          AppConfig.reflectTarget = *arg;
       }
+      else if (!strcmp(*arg, "-assetgen")) {
+         AppConfig.assetgen = true;
+      }
    }
 }
 
@@ -45,6 +48,12 @@ int main(int argc, char** argv)
 
    if (AppConfig.reflectgen) {
       runReflectGen();
+   }
+   else if (AppConfig.assetgen) {
+      _loadConfig();
+      reflectionStartup();
+
+      runAssetGen();
    }
    else {
       lppStartup();

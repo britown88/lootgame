@@ -41,7 +41,7 @@ static Logger g_logger;
 void _log(const char* file, LogLevel level, const char*msg) {
 
    std::filesystem::path p = file;
-   printf(msg);
+   printf("%s\n", msg);
 
 
    g_logger.entries.push_back({ p.filename().string(), msg, level });
@@ -315,6 +315,7 @@ void appBeginNewGameInstance() {
 void appCreateWindow(App* app, WindowConfig const& info) {
    _windowCreate(app, info);
    assetsLoad();
+   assetsStartup();
    Graphics.build(); 
       
    uiOpenTextureManager();

@@ -9,7 +9,7 @@
 
 Map _defaultMap = { {1000,1000} };
 
-
+#include "assets_gen.inl"
 
 #include <GL/glew.h>
 #include <SDL2/SDL.h>
@@ -21,8 +21,6 @@ Map _defaultMap = { {1000,1000} };
 #define AXIS_AIM_DEADZONE 0.5f
 
 GameAssets Assets;
-std::unordered_map<Symbol*, Texture>& Textures = Assets.textures;
-std::unordered_map<Symbol*, Map>& Maps = Assets.maps;
 EngineConstants& Const = Assets.constants;
 
 EngineState Engine;

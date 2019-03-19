@@ -16,11 +16,14 @@ struct _AppConfig {
 
    bool reflectgen = false;
    const char* reflectTarget = nullptr;
+
+   bool assetgen = false;
 };
 
 extern _AppConfig AppConfig;
 
 void runReflectGen();
+void runAssetGen();
 
 // APP
 typedef struct App App;

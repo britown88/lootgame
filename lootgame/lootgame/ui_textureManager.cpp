@@ -49,7 +49,7 @@ static void _doTextureManager(TextureManagerState& state) {
             if (ImGui::Button("OK") || ImGui::IsKeyPressed(ImGui::GetIO().KeyMap[ImGuiKey_Enter])) {
                Texture newtex;
                newtex.id = state.newkey;
-               Textures.insert({ state.newkey, newtex });
+               Assets.textures.insert({ state.newkey, newtex });
                state.keysDirty = true;
                ImGui::CloseCurrentPopup();
             }
@@ -60,7 +60,7 @@ static void _doTextureManager(TextureManagerState& state) {
 
          if (state.keysDirty) {
             state.keyList.clear();
-            for (auto&&kvp : Textures) {
+            for (auto&&kvp : Assets.textures) {
                state.keyList.push_back({ kvp.first });
             }
             std::sort(state.keyList.begin(), state.keyList.end(), [](TextureState const&a, TextureState const&b) {return natstrcmp(a.sym, b.sym) < 0; });
@@ -68,7 +68,7 @@ static void _doTextureManager(TextureManagerState& state) {
          }
 
          for (auto&&k : state.keyList) {
-            auto& tex = Textures[k.sym];
+            auto& tex = Assets.textures[k.sym];
 
             if (tex.markForDelete) {
                continue;

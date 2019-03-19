@@ -47,7 +47,7 @@ static void _doMapManager(MapManagerState& state) {
             if (ImGui::Button("OK") || ImGui::IsKeyPressed(ImGui::GetIO().KeyMap[ImGuiKey_Enter])) {
                Map newtex;
                newtex.id = state.newkey;
-               Maps.insert({ state.newkey, newtex });
+               Assets.maps.insert({ state.newkey, newtex });
                state.keysDirty = true;
                ImGui::CloseCurrentPopup();
             }
@@ -58,7 +58,7 @@ static void _doMapManager(MapManagerState& state) {
 
          if (state.keysDirty) {
             state.keyList.clear();
-            for (auto&&kvp : Maps) {
+            for (auto&&kvp : Assets.maps) {
                state.keyList.push_back({ kvp.first });
             }
             std::sort(state.keyList.begin(), state.keyList.end(), [](MapState const&a, MapState const&b) {return natstrcmp(a.sym, b.sym) < 0; });
@@ -66,7 +66,7 @@ static void _doMapManager(MapManagerState& state) {
          }
 
          for (auto&&k : state.keyList) {
-            auto& tex = Maps[k.sym];
+            auto& tex = Assets.maps[k.sym];
 
             if (tex.markForDelete) {
                continue;

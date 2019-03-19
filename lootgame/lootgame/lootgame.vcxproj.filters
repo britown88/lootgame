@@ -135,6 +135,9 @@
     <ClCompile Include="ui_mapManager.cpp">
       <Filter>Source Files\ui</Filter>
     </ClCompile>
+    <ClCompile Include="assetgen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h">
@@ -206,6 +209,9 @@
     <ClInclude Include="array.h">
       <Filter>Header Files\utility</Filter>
     </ClInclude>
+    <ClInclude Include="assets_gen.h">
+      <Filter>Header Files\generated</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="uniforms.x">
@@ -231,6 +237,15 @@
     </None>
     <None Include="config.ini">
       <Filter>Resource Files</Filter>
+    </None>
+    <None Include="assets_gen.h.temp">
+      <Filter>Source Files\templates</Filter>
+    </None>
+    <None Include="assets_gen.temp">
+      <Filter>Source Files\templates</Filter>
+    </None>
+    <None Include="assets_gen.inl">
+      <Filter>Header Files\generated</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

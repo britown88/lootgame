@@ -115,7 +115,8 @@
 xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>$(SolutionDir)codegen/lootgame.exe -reflectgen "$(ProjectDir)."</Command>
+      <Command>$(SolutionDir)codegen/lootgame.exe -reflectgen "$(ProjectDir)."
+$(SolutionDir)codegen/lootgame.exe -assetgen</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -161,7 +162,8 @@ xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
 xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>$(SolutionDir)codegen/lootgame.exe -reflectgen "$(ProjectDir)."</Command>
+      <Command>$(SolutionDir)codegen/lootgame.exe -reflectgen "$(ProjectDir)."
+$(SolutionDir)codegen/lootgame.exe -assetgen</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -179,6 +181,7 @@ xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="app.cpp" />
+    <ClCompile Include="assetgen.cpp" />
     <ClCompile Include="assets.cpp" />
     <ClCompile Include="coords.cpp" />
     <ClCompile Include="game_draw.cpp" />
@@ -216,6 +219,7 @@ xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
     <ClInclude Include="app.h" />
     <ClInclude Include="array.h" />
     <ClInclude Include="assets.h" />
+    <ClInclude Include="assets_gen.h" />
     <ClInclude Include="coords.h" />
     <ClInclude Include="custom_ui_renders.h" />
     <ClInclude Include="fsys.h" />
@@ -238,6 +242,9 @@ xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
   <ItemGroup>
     <None Include="assets\fragment.glsl" />
     <None Include="assets\vertex.glsl" />
+    <None Include="assets_gen.inl" />
+    <None Include="assets_gen.temp" />
+    <None Include="assets_gen.h.temp" />
     <None Include="config.ini" />
     <None Include="reflection_gen.h.temp" />
     <None Include="reflection_gen.inl" />

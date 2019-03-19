@@ -1,0 +1,12 @@
+AssetTextures Textures;
+AssetMaps Maps;
+
+void assetsStartup(){
+   @texture{Textures.@name = &Assets.textures[intern("@name")];
+   Textures.array[Textures_@name] = Textures.@name;
+   }
+
+   @map{Maps.@name = &Assets.maps[intern("@name")];
+   Maps.array[Maps_@name] = Maps.@name;
+   }
+}

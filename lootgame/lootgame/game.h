@@ -198,9 +198,8 @@ struct GameAssets {
 };//}
 
 extern GameAssets Assets;
-extern std::unordered_map<Symbol*, Texture>& Textures;
-extern std::unordered_map<Symbol*, Map>& Maps;
 extern EngineConstants& Const;
+#include "assets_gen.h"
 
 
 
