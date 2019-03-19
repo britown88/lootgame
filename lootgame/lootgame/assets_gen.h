@@ -19,6 +19,11 @@ enum Textures_{
    Textures_Target,
    Textures_Tile,
    Textures_TileNormals,
+   Textures_TinyHeartEmpty,
+   Textures_TinyHeartFull,
+   Textures_TinyStamCracked,
+   Textures_TinyStamEmpty,
+   Textures_TinyStamFull,
    
    Textures_COUNT
 };
@@ -40,6 +45,11 @@ struct AssetTextures{
    Texture* Target = nullptr;
    Texture* Tile = nullptr;
    Texture* TileNormals = nullptr;
+   Texture* TinyHeartEmpty = nullptr;
+   Texture* TinyHeartFull = nullptr;
+   Texture* TinyStamCracked = nullptr;
+   Texture* TinyStamEmpty = nullptr;
+   Texture* TinyStamFull = nullptr;
    
 };
 extern AssetTextures Textures;

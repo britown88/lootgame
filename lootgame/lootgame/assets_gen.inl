@@ -30,6 +30,16 @@ void assetsStartup(){
    Textures.array[Textures_Tile] = Textures.Tile;
    Textures.TileNormals = &Assets.textures[intern("TileNormals")];
    Textures.array[Textures_TileNormals] = Textures.TileNormals;
+   Textures.TinyHeartEmpty = &Assets.textures[intern("TinyHeartEmpty")];
+   Textures.array[Textures_TinyHeartEmpty] = Textures.TinyHeartEmpty;
+   Textures.TinyHeartFull = &Assets.textures[intern("TinyHeartFull")];
+   Textures.array[Textures_TinyHeartFull] = Textures.TinyHeartFull;
+   Textures.TinyStamCracked = &Assets.textures[intern("TinyStamCracked")];
+   Textures.array[Textures_TinyStamCracked] = Textures.TinyStamCracked;
+   Textures.TinyStamEmpty = &Assets.textures[intern("TinyStamEmpty")];
+   Textures.array[Textures_TinyStamEmpty] = Textures.TinyStamEmpty;
+   Textures.TinyStamFull = &Assets.textures[intern("TinyStamFull")];
+   Textures.array[Textures_TinyStamFull] = Textures.TinyStamFull;
    
 
    Maps.secondmap = &Assets.maps[intern("secondmap")];

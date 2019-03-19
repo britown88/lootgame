@@ -284,6 +284,62 @@ void renderLitScene(GameState& game) {
 
 }
 
+static void _renderDudeStatus(GameState& g, Dude&d) {
+   auto &tfilled = *Textures.TinyStamFull;
+   auto &tempty = *Textures.TinyStamEmpty;
+   auto &tcracked = *Textures.TinyStamCracked;
+
+   auto &thfilled = *Textures.TinyHeartFull;
+   auto &thempty = *Textures.TinyHeartEmpty;
+
+   auto tsz = tfilled.sz;
+   Float2 gemSize = { (float)tsz.x, (float)tsz.y };
+   float gemSpace = -1.0f;
+   float hpstamSpace = 2.0f;
+
+   auto stamCount = d.status.stamina.size();
+   auto stamina = 0;
+   for (auto&& s : d.status.stamina) {
+      if (s.state == PipState_Full) { ++stamina; }
+   }
+
+   if (!dudeAlive(d) || stamina == d.status.stamina.size()) {
+      return;
+   }
+
+   auto w = (gemSize.x + gemSpace) * (stamCount + d.status.healthMax) + hpstamSpace;
+   auto dudePos = Coords::fromWorld(d.phy.pos).toViewport(g);
+   float heightOffset = d.phy.circle.size;
+
+   Float2 staminaCorner = dudePos + Float2{ heightOffset, -(heightOffset + tsz.y) };
+
+   for (int i = 0; i < d.status.healthMax; ++i) {
+
+      auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
+      uber::set(Uniform_ModelMatrix, model);
+      uber::bindTexture(Uniform_DiffuseTexture, i < d.status.health ? thfilled.handle : thempty.handle);
+      render::meshRender(Graphics.meshUncentered);
+      staminaCorner.x += gemSize.x + gemSpace;
+   }
+   staminaCorner.x += hpstamSpace;
+
+   for (int i = 0; i < stamCount; ++i) {
+      auto &pip = d.status.stamina[i];
+      auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
+
+      uber::set(Uniform_ModelMatrix, model);
+      switch (pip.state) {
+      case PipState_Full: uber::bindTexture(Uniform_DiffuseTexture, tfilled.handle); break;
+      case PipState_Spent: uber::bindTexture(Uniform_DiffuseTexture, tempty.handle); break;
+      case PipState_Cracked: uber::bindTexture(Uniform_DiffuseTexture, tcracked.handle); break;
+      }
+
+      render::meshRender(Graphics.meshUncentered);
+      staminaCorner.x += gemSize.x + gemSpace;
+   }
+
+}
+
 void renderUI(GameState& g) {
    auto& vp = g.camera.viewport;
 
@@ -298,90 +354,95 @@ void renderUI(GameState& g) {
    Float2 fbosz = { (float)Const.vpSize.x, (float)Const.vpSize.y };
    uber::set(Uniform_ViewMatrix, Matrix::ortho(0, fbosz.x, 0, fbosz.y, 1, -1));
 
-   /*if (game->maindude.stamina < game->maindude.staminaMax)*/ {
-      auto &tfilled = *Textures.GemFilled;
-      auto &tempty = *Textures.GemEmpty;
-      auto &tcracked = *Textures.GemCracked;
 
-      auto &thfilled = *Textures.HeartFilled;
-      auto &thempty = *Textures.HeartEmpty;
+   auto &tfilled = *Textures.GemFilled;
+   auto &tempty = *Textures.GemEmpty;
+   auto &tcracked = *Textures.GemCracked;
 
-      auto tsz = tfilled.sz;
-      Float2 gemSize = { (float)tsz.x, (float)tsz.y };
-      float gemSpace = 1.0f;
-      float hpstamSpace = 5.0f;
+   auto &thfilled = *Textures.HeartFilled;
+   auto &thempty = *Textures.HeartEmpty;
 
-      auto stamCount = g.maindude.status.stamina.size();
-      auto stamina = 0;
-      for (auto&& s : g.maindude.status.stamina) {
-         if (s.state == PipState_Full) { ++stamina; }
+   auto tsz = tfilled.sz;
+   Float2 gemSize = { (float)tsz.x, (float)tsz.y };
+   float gemSpace = 1.0f;
+   float hpstamSpace = 5.0f;
+
+   auto stamCount = g.maindude.status.stamina.size();
+   auto stamina = 0;
+   for (auto&& s : g.maindude.status.stamina) {
+      if (s.state == PipState_Full) { ++stamina; }
+   }
+
+   auto w = (gemSize.x + gemSpace) * (stamCount + g.maindude.status.healthMax) + hpstamSpace;
+
+
+   auto dudePos = Coords::fromWorld(g.maindude.phy.pos).toViewport(g);
+   float heightOffset = g.maindude.phy.circle.size + 20.0f;
+   //Float2 staminaCorner = dudePos + Float2{-w/2.0f, heightOffset };
+
+   //Float2 staminaCorner = { game->maindude.phy.pos.x - w / 2.0f, game->maindude.phy.pos.y + game->maindude.phy.circle.size + 20 };
+   Float2 staminaCorner ={ 10,10 };// Coords::fromWorld(g.maindude.phy.pos).toViewport(g);
+
+   if (stamina != 0) {
+      uber::set(Uniform_Alpha, 0.5f);
+      //uber::set(Uniform_Color, Red);
+   }
+
+   for (int i = 0; i < g.maindude.status.healthMax; ++i) {
+
+      auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
+      uber::set(Uniform_ModelMatrix, model);
+      uber::bindTexture(Uniform_DiffuseTexture, i < g.maindude.status.health ? thfilled.handle : thempty.handle);
+      render::meshRender(Graphics.meshUncentered);
+
+      staminaCorner.x += gemSize.x + gemSpace;
+   }
+   staminaCorner.x += hpstamSpace;
+
+   if (stamina == 0) {
+      //uber::set(Uniform_Alpha, 1.0f);
+      uber::set(Uniform_Color, Red);
+   }
+   for (int i = 0; i < stamCount; ++i) {
+      auto &pip = g.maindude.status.stamina[i];
+      auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
+
+      uber::set(Uniform_ModelMatrix, model);
+      if (pip.state == PipState_Full) {
+         uber::set(Uniform_Alpha, 1.0f);
+         uber::bindTexture(Uniform_DiffuseTexture, tfilled.handle);
+         render::meshRender(Graphics.meshUncentered);
       }
-
-      auto w = (gemSize.x + gemSpace) * (stamCount + g.maindude.status.healthMax) + hpstamSpace;
-
-
-      auto dudePos = Coords::fromWorld(g.maindude.phy.pos).toViewport(g);
-      float heightOffset = g.maindude.phy.circle.size + 20.0f;
-      //Float2 staminaCorner = dudePos + Float2{-w/2.0f, heightOffset };
-
-      //Float2 staminaCorner = { game->maindude.phy.pos.x - w / 2.0f, game->maindude.phy.pos.y + game->maindude.phy.circle.size + 20 };
-      Float2 staminaCorner ={ 10,10 };// Coords::fromWorld(g.maindude.phy.pos).toViewport(g);
-
-      if (stamina != 0) {
-         uber::set(Uniform_Alpha, 0.5f);
-         //uber::set(Uniform_Color, Red);
-      }
-
-      for (int i = 0; i < g.maindude.status.healthMax; ++i) {
-
-         auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
-         uber::set(Uniform_ModelMatrix, model);
-         uber::bindTexture(Uniform_DiffuseTexture, i < g.maindude.status.health ? thfilled.handle : thempty.handle);
+      else {
+         uber::set(Uniform_Alpha, 1.0f);
+         uber::bindTexture(Uniform_DiffuseTexture, tempty.handle);
          render::meshRender(Graphics.meshUncentered);
 
-         staminaCorner.x += gemSize.x + gemSpace;
-      }
-      staminaCorner.x += hpstamSpace;
+         auto ratio = (float)pip.charge / pip.fullCharge;
+         uber::set(Uniform_Alpha, ratio);
+         uber::bindTexture(Uniform_DiffuseTexture, tfilled.handle);
+         render::meshRender(Graphics.meshUncentered);
 
-      if (stamina == 0) {
-         //uber::set(Uniform_Alpha, 1.0f);
-         uber::set(Uniform_Color, Red);
-      }
-      for (int i = 0; i < stamCount; ++i) {
-         auto &pip = g.maindude.status.stamina[i];
-         auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
-
-         uber::set(Uniform_ModelMatrix, model);
-         if (pip.state == PipState_Full) {
-            uber::set(Uniform_Alpha, 1.0f);
-            uber::bindTexture(Uniform_DiffuseTexture, tfilled.handle);
+         if (pip.state == PipState_Cracked) {
+            uber::set(Uniform_Alpha, 1.0f - ratio);
+            uber::bindTexture(Uniform_DiffuseTexture, tcracked.handle);
             render::meshRender(Graphics.meshUncentered);
          }
-         else {
-            uber::set(Uniform_Alpha, 1.0f);
-            uber::bindTexture(Uniform_DiffuseTexture, tempty.handle);
-            render::meshRender(Graphics.meshUncentered);
 
-            auto ratio = (float)pip.charge / pip.fullCharge;
-            uber::set(Uniform_Alpha, ratio);
-            uber::bindTexture(Uniform_DiffuseTexture, tfilled.handle);
-            render::meshRender(Graphics.meshUncentered);
-
-            if (pip.state == PipState_Cracked) {
-               uber::set(Uniform_Alpha, 1.0f - ratio);
-               uber::bindTexture(Uniform_DiffuseTexture, tcracked.handle);
-               render::meshRender(Graphics.meshUncentered);
-            }
-
-         }
-
-         staminaCorner.x += gemSize.x + gemSpace;
       }
 
-      //uber::resetToDefault();
-      //uber::set(Uniform_ViewMatrix, Matrix::ortho(0, fbosz.x, 0, fbosz.y, 1, -1));
+      staminaCorner.x += gemSize.x + gemSpace;
+   }
 
-      
+   //uber::resetToDefault();
+   //uber::set(Uniform_ViewMatrix, Matrix::ortho(0, fbosz.x, 0, fbosz.y, 1, -1));
+
+
+   uber::set(Uniform_Alpha, 1.0f);
+   uber::set(Uniform_Color, White);
+
+   for (auto&& d : g.baddudes) {
+      _renderDudeStatus(g, d);
    }
 }
 
