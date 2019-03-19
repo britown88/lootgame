@@ -20,12 +20,13 @@ Map _defaultMap = { {1000,1000} };
 // our aim stick normalizes so we need a harsher deadzone to prevent bounce-back
 #define AXIS_AIM_DEADZONE 0.5f
 
+GameAssets Assets;
+std::unordered_map<Symbol*, Texture>& Textures = Assets.textures;
+std::unordered_map<Symbol*, Map>& Maps = Assets.maps;
+EngineConstants& Const = Assets.constants;
 
-EngineConstants Const;
 EngineState Engine;
 GraphicObjects Graphics;
-//Texture* Textures = Graphics.textures;
-_TextureMap& TextureMap = Graphics.tmap;
 
 
 void dudeBeginCooldown(Dude&d, Milliseconds duration);

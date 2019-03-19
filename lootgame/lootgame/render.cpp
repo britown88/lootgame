@@ -379,8 +379,10 @@ Texture render::textureBuild(Int2 const& sz, TextureFlag flags, ColorRGBA const*
 }
 
 void render::textureDestroy(TextureHandle& t) {
-   glDeleteTextures(1, &t);
-   t = 0;
+   if (t) {
+      glDeleteTextures(1, &t);
+      t = 0;
+   }
 }
 void render::textureBind(TextureHandle t, TextureSlot slot) {
    glActiveTexture(GL_TEXTURE0 + slot);

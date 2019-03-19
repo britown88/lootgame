@@ -20,11 +20,11 @@ struct MapManagerState {
 static void _doMapManager(MapManagerState& state) {
    if (ImGui::Begin("Maps", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
       if (ImGui::Button(ICON_FA_SAVE)) {
-         assets_mapMapSave();
+         assetsSave();
       }
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_RECYCLE)) {
-         assets_mapMapReload();
+         assetsReloadMaps();
       }
 
 
@@ -47,7 +47,7 @@ static void _doMapManager(MapManagerState& state) {
             if (ImGui::Button("OK") || ImGui::IsKeyPressed(ImGui::GetIO().KeyMap[ImGuiKey_Enter])) {
                Map newtex;
                newtex.id = state.newkey;
-               MapMap.map.insert({ state.newkey, newtex });
+               Maps.insert({ state.newkey, newtex });
                state.keysDirty = true;
                ImGui::CloseCurrentPopup();
             }
@@ -58,7 +58,7 @@ static void _doMapManager(MapManagerState& state) {
 
          if (state.keysDirty) {
             state.keyList.clear();
-            for (auto&&kvp : MapMap.map) {
+            for (auto&&kvp : Maps) {
                state.keyList.push_back({ kvp.first });
             }
             std::sort(state.keyList.begin(), state.keyList.end(), [](MapState const&a, MapState const&b) {return natstrcmp(a.sym, b.sym) < 0; });
@@ -66,7 +66,7 @@ static void _doMapManager(MapManagerState& state) {
          }
 
          for (auto&&k : state.keyList) {
-            auto& tex = MapMap.map[k.sym];
+            auto& tex = Maps[k.sym];
 
             if (tex.markForDelete) {
                continue;

@@ -220,7 +220,6 @@ xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
     <ClInclude Include="custom_ui_renders.h" />
     <ClInclude Include="fsys.h" />
     <ClInclude Include="lpp.h" />
-    <ClInclude Include="map.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="phy.h" />
     <ClInclude Include="reflection.h" />

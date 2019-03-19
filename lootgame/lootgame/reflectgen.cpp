@@ -128,6 +128,17 @@ static bool _acceptStringLiteral(StringParser& p) {
    return false;
 }
 
+
+static bool _acceptConst(StringParser& p) {
+   auto start = p.pos;
+   if (p.accept("const") && _acceptWhitespaceChar(p)) {
+      return true;
+   }
+   p.pos = start;
+   return false;
+}
+
+
 static void _skipToExpressionEnd(StringParser& p) {
    while (!p.atEnd()) {
       if (!_acceptStringLiteral(p)) {
@@ -187,7 +198,7 @@ static bool _acceptSkippableExpression(StringParser& p) {
 
 static bool _acceptType(StringParser& p, ParsedType& output) {   
    auto start = p.pos;
-   if (p.accept("const")) {
+   if (_acceptConst(p)) {
       _acceptSkippable(p);
    }
 
@@ -205,7 +216,7 @@ static bool _acceptType(StringParser& p, ParsedType& output) {
             ++output.pointers;
             _acceptSkippable(p);
          }
-         else if (p.accept('&') || p.accept("const")) {
+         else if (p.accept('&') || _acceptConst(p)) {
             _acceptSkippable(p);
          }
          else {
@@ -389,7 +400,7 @@ static bool _acceptEnum(StringParser& p, VexNode* vexChild, ParsedEnum& output);
 static bool _acceptStruct(StringParser& p, VexNode* vexChild, ParsedStruct &output) {
 
    auto start = p.pos;
-   while (p.accept("const") || p.accept("typedef")) {
+   while (_acceptConst(p) || p.accept("typedef")) {
       _acceptSkippable(p);
    }
 

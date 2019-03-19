@@ -314,9 +314,8 @@ void appBeginNewGameInstance() {
 
 void appCreateWindow(App* app, WindowConfig const& info) {
    _windowCreate(app, info);
+   assetsLoad();
    Graphics.build(); 
-
-   assets_mapMapLoad();
       
    uiOpenTextureManager();
    uiOpenMapManager();

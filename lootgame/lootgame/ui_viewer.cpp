@@ -960,7 +960,7 @@ void uiDoGameDebugger(GameInstance& instance) {
 
       doTypeUI(&g.DEBUG);
 
-      doTypeUI(&Const);
+      doTypeUI(&Assets.constants);
 
    }
    ImGui::End();

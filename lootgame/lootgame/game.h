@@ -10,18 +10,8 @@
 
 typedef struct GameState GameState;
 
-
-//@reflect{
-struct _TextureMap {
-   std::unordered_map<Symbol*, Texture> map;
-};
-//}
-
 struct GraphicObjects {
    ShaderHandle shader = 0;
-
-   //Texture textures[GameTexture_COUNT];
-   _TextureMap tmap;
 
    Mesh mesh, meshUncentered;
    FBO
@@ -34,11 +24,15 @@ struct GraphicObjects {
    bool reloadShaders();
 };
 
-void assets_textureMapSave();
-void assets_textureMapRefreshAll();
-void assets_textureMapReload();
-void assets_textureMapLoad();
+void assetsSave();
+void assetsLoad();
 
+void assetsReloadMaps();
+void assetsReloadTextures();
+void assetsReloadAll();
+
+// called in Graphics.Build()
+void assetsBuildTextureHandles();
 
 
 //@reflect{
@@ -83,11 +77,8 @@ struct EngineState {
    bool reloadShaders = false;
 };//}
 
-extern EngineConstants Const;
 extern EngineState Engine;
 extern GraphicObjects Graphics;
-//extern Texture* Textures;
-extern _TextureMap& TextureMap;
 
 enum GameButton_ {
    GameButton_LEFT = 0,
@@ -170,17 +161,6 @@ struct Map {
 };//}
 
 //@reflect{
-struct _MapMap {
-   std::unordered_map<Symbol*, Map> map;
-};//}
-
-extern _MapMap MapMap;
-
-void assets_mapMapSave();
-void assets_mapMapReload();
-void assets_mapMapLoad();
-
-//@reflect{
 enum SwingPhase {
    SwingPhase_Windup = 0,
    SwingPhase_Lunge,
@@ -209,6 +189,19 @@ struct AttackSwing {
 struct MoveSet {
    Array<AttackSwing> swings;
 };//}
+
+//@reflect{
+struct GameAssets {
+   EngineConstants constants;
+   std::unordered_map<Symbol*, Texture> textures;
+   std::unordered_map<Symbol*, Map> maps;
+};//}
+
+extern GameAssets Assets;
+extern std::unordered_map<Symbol*, Texture>& Textures;
+extern std::unordered_map<Symbol*, Map>& Maps;
+extern EngineConstants& Const;
+
 
 
   /*
@@ -397,7 +390,7 @@ struct GameState {
    GameStateUI ui;
    IO io;
    Map *map = &_defaultMap;
-   GameCamera camera = { { 0, 0, (float)Const.vpSize.x, (float)Const.vpSize.y } }; // viewport into the world
+   GameCamera camera;// = { { 0, 0, (float)Const.vpSize.x, (float)Const.vpSize.y } }; // viewport into the world
    Rectf vpScreenArea = { 0, 0, 1, 1 }; // screen coordinates or the viewer image within the UI
    GameMode mode;
 

@@ -9,205 +9,169 @@
 
 #include "reflection_gen.h"
 
-_MapMap MapMap;
+//_MapMap MapMap;
 
 namespace Paths {
-   static const std::filesystem::path assets = "assets.bin";
-   static const std::filesystem::path maps = "maps.bin";
+   static const std::filesystem::path gameAssets = "lootgame.bin";
 }
 
+static void _clearDeleted(GameAssets& assets) {
+   Array<Symbol*> texToDelete;
+   for (auto&& kvp : assets.textures) {
+      if (kvp.second.markForDelete) {
+         texToDelete.push_back(kvp.first);
+      }
+   }
+   if (!texToDelete.empty()) {
+      WARN("Ignoring %d deleted textures from save.", texToDelete.size());
+   }
+   for (auto&& td : texToDelete) {
+      assets.textures.erase(td);
+   }
 
+   Array<Symbol*> mapsToDelete;
+   for (auto&& kvp : assets.maps) {
+      if (kvp.second.markForDelete) {
+         mapsToDelete.push_back(kvp.first);
+      }
+   }
+   if (!mapsToDelete.empty()) {
+      WARN("Ignoring %d deleted maps from save.", mapsToDelete.size());
+   }
+   for (auto&& td : mapsToDelete) {
+      assets.maps.erase(td);
+   }
+}
 
-void assets_textureMapSave() {   
-   auto fpath = AppConfig.assetPath / Paths::assets;
+void assetsSave() {
+   auto fpath = AppConfig.assetPath / Paths::gameAssets;
 
    auto writer = scfWriterCreate();
    uint64_t sz = 0;
 
-   // kill off deleted textures
-   auto tmapCopy = TextureMap;
-   Array<Symbol*> toDelete;
-   for (auto&& kvp : tmapCopy.map) {
-      if (kvp.second.markForDelete) {
-         toDelete.push_back(kvp.first);
-      }
-   }
-   for (auto&& td : toDelete) {
-      tmapCopy.map.erase(td);
-   }
+   // we clone our assets before save so we can ignore deleted objects when we save
+   auto assetCopy = Assets;
+   _clearDeleted(assetCopy);
 
-   serialize(writer, &tmapCopy);
+   serialize(writer, &assetCopy);
    auto output = scfWriteToBuffer(writer, &sz);
 
    writeBinaryFile(fpath.string().c_str(), (byte*)output, sz);
    scfWriterDestroy(writer);
    delete[] output;
 
-   LOG("Texture Map Saved");
+   LOG("%s Saved", fpath.string().c_str());
 }
 
-
-void assets_textureMapReload() {
-   auto fpath = Paths::assets;
+static bool _loadAssets(GameAssets& target, std::filesystem::path& fpath) {
+   fpath = Paths::gameAssets;
    if (!std::filesystem::exists(fpath)) {
       fpath = AppConfig.assetPath / fpath;
    }
 
-   //assert(std::filesystem::exists(fpath) && "Assets file not found");
-
    if (auto content = fileReadBinary(fpath.string().c_str(), nullptr)) {
       auto reader = scfView(content);
-      _TextureMap reloaded;
-      deserialize(reader, &reloaded);
+      deserialize(reader, &target);
       delete[] content;
+      return true;
+   }
 
-      for (auto&&kvp : reloaded.map) {
-         auto result = TextureMap.map.insert({ kvp.first, kvp.second });
-         if (!result.second) {
-            auto& existing = TextureMap.map[kvp.first];
-            existing.markForDelete = false;
-            existing.filepath = kvp.second.filepath;
-            existing.flags = kvp.second.flags;
-            render::textureRefresh(existing);
-         }
-      }
-      LOG("Reloaded Texture Map");
+   return false;
+}
+
+void assetsLoad() {
+   std::filesystem::path fpath;
+   if (_loadAssets(Assets, fpath)) {
+      LOG("Loaded %s", fpath.string().c_str());
    }
    else {
-      ERR("Error reloading texture map");
+      ERR("Error %s", fpath.string().c_str());
    }
 }
 
-void assets_textureMapRefreshAll() {
-   LOG("Refreshing All Textures...");
-
-   for (auto&& kvp : TextureMap.map) {
-      auto& t = kvp.second;
+// either builds from existing data or refreshes
+static void _textureInitHandle(Texture&t) {
+   if (t.storedImageData) {
+      t.handle = render::buildTextureHandle(t.sz, t.flags, (ColorRGBA const*)t.storedImageData.data);
+   }
+   else {
       render::textureRefresh(t);
    }
-   
 }
 
-void assets_textureMapLoad() {
-   auto fpath = Paths::assets;
-   if (!std::filesystem::exists(fpath)) {
-      fpath = AppConfig.assetPath / fpath;
-   }
 
-   //assert(std::filesystem::exists(fpath) && "Assets file not found");
-
-   if (auto content = fileReadBinary(fpath.string().c_str(), nullptr)) {
-      auto reader = scfView(content);
-      deserialize<_TextureMap>(reader, &TextureMap);
-      delete[] content;
-
-      for (auto&& kvp : TextureMap.map) {
-         auto& t = kvp.second;
-         t.id = intern(kvp.first);
-         if (t.storedImageData) {
-            t.handle = render::buildTextureHandle(t.sz, t.flags, (ColorRGBA const*)t.storedImageData.data);
-         }
-         else {
-            render::textureRefresh(t);
-         }
+static void _mergeMaps(GameAssets& from) {
+   for (auto&&kvp : from.maps) {
+      auto result = Maps.insert({ kvp.first, kvp.second });
+      if (!result.second) {
+         auto& existing = Maps[kvp.first];
+         existing = kvp.second;
+         existing.markForDelete = false;
       }
+   }
+}
 
-      LOG("Loaded Texture Map");
+static void _mergeTextures(GameAssets& from) {
+   for (auto&&kvp : from.textures) {
+      auto result = Textures.insert({ kvp.first, kvp.second });
+      if (!result.second) {
+         auto& existing = Textures[kvp.first];
+         render::textureDestroy(existing.handle);
+         existing = kvp.second;
+         existing.markForDelete = false;
+         _textureInitHandle(existing);
+      }
+   }
+}
+
+
+void assetsReloadMaps() {
+   std::filesystem::path fpath;
+   GameAssets reloaded;
+
+   if (_loadAssets(reloaded, fpath)) {
+      _mergeMaps(reloaded);
+      LOG("Reloaded maps from %s", fpath.string().c_str());
    }
    else {
-      ERR("Error reloading texture map, assets file not found");
+      ERR("Failed to reload maps from %s", fpath.string().c_str());
    }
-
 }
 
 
-void assets_mapMapSave() {
-   auto fpath = AppConfig.assetPath / Paths::maps;
+void assetsReloadTextures() {
+   std::filesystem::path fpath;
+   GameAssets reloaded;
 
-   auto writer = scfWriterCreate();
-   uint64_t sz = 0;
-
-   // kill off deleted textures
-   auto mapCopy = MapMap;
-   Array<Symbol*> toDelete;
-   for (auto&& kvp : mapCopy.map) {
-      if (kvp.second.markForDelete) {
-         toDelete.push_back(kvp.first);
-      }
-   }
-   for (auto&& td : toDelete) {
-      mapCopy.map.erase(td);
-   }
-
-   serialize(writer, &mapCopy);
-   auto output = scfWriteToBuffer(writer, &sz);
-
-   writeBinaryFile(fpath.string().c_str(), (byte*)output, sz);
-   scfWriterDestroy(writer);
-   delete[] output;
-
-   LOG("Map Map Saved");
-}
-
-
-void assets_mapMapReload() {
-   auto fpath = Paths::maps;
-   if (!std::filesystem::exists(fpath)) {
-      fpath = AppConfig.assetPath / fpath;
-   }
-
-   //assert(std::filesystem::exists(fpath) && "Assets file not found");
-
-   if (auto content = fileReadBinary(fpath.string().c_str(), nullptr)) {
-      auto reader = scfView(content);
-      _MapMap reloaded;
-      deserialize(reader, &reloaded);
-      delete[] content;
-
-      for (auto&&kvp : reloaded.map) {
-         auto result = MapMap.map.insert({ kvp.first, kvp.second });
-         if (!result.second) {
-            auto& existing = MapMap.map[kvp.first];            
-            existing = kvp.second;
-            existing.markForDelete = false;
-         }
-      }
-      LOG("Reloaded Map Map");
+   if (_loadAssets(reloaded, fpath)) {
+      _mergeTextures(reloaded);
+      LOG("Reloaded textures from %s", fpath.string().c_str());
    }
    else {
-      ERR("Error reloading Map map");
+      ERR("Failed to reload textures from %s", fpath.string().c_str());
    }
+
 }
+void assetsReloadAll() {
+   std::filesystem::path fpath;
+   GameAssets reloaded;
 
-
-
-void assets_mapMapLoad() {
-   auto fpath = Paths::maps;
-   if (!std::filesystem::exists(fpath)) {
-      fpath = AppConfig.assetPath / fpath;
-   }
-
-   //assert(std::filesystem::exists(fpath) && "Assets file not found");
-
-   if (auto content = fileReadBinary(fpath.string().c_str(), nullptr)) {
-      auto reader = scfView(content);
-      deserialize<_MapMap>(reader, &MapMap);
-      delete[] content;
-
-      for (auto&& kvp : MapMap.map) {
-         auto& t = kvp.second;
-         t.id = intern(kvp.first);
-      }
-
-      LOG("Loaded Map Map");
+   if (_loadAssets(reloaded, fpath)) {
+      Const = reloaded.constants;
+      _mergeMaps(reloaded);
+      _mergeTextures(reloaded);
+      LOG("Reloaded %s", fpath.string().c_str());
    }
    else {
-      ERR("Error reloading map map, assets file not found");
+      ERR("Failed to reload %s", fpath.string().c_str());
    }
-
 }
 
-
+void assetsBuildTextureHandles() {
+   for (auto&&kvp : Assets.textures) {
+      _textureInitHandle(kvp.second);
+   }
+}
 
 
 static int _reloadShader(GraphicObjects &gfx) {
@@ -244,7 +208,7 @@ static Texture _textureBuildFromFile(const char* path, TextureFlag flags = Textu
 }
 
 void GraphicObjects::build() {
-   assets_textureMapLoad();
+   assetsBuildTextureHandles();
 
    assert(_reloadShader(*this));
 

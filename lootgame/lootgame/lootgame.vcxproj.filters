@@ -167,9 +167,6 @@
     <ClInclude Include="phy.h">
       <Filter>Header Files\game</Filter>
     </ClInclude>
-    <ClInclude Include="map.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\imgui\examples\imgui_impl_opengl3.h">
       <Filter>Header Files\app</Filter>
     </ClInclude>

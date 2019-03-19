@@ -22,11 +22,11 @@ struct TextureManagerState {
 static void _doTextureManager(TextureManagerState& state) {
    if (ImGui::Begin("Textures", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
       if (ImGui::Button(ICON_FA_SAVE)) {
-         assets_textureMapSave();
+         assetsSave();
       }
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_RECYCLE)) {
-         assets_textureMapReload();
+         assetsReloadTextures();
       }
 
 
@@ -49,7 +49,7 @@ static void _doTextureManager(TextureManagerState& state) {
             if (ImGui::Button("OK") || ImGui::IsKeyPressed(ImGui::GetIO().KeyMap[ImGuiKey_Enter])) {
                Texture newtex;
                newtex.id = state.newkey;
-               TextureMap.map.insert({ state.newkey, newtex });
+               Textures.insert({ state.newkey, newtex });
                state.keysDirty = true;
                ImGui::CloseCurrentPopup();
             }
@@ -60,7 +60,7 @@ static void _doTextureManager(TextureManagerState& state) {
 
          if (state.keysDirty) {
             state.keyList.clear();
-            for (auto&&kvp : TextureMap.map) {
+            for (auto&&kvp : Textures) {
                state.keyList.push_back({ kvp.first });
             }
             std::sort(state.keyList.begin(), state.keyList.end(), [](TextureState const&a, TextureState const&b) {return natstrcmp(a.sym, b.sym) < 0; });
@@ -68,7 +68,7 @@ static void _doTextureManager(TextureManagerState& state) {
          }
 
          for (auto&&k : state.keyList) {
-            auto& tex = TextureMap.map[k.sym];
+            auto& tex = Textures[k.sym];
 
             if (tex.markForDelete) {
                continue;

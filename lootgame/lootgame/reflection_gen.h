@@ -96,15 +96,6 @@ struct Reflector<ColorRGBAf>{
 };
 
 
-// _TextureMap ----------------------------
-typedef struct _TextureMap _TextureMap;
-extern TypeMetadata* meta__TextureMap;
-template<>
-struct Reflector<_TextureMap>{
-   static TypeMetadata const* type() { return meta__TextureMap; }
-};
-
-
 // EngineConstants ----------------------------
 typedef struct EngineConstants EngineConstants;
 extern TypeMetadata* meta_EngineConstants;
@@ -168,15 +159,6 @@ struct Reflector<Map>{
 };
 
 
-// _MapMap ----------------------------
-typedef struct _MapMap _MapMap;
-extern TypeMetadata* meta__MapMap;
-template<>
-struct Reflector<_MapMap>{
-   static TypeMetadata const* type() { return meta__MapMap; }
-};
-
-
 // AttackSwing ----------------------------
 typedef struct AttackSwing AttackSwing;
 extern TypeMetadata* meta_AttackSwing;
@@ -192,6 +174,15 @@ extern TypeMetadata* meta_MoveSet;
 template<>
 struct Reflector<MoveSet>{
    static TypeMetadata const* type() { return meta_MoveSet; }
+};
+
+
+// GameAssets ----------------------------
+typedef struct GameAssets GameAssets;
+extern TypeMetadata* meta_GameAssets;
+template<>
+struct Reflector<GameAssets>{
+   static TypeMetadata const* type() { return meta_GameAssets; }
 };
 
 

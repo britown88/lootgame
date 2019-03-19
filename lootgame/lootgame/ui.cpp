@@ -241,6 +241,14 @@ static bool _doSCFTest(SCFTestState& state) {
 
 static void _mainMenu() {
    if (ImGui::BeginMenuBar()) {
+      if (ImGui::BeginMenu("Assets")) {
+         if (ImGui::MenuItem("Save")) {
+            assetsSave();
+         }
+
+         ImGui::EndMenu();
+      }
+
       if (ImGui::BeginMenu("Debug")) {
 
          if (ImGui::MenuItem("New Game Instance")) {

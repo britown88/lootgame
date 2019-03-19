@@ -12,7 +12,6 @@ TypeMetadata* meta_ColorHSV = new TypeMetadata;
 TypeMetadata* meta_ColorRGBAf = new TypeMetadata;
 TypeMetadata* meta_SwingPhase = new TypeMetadata;
 TypeMetadata* meta_DudeState = new TypeMetadata;
-TypeMetadata* meta__TextureMap = new TypeMetadata;
 TypeMetadata* meta_EngineConstants = new TypeMetadata;
 TypeMetadata* meta_EngineState = new TypeMetadata;
 TypeMetadata* meta_IO = new TypeMetadata;
@@ -20,9 +19,9 @@ TypeMetadata* meta_GameCamera = new TypeMetadata;
 TypeMetadata* meta_Wall = new TypeMetadata;
 TypeMetadata* meta_Light = new TypeMetadata;
 TypeMetadata* meta_Map = new TypeMetadata;
-TypeMetadata* meta__MapMap = new TypeMetadata;
 TypeMetadata* meta_AttackSwing = new TypeMetadata;
 TypeMetadata* meta_MoveSet = new TypeMetadata;
+TypeMetadata* meta_GameAssets = new TypeMetadata;
 TypeMetadata* meta_Movement = new TypeMetadata;
 TypeMetadata* meta_GameStateDebug = new TypeMetadata;
 TypeMetadata* meta_Int2 = new TypeMetadata;
@@ -550,30 +549,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGBAf, a);
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
-         
-         structName->structMembers.push_back(member);
-      }
-
-      
-   }
-
-   
-   {
-      auto& structName = meta__TextureMap;
-      structName->name = intern("_TextureMap");
-      structName->size = sizeof(_TextureMap);
-      structName->variety = TypeVariety_Struct;
-
-      structName->funcs.create = [](void* data) {new (data) _TextureMap;};
-      structName->funcs.destroy = [](void* data) {((_TextureMap*)data)->~_TextureMap(); };
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("map");
-         member.offset = offsetof(_TextureMap, map);
-         member.type = reflect<std::unordered_map<Symbol*, Texture>>();
-         member.customUI = customUIRenderer<std::unordered_map<Symbol*, Texture>>();
          
          structName->structMembers.push_back(member);
       }
@@ -1200,30 +1175,6 @@ void reflectionStartup_generated() {
 
    
    {
-      auto& structName = meta__MapMap;
-      structName->name = intern("_MapMap");
-      structName->size = sizeof(_MapMap);
-      structName->variety = TypeVariety_Struct;
-
-      structName->funcs.create = [](void* data) {new (data) _MapMap;};
-      structName->funcs.destroy = [](void* data) {((_MapMap*)data)->~_MapMap(); };
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("map");
-         member.offset = offsetof(_MapMap, map);
-         member.type = reflect<std::unordered_map<Symbol*, Map>>();
-         member.customUI = customUIRenderer<std::unordered_map<Symbol*, Map>>();
-         
-         structName->structMembers.push_back(member);
-      }
-
-      
-   }
-
-   
-   {
       auto& structName = meta_AttackSwing;
       structName->name = intern("AttackSwing");
       structName->size = sizeof(AttackSwing);
@@ -1362,6 +1313,52 @@ void reflectionStartup_generated() {
          member.offset = offsetof(MoveSet, swings);
          member.type = reflect<Array<AttackSwing>>();
          member.customUI = customUIRenderer<Array<AttackSwing>>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
+      auto& structName = meta_GameAssets;
+      structName->name = intern("GameAssets");
+      structName->size = sizeof(GameAssets);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) GameAssets;};
+      structName->funcs.destroy = [](void* data) {((GameAssets*)data)->~GameAssets(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("constants");
+         member.offset = offsetof(GameAssets, constants);
+         member.type = reflect<EngineConstants>();
+         member.customUI = customUIRenderer<EngineConstants>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("textures");
+         member.offset = offsetof(GameAssets, textures);
+         member.type = reflect<std::unordered_map<Symbol*, Texture>>();
+         member.customUI = customUIRenderer<std::unordered_map<Symbol*, Texture>>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("maps");
+         member.offset = offsetof(GameAssets, maps);
+         member.type = reflect<std::unordered_map<Symbol*, Map>>();
+         member.customUI = customUIRenderer<std::unordered_map<Symbol*, Map>>();
          
          structName->structMembers.push_back(member);
       }

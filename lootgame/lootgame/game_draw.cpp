@@ -22,8 +22,8 @@ static void _renderSwing(Dude&dude) {
    uber::set(Uniform_Height, Const.dudeHeight);
       
 
-   uber::bindTexture(Uniform_DiffuseTexture, TextureMap.map[intern("ShittySword")].handle);
-   uber::bindTexture(Uniform_NormalsTexture, TextureMap.map[intern("SwordNormals")].handle);
+   uber::bindTexture(Uniform_DiffuseTexture, Textures[intern("ShittySword")].handle);
+   uber::bindTexture(Uniform_NormalsTexture, Textures[intern("SwordNormals")].handle);
 
    render::meshRender(Graphics.meshUncentered);
 }
@@ -60,7 +60,7 @@ static void _renderDude(GameState& g, Dude& dude) {
 
    uber::set(Uniform_ModelMatrix, model);
    uber::bindTexture(Uniform_DiffuseTexture, dude.texture->handle);   
-   uber::bindTexture(Uniform_NormalsTexture, TextureMap.map[intern("DudeNormals")].handle);
+   uber::bindTexture(Uniform_NormalsTexture, Textures[intern("DudeNormals")].handle);
    render::meshRender(Graphics.mesh);
 
    //uber::set(Uniform_OutlineOnly, true);
@@ -82,8 +82,8 @@ static void _renderFloor(GameState& game) {
    uber::set(Uniform_TextureMatrix, Matrix::scale2f({ fres.x / tileSize.x, fres.y / tileSize.y }));
    uber::set(Uniform_ModelMatrix, Matrix::scale2f(fres));
 
-   uber::bindTexture(Uniform_DiffuseTexture, TextureMap.map[intern("Tile")].handle);
-   uber::bindTexture(Uniform_NormalsTexture, TextureMap.map[intern("TileNormals")].handle);
+   uber::bindTexture(Uniform_DiffuseTexture, Textures[intern("Tile")].handle);
+   uber::bindTexture(Uniform_NormalsTexture, Textures[intern("TileNormals")].handle);
    //uber::set(Uniform_ColorOnly, true);
 
    render::meshRender(Graphics.meshUncentered);
@@ -299,12 +299,12 @@ void renderUI(GameState& g) {
    uber::set(Uniform_ViewMatrix, Matrix::ortho(0, fbosz.x, 0, fbosz.y, 1, -1));
 
    /*if (game->maindude.stamina < game->maindude.staminaMax)*/ {
-      auto &tfilled = TextureMap.map[intern("GemFilled")];
-      auto &tempty = TextureMap.map[intern("GemEmpty")];
-      auto &tcracked = TextureMap.map[intern("GemCracked")];
+      auto &tfilled = Textures[intern("GemFilled")];
+      auto &tempty = Textures[intern("GemEmpty")];
+      auto &tcracked = Textures[intern("GemCracked")];
 
-      auto &thfilled = TextureMap.map[intern("HeartFilled")];
-      auto &thempty = TextureMap.map[intern("HeartEmpty")];
+      auto &thfilled = Textures[intern("HeartFilled")];
+      auto &thempty = Textures[intern("HeartEmpty")];
 
       auto tsz = tfilled.sz;
       Float2 gemSize = { (float)tsz.x, (float)tsz.y };
