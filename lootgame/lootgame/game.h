@@ -62,7 +62,7 @@ struct EngineConstants {
 
    float dudeDashDistance = 40.0f;
    float dudeKnockbackDistance = 0.0f;
-   Milliseconds dudePostDashCooldown = 400;
+   Milliseconds dudePostDashCooldown = 300;
    Milliseconds dudeBaseStaminaTickRecoveryTime = 500;
 
    Milliseconds dudeSpentStaminaRecoveryTime = 400;

@@ -239,7 +239,6 @@ void renderLightLayer(GameState& game) {
 
    
 
-
    //uber::set(Uniform_LightIntensity, cLightIntensity);
    auto candleColor = sRgbToLinear(ColorRGB{ 255,147,41 });
 
@@ -302,6 +301,7 @@ void renderUI(GameState& g) {
    /*if (game->maindude.stamina < game->maindude.staminaMax)*/ {
       auto &tfilled = TextureMap.map[intern("GemFilled")];
       auto &tempty = TextureMap.map[intern("GemEmpty")];
+      auto &tcracked = TextureMap.map[intern("GemCracked")];
 
       auto &thfilled = TextureMap.map[intern("HeartFilled")];
       auto &thempty = TextureMap.map[intern("HeartEmpty")];
@@ -344,15 +344,36 @@ void renderUI(GameState& g) {
       staminaCorner.x += hpstamSpace;
 
       if (stamina == 0) {
-         uber::set(Uniform_Alpha, 1.0f);
+         //uber::set(Uniform_Alpha, 1.0f);
          uber::set(Uniform_Color, Red);
       }
       for (int i = 0; i < stamCount; ++i) {
-
+         auto &pip = g.maindude.status.stamina[i];
          auto model = Matrix::translate2f(staminaCorner) *  Matrix::scale2f(gemSize);
+
          uber::set(Uniform_ModelMatrix, model);
-         uber::bindTexture(Uniform_DiffuseTexture, i < stamina ? tfilled.handle : tempty.handle);
-         render::meshRender(Graphics.meshUncentered);
+         if (pip.state == PipState_Full) {
+            uber::set(Uniform_Alpha, 1.0f);
+            uber::bindTexture(Uniform_DiffuseTexture, tfilled.handle);
+            render::meshRender(Graphics.meshUncentered);
+         }
+         else {
+            uber::set(Uniform_Alpha, 1.0f);
+            uber::bindTexture(Uniform_DiffuseTexture, tempty.handle);
+            render::meshRender(Graphics.meshUncentered);
+
+            auto ratio = (float)pip.charge / pip.fullCharge;
+            uber::set(Uniform_Alpha, ratio);
+            uber::bindTexture(Uniform_DiffuseTexture, tfilled.handle);
+            render::meshRender(Graphics.meshUncentered);
+
+            if (pip.state == PipState_Cracked) {
+               uber::set(Uniform_Alpha, 1.0f - ratio);
+               uber::bindTexture(Uniform_DiffuseTexture, tcracked.handle);
+               render::meshRender(Graphics.meshUncentered);
+            }
+
+         }
 
          staminaCorner.x += gemSize.x + gemSpace;
       }

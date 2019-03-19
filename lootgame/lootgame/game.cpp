@@ -43,6 +43,12 @@ bool dudeSpendStamina(Dude &d, int stam, PipState spendType) {
 
    bool hasEnough = stamAvail >= stam;
 
+   if (hasEnough) { // dont interrupt recharge if you dont have enough to spend
+      for (int i = stamAvail; i < d.status.stamina.size(); ++i) {
+         d.status.stamina[i].charge = 0;
+      }
+   }
+
    for (int i = stamAvail - 1; i >= 0 && stam > 0; --i, --stam) {
       d.status.stamina[i].state = spendType;
       d.status.stamina[i].charge = 0;
@@ -219,6 +225,8 @@ void dudeUpdateStateDash(Dude& d) {
 }
 
 void dudeBeginAttack(Dude& d, int swingDir, int combo) {
+
+
    bool hadStamina = dudeSpendStamina(d, 1, PipState_Spent);
    bool overExtend = !hadStamina && (combo > 0 && combo < d.moveset.swings.size());
    if (hadStamina || overExtend) {
@@ -489,8 +497,8 @@ void dudeUpdateVelocity(Dude& d) {
       // scale mvspeed based on facing;
       float facedot = v2Dot(v2Normalized(d.phy.velocity), d.mv.facing);
       auto scaledSpeed = 
-         (d.phy.maxSpeed * (1 - Const.dudeBackwardsPenalty)) + 
-         (d.phy.maxSpeed * Const.dudeBackwardsPenalty * facedot);
+         (d.phy.maxSpeed * (1 - (Const.dudeBackwardsPenalty * 0.5f))) + 
+         (d.phy.maxSpeed * (Const.dudeBackwardsPenalty * 0.5f) * facedot);
 
       // set the target speed
       d.mv.moveSpeedCapTarget = scaledSpeed * v2Len(d.mv.moveVector);
