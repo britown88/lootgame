@@ -438,7 +438,6 @@ void dudeApplyInputAiming(GameState& g, Dude& d) {
 void dudeApplyInputFreeActions(GameState& g, Dude& d) {
    auto& io = g.io;
    if (io.buttonPressed[GameButton_LT]){
-      LOG("Dash pressed while free");
       dudeBeginDash(d, Const.dudeDashSpeed);
    }
    else if (io.buttonPressed[GameButton_RT]) {

@@ -438,7 +438,7 @@ void renderUI(GameState& g) {
    //uber::set(Uniform_ViewMatrix, Matrix::ortho(0, fbosz.x, 0, fbosz.y, 1, -1));
 
 
-   uber::set(Uniform_Alpha, 1.0f);
+   uber::set(Uniform_Alpha, 0.5f);
    uber::set(Uniform_Color, White);
 
    for (auto&& d : g.baddudes) {
