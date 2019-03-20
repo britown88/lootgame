@@ -292,7 +292,20 @@ void dudeUpdateStateAttack(Dude& d, Milliseconds tickSize) {
       if (d.stateClock >= d.atk.swing.swingDur) {
          d.stateClock -= d.atk.swing.swingDur;
          d.atk.weaponVector = v2Normalized(v2Rotate(d.mv.facing, v2FromAngle(-d.atk.swingDir * d.atk.swing.swipeAngle / 2.0f * DEG2RAD)));
-         d.atk.swingPhase = SwingPhase_Cooldown;
+
+         bool executeQueued = false;
+         if (d.atk.queuedAttacked) {
+            d.atk.queuedAttacked = false;
+            if (d.atk.combo + 1 < d.moveset.swings.size()) {
+               dudeBeginAttack(d, -d.atk.swingDir, d.atk.combo + 1);
+               executeQueued = true;
+            }
+         }
+
+
+         if(!executeQueued) {
+            d.atk.swingPhase = SwingPhase_Cooldown;
+         }
       }
    }  break;
    case SwingPhase_Cooldown:
@@ -464,6 +477,11 @@ void dudeApplyInputAttack(GameState& g, Dude& d) {
    auto& io = g.io;
    if (io.buttonPressed[GameButton_RT]) {
       switch (d.atk.swingPhase) {
+      case SwingPhase_Windup:
+      case SwingPhase_Lunge:
+      case SwingPhase_Swing:
+         d.atk.queuedAttacked = true;
+         break;
       case SwingPhase_Cooldown:
          if (d.atk.combo + 1 < d.moveset.swings.size()) {
             dudeBeginAttack(d, -d.atk.swingDir, d.atk.combo + 1);

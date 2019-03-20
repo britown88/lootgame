@@ -188,6 +188,9 @@ struct AttackSwing {
 //@reflect{
 struct MoveSet {
    Array<AttackSwing> swings;
+
+   // @readonly
+   Symbol* id = nullptr;
 };//}
 
 //@reflect{
@@ -251,6 +254,7 @@ struct AttackState {
 
    Array<Dude*> hits;
    bool overExtended = false;
+   bool queuedAttacked = false; // this will need to later be the requested action
 };
 
 struct CooldownState {

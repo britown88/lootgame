@@ -1318,6 +1318,18 @@ void reflectionStartup_generated() {
       }
 
       
+      {
+         StructMemberMetadata member;
+         member.name = intern("id");
+         member.offset = offsetof(MoveSet, id);
+         member.type = reflect<Symbol*>();
+         member.customUI = customUIRenderer<Symbol*>();
+         member.flags |= StructMemberFlags_ReadOnly;
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
    }
 
    
