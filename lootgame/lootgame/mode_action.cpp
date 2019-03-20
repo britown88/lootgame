@@ -14,14 +14,14 @@ static MoveSet _createMoveSet() {
    out.swings[0].swipeAngle = 120.0f;
    out.swings[0].lungeSpeed = 0.3f;
    out.swings[0].lungeDist = 0.0f;
-   out.swings[0].windupDur = 150;
-   out.swings[0].swingDur = 250;
+   out.swings[0].windupDur = 400;
+   out.swings[0].swingDur = 100;
    out.swings[0].cooldownDur = 300;
    out.swings[0].hitbox = hitbox;
 
    out.swings[1] = out.swings[0];
    out.swings[1].windupDur = 50;
-   out.swings[1].swingDur = 150;
+   out.swings[1].swingDur = 100;
    out.swings[1].cooldownDur = 500;
 
    out.swings[2] = out.swings[0];
