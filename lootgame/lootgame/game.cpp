@@ -35,11 +35,16 @@ bool dudeAlive(Dude&d) {
 }
 
 
-
-bool dudeSpendStamina(Dude &d, int stam, PipState spendType) {
+int dudeStamina(Dude&d) {
    auto stamAvail = 0;
    for (auto&&s : d.status.stamina) { if (s.state == PipState_Full) ++stamAvail; else break; }
-
+   return stamAvail;
+}
+bool dudeCanAffordStamina(Dude &d, int stam, PipState spendType) {   
+   return dudeStamina(d) >= stam;
+}
+bool dudeSpendStamina(Dude &d, int stam, PipState spendType) {
+   auto stamAvail = dudeStamina(d);
    bool hasEnough = stamAvail >= stam;
 
    if (hasEnough) { // dont interrupt recharge if you dont have enough to spend
@@ -226,9 +231,9 @@ void dudeUpdateStateDash(Dude& d) {
 void dudeBeginAttack(Dude& d, int swingDir, int combo) {
 
 
-   bool hadStamina = dudeSpendStamina(d, 1, PipState_Spent);
-   bool overExtend = !hadStamina && (combo > 0 && combo < d.moveset.swings.size());
-   if (hadStamina || overExtend) {
+   bool hasStamina = dudeCanAffordStamina(d, 1, PipState_Spent);
+   bool overExtend = !hasStamina && (combo > 0 && combo < d.moveset.swings.size());
+   if (hasStamina || overExtend) {
       dudeSetState(d, DudeState_ATTACKING);
       d.atk.hits.clear();
 
@@ -275,13 +280,16 @@ void dudeUpdateStateAttack(Dude& d, Milliseconds tickSize) {
          else {
             d.atk.swingPhase = SwingPhase_Swing;
          }
+
+         // actually spend the stamina for the action now
+         dudeSpendStamina(d, 1, PipState_Spent);
       }
       d.atk.weaponVector = v2Normalized(v2Rotate(d.mv.facing, v2FromAngle(d.atk.swingDir * d.atk.swing.swipeAngle / 2.0f * DEG2RAD)));
       break;
    case SwingPhase_Lunge:
       if (!d.shoved) {
          d.atk.swingPhase = SwingPhase_Swing;
-         d.stateClock = 0;
+         d.stateClock = 0;         
       }
       break;
    case SwingPhase_Swing: {
