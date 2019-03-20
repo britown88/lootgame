@@ -59,6 +59,8 @@ struct EngineConstants {
    Milliseconds dudePostDashCooldown = 300;
    Milliseconds dudeBaseStaminaTickRecoveryTime = 500;
 
+   Milliseconds dudeMinimumSwingCooldown = 100; // global minimum cooldown after a swing, even if a combo is queued
+
    Milliseconds dudeSpentStaminaRecoveryTime = 400;
    Milliseconds dudeCrackedStaminaRecoveryTime = 800;
    Milliseconds overExtendedStaminaRecoveryTime = 2000;
@@ -352,6 +354,8 @@ struct GameStateDebug {
 
    //@ui(min=0 max=1)
    float ambientLight = 0.2f;
+
+   bool AI = true;
 };
 //}
 

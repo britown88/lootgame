@@ -803,6 +803,14 @@ ColorRGBAf sRgbToLinear(ColorRGB const& srgb) {
    return { s2lin(srgb.r * i255), s2lin(srgb.g * i255), s2lin(srgb.b * i255), 1.0f };
 }
 
+ColorRGBAf colorLerp(ColorRGBAf const& a, ColorRGBAf const& b, float t) {
+   return { 
+      clamp(a.r + lerp(a.r, b.r, t), 0.0f, 1.0f),
+      clamp(a.g + lerp(a.g, b.g, t), 0.0f, 1.0f),
+      clamp(a.b + lerp(a.b, b.b, t), 0.0f, 1.0f),
+      clamp(a.a + lerp(a.a, b.a, t), 0.0f, 1.0f) };
+}
+
 ColorRGBA linearToSrgb(ColorRGBAf const& lin) {
    return { 
       (byte)(lin2s(lin.r) * 255), 

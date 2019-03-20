@@ -384,7 +384,7 @@ void renderUI(GameState& g) {
    Float2 staminaCorner ={ 10,10 };// Coords::fromWorld(g.maindude.phy.pos).toViewport(g);
 
    if (stamina != 0) {
-      uber::set(Uniform_Alpha, 0.5f);
+      //uber::set(Uniform_Alpha, 0.5f);
       //uber::set(Uniform_Color, Red);
    }
 
@@ -400,8 +400,10 @@ void renderUI(GameState& g) {
    staminaCorner.x += hpstamSpace;
 
    if (stamina == 0) {
-      //uber::set(Uniform_Alpha, 1.0f);
-      uber::set(Uniform_Color, Red);
+      auto firstPipRatio = 
+         (float)g.maindude.status.stamina[0].charge / 
+         g.maindude.status.stamina[0].fullCharge;
+      uber::set(Uniform_Color, colorLerp(Red, White, firstPipRatio));
    }
    for (int i = 0; i < stamCount; ++i) {
       auto &pip = g.maindude.status.stamina[i];
@@ -419,6 +421,7 @@ void renderUI(GameState& g) {
          render::meshRender(Graphics.meshUncentered);
 
          auto ratio = (float)pip.charge / pip.fullCharge;
+
          uber::set(Uniform_Alpha, ratio);
          uber::bindTexture(Uniform_DiffuseTexture, tfilled.handle);
          render::meshRender(Graphics.meshUncentered);

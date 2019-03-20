@@ -724,6 +724,17 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
+         member.name = intern("dudeMinimumSwingCooldown");
+         member.offset = offsetof(EngineConstants, dudeMinimumSwingCooldown);
+         member.type = reflect<Milliseconds>();
+         member.customUI = customUIRenderer<Milliseconds>();
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
          member.name = intern("dudeSpentStaminaRecoveryTime");
          member.offset = offsetof(EngineConstants, dudeSpentStaminaRecoveryTime);
          member.type = reflect<Milliseconds>();
@@ -1465,6 +1476,17 @@ void reflectionStartup_generated() {
          member.customUI = customUIRenderer<float>();
          member.ui.min = (float)0;
          member.ui.max = (float)1;
+         
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("AI");
+         member.offset = offsetof(GameStateDebug, AI);
+         member.type = reflect<bool>();
+         member.customUI = customUIRenderer<bool>();
          
          structName->structMembers.push_back(member);
       }

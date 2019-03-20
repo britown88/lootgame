@@ -292,25 +292,23 @@ void dudeUpdateStateAttack(Dude& d, Milliseconds tickSize) {
       if (d.stateClock >= d.atk.swing.swingDur) {
          d.stateClock -= d.atk.swing.swingDur;
          d.atk.weaponVector = v2Normalized(v2Rotate(d.mv.facing, v2FromAngle(-d.atk.swingDir * d.atk.swing.swipeAngle / 2.0f * DEG2RAD)));
-
-         bool executeQueued = false;
-         if (d.atk.queuedAttacked) {
-            d.atk.queuedAttacked = false;
-            if (d.atk.combo + 1 < d.moveset.swings.size()) {
-               dudeBeginAttack(d, -d.atk.swingDir, d.atk.combo + 1);
-               executeQueued = true;
-            }
-         }
-
-
-         if(!executeQueued) {
-            d.atk.swingPhase = SwingPhase_Cooldown;
-         }
+         d.atk.swingPhase = SwingPhase_Cooldown;
       }
    }  break;
    case SwingPhase_Cooldown:
-      if (d.stateClock >= d.atk.swing.cooldownDur) {
+      // so queued attacks cancel the cooldown phase but 
+      // im not sure if it should:
+      //    cancel it completely, 
+      //    still obey a global minimum cd, 
+      //    or obey a fraction of the base cd
 
+      if (d.stateClock >= Const.dudeMinimumSwingCooldown && d.atk.queuedAttacked) {
+         d.atk.queuedAttacked = false;
+         if (d.atk.combo + 1 < d.moveset.swings.size()) {
+            dudeBeginAttack(d, -d.atk.swingDir, d.atk.combo + 1);
+         }
+      }
+      else if (d.stateClock >= d.atk.swing.cooldownDur) {
          // at the end of an attack cooldown, check to see if we over extended
          if (d.atk.overExtended && dudeStaminaEmpty(d)) {
             d.status.stamina[0].fullCharge += Const.overExtendedStaminaRecoveryTime;
@@ -476,18 +474,18 @@ void dudeApplyInputAttack(GameState& g, Dude& d) {
 
    auto& io = g.io;
    if (io.buttonPressed[GameButton_RT]) {
-      switch (d.atk.swingPhase) {
-      case SwingPhase_Windup:
-      case SwingPhase_Lunge:
-      case SwingPhase_Swing:
+      //switch (d.atk.swingPhase) {
+      //case SwingPhase_Windup:
+      //case SwingPhase_Lunge:
+      //case SwingPhase_Swing:
          d.atk.queuedAttacked = true;
-         break;
-      case SwingPhase_Cooldown:
-         if (d.atk.combo + 1 < d.moveset.swings.size()) {
-            dudeBeginAttack(d, -d.atk.swingDir, d.atk.combo + 1);
-         }
-         break;
-      }
+         //break;
+      //case SwingPhase_Cooldown:
+      //   if (d.atk.combo + 1 < d.moveset.swings.size()) {
+      //      dudeBeginAttack(d, -d.atk.swingDir, d.atk.combo + 1);
+      //   }
+      //   break;
+      //}
    }
 }
 
@@ -650,12 +648,6 @@ void _buildPhySystem(GameState&game) {
       }
    }
 }
-
-
-void gameUpdateMilliStep(GameState& game) {
-
-}
-
 
 void gameBeginFrame(GameState& g) {
    auto& mPos = ImGui::GetIO().MousePos;
@@ -875,7 +867,10 @@ static void _frameStep(GameState& g) {
 
    for (auto && d : g.baddudes) {
       if (dudeAlive(d)) {
-         dudeUpdateBehavior(d, tickSize);
+         if (g.DEBUG.AI) {
+            dudeUpdateBehavior(d, tickSize);
+         }
+         
          badDudeCheckAttackCollision(g, d, g.maindude);
       }
 

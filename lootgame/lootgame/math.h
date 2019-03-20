@@ -155,6 +155,8 @@ ColorRGBAf sRgbToLinear(ColorRGBf const& srgb);
 ColorRGBAf sRgbToLinear(ColorRGBA const& srgb);
 ColorRGBAf sRgbToLinear(ColorRGB const& srgb);
 
+ColorRGBAf colorLerp(ColorRGBAf const& a, ColorRGBAf const& b, float t);
+
 ColorRGBA linearToSrgb(ColorRGBAf const& lin);
 ColorRGBAf linearToSrgbf(ColorRGBAf const& lin);
 ColorRGBA srgbPremultipleAlpha(ColorRGBA const& srgb);
