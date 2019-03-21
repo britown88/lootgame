@@ -128,6 +128,27 @@ void assignEnumValue(size_t enumSize, int64_t entryValue, void*target) {
    }
 }
 
+// for serializing a reference, we find the member used for the key and serialize that symbol
+void serializeReference(SCFWriter* writer, StructMemberMetadata &member, void* data) {
+   assert(member.type->variety == TypeVariety_Struct); // only structs can be saved as references
+
+   auto null = nullptr;
+
+
+   StructMemberMetadata*keyMember = nullptr;
+   for (auto&& mchild : member.type->structMembers) {
+      if (mchild.name == member.referenceKeyMember) {
+         keyMember = &mchild;
+         break;
+      }
+   }
+   assert(keyMember); // key member not found
+   assert(keyMember->type == meta_symbol); // only symbols can be used for keys
+   assert(*(byte**)data); // symbol is null
+
+   serializeEX(writer, meta_symbol, (void*)(*(byte**)data + keyMember->offset));
+}
+
 void serializeEX(SCFWriter* writer, TypeMetadata const* type, void* data) {
 
    switch (type->variety) {
@@ -157,12 +178,24 @@ void serializeEX(SCFWriter* writer, TypeMetadata const* type, void* data) {
             scfWriteListBegin(writer);
             scfWriteInt(writer, member.staticArraySize);
             for (int i = 0; i < member.staticArraySize; ++i) {
-               serializeEX(writer, member.type, (byte*)data + member.offset + (member.type->size * i));
+               auto dataptr = (byte*)data + member.offset + (member.type->size * i);
+               if (member.reference) {
+                  serializeReference(writer, member, dataptr);
+               }
+               else {
+                  serializeEX(writer, member.type, dataptr);
+               }
             }
             scfWriteListEnd(writer);
          }
          else {
-            serializeEX(writer, member.type, (byte*)data + member.offset);
+            auto dataptr = (byte*)data + member.offset;
+            if (member.reference) {
+               serializeReference(writer, member, dataptr);
+            }
+            else {
+               serializeEX(writer, member.type, dataptr);
+            }
          }
          
          scfWriteListEnd(writer);
@@ -202,6 +235,15 @@ void serializeEX(SCFWriter* writer, TypeMetadata const* type, void* data) {
 
 }
 
+void deserializeReference(SCFReader& reader, StructMemberMetadata &member, void* data) {
+   assert(member.referenceOwnerType->variety == TypeVariety_KVP); // owner must be a kvp
+
+   Symbol* key = nullptr;
+   deserializeEX(reader, meta_symbol, &key);
+
+   member.referenceOwnerType->funcs.retrieveKVP(member.referenceOwner, &key, (void**)data);
+}
+
 void deserializeEX(SCFReader& reader, TypeMetadata const* type, void* target) {
 
    switch (type->variety) {
@@ -236,13 +278,25 @@ void deserializeEX(SCFReader& reader, TypeMetadata const* type, void* target) {
                   auto staticList = scfReadList(mlist);
                   auto szInFile = scfReadInt(staticList);
                   auto sz = MIN((size_t)*szInFile, m.staticArraySize);
-
+                  
                   for (int i = 0; i < sz; ++i) {
-                     deserializeEX(staticList, m.type, (byte*)target + m.offset + (m.type->size * i));
+                     auto dataptr = (byte*)target + m.offset + (m.type->size * i);
+                     if (m.reference) {
+                        deserializeReference(staticList, m, dataptr);
+                     }
+                     else {
+                        deserializeEX(staticList, m.type, dataptr);
+                     }
                   }
                }
                else {
-                  deserializeEX(mlist, m.type, (byte*)target + m.offset);
+                  auto dataptr = (byte*)target + m.offset;
+                  if (m.reference) {
+                     deserializeReference(mlist, m, dataptr);
+                  }
+                  else {
+                     deserializeEX(mlist, m.type, dataptr);
+                  }
                }
                break;
             }

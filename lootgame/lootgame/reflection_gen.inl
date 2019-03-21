@@ -12,6 +12,7 @@ TypeMetadata* meta_ColorHSV = new TypeMetadata;
 TypeMetadata* meta_ColorRGBAf = new TypeMetadata;
 TypeMetadata* meta_SwingPhase = new TypeMetadata;
 TypeMetadata* meta_DudeState = new TypeMetadata;
+TypeMetadata* meta_Sprite = new TypeMetadata;
 TypeMetadata* meta_EngineConstants = new TypeMetadata;
 TypeMetadata* meta_EngineState = new TypeMetadata;
 TypeMetadata* meta_IO = new TypeMetadata;
@@ -274,6 +275,8 @@ void reflectionStartup_generated() {
          member.type = reflect<WorldCoords>();
          member.customUI = customUIRenderer<WorldCoords>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -298,6 +301,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Microseconds>();
          member.customUI = customUIRenderer<Microseconds>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -322,6 +327,8 @@ void reflectionStartup_generated() {
          member.type = reflect<byte>();
          member.customUI = customUIRenderer<byte>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -333,6 +340,8 @@ void reflectionStartup_generated() {
          member.type = reflect<byte>();
          member.customUI = customUIRenderer<byte>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -344,6 +353,8 @@ void reflectionStartup_generated() {
          member.type = reflect<byte>();
          member.customUI = customUIRenderer<byte>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -368,6 +379,8 @@ void reflectionStartup_generated() {
          member.type = reflect<byte>();
          member.customUI = customUIRenderer<byte>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -379,6 +392,8 @@ void reflectionStartup_generated() {
          member.type = reflect<byte>();
          member.customUI = customUIRenderer<byte>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -390,6 +405,8 @@ void reflectionStartup_generated() {
          member.type = reflect<byte>();
          member.customUI = customUIRenderer<byte>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -401,6 +418,8 @@ void reflectionStartup_generated() {
          member.type = reflect<byte>();
          member.customUI = customUIRenderer<byte>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -425,6 +444,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -436,6 +457,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -447,6 +470,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -471,6 +496,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -482,6 +509,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -493,6 +522,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -517,6 +548,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -528,6 +561,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -539,6 +574,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -550,6 +587,69 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
+      auto& structName = meta_Sprite;
+      structName->name = intern("Sprite");
+      structName->size = sizeof(Sprite);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) Sprite;};
+      structName->funcs.destroy = [](void* data) {((Sprite*)data)->~Sprite(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("texture");
+         member.offset = offsetof(Sprite, texture);
+         member.type = reflect<Texture>();
+         member.customUI = customUIRenderer<Texture>();
+         
+         member.reference = true;
+         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, Texture>>();
+         member.referenceOwner = (void*)&(Assets.textures);
+         member.referenceKeyMember = intern("id");
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("normalMap");
+         member.offset = offsetof(Sprite, normalMap);
+         member.type = reflect<Texture>();
+         member.customUI = customUIRenderer<Texture>();
+         
+         member.reference = true;
+         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, Texture>>();
+         member.referenceOwner = (void*)&(Assets.textures);
+         member.referenceKeyMember = intern("id");
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("id");
+         member.offset = offsetof(Sprite, id);
+         member.type = reflect<Symbol*>();
+         member.customUI = customUIRenderer<Symbol*>();
+         member.flags |= StructMemberFlags_ReadOnly;
+         
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -575,6 +675,8 @@ void reflectionStartup_generated() {
          member.customUI = customUIRenderer<Int2>();
          member.flags |= StructMemberFlags_ReadOnly;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -586,6 +688,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Int2>();
          member.customUI = customUIRenderer<Int2>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -597,6 +701,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -608,6 +714,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -619,6 +727,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -630,6 +740,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -641,6 +753,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -652,6 +766,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -663,6 +779,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -674,6 +792,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -685,6 +805,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -696,6 +818,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -707,6 +831,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Milliseconds>();
          member.customUI = customUIRenderer<Milliseconds>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -718,6 +844,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Milliseconds>();
          member.customUI = customUIRenderer<Milliseconds>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -729,6 +857,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Milliseconds>();
          member.customUI = customUIRenderer<Milliseconds>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -740,6 +870,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Milliseconds>();
          member.customUI = customUIRenderer<Milliseconds>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -751,6 +883,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Milliseconds>();
          member.customUI = customUIRenderer<Milliseconds>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -762,6 +896,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Milliseconds>();
          member.customUI = customUIRenderer<Milliseconds>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -773,6 +909,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Milliseconds>();
          member.customUI = customUIRenderer<Milliseconds>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -784,6 +922,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Milliseconds>();
          member.customUI = customUIRenderer<Milliseconds>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -795,6 +935,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Milliseconds>();
          member.customUI = customUIRenderer<Milliseconds>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -819,6 +961,8 @@ void reflectionStartup_generated() {
          member.type = reflect<ColorRGBAf>();
          member.customUI = customUIRenderer<ColorRGBAf>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -830,6 +974,8 @@ void reflectionStartup_generated() {
          member.type = reflect<bool>();
          member.customUI = customUIRenderer<bool>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -841,6 +987,8 @@ void reflectionStartup_generated() {
          member.type = reflect<bool>();
          member.customUI = customUIRenderer<bool>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -865,6 +1013,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Coords>();
          member.customUI = customUIRenderer<Coords>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -876,6 +1026,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Float2>();
          member.customUI = customUIRenderer<Float2>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -887,6 +1039,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Float2>();
          member.customUI = customUIRenderer<Float2>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -898,6 +1052,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Float2>();
          member.customUI = customUIRenderer<Float2>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -909,6 +1065,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Float2>();
          member.customUI = customUIRenderer<Float2>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -920,6 +1078,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -931,6 +1091,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -944,6 +1106,8 @@ void reflectionStartup_generated() {
          member.flags |= StructMemberFlags_StaticArray;
          member.staticArraySize = GameButton_COUNT;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -957,6 +1121,8 @@ void reflectionStartup_generated() {
          member.flags |= StructMemberFlags_StaticArray;
          member.staticArraySize = GameButton_COUNT;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -970,6 +1136,8 @@ void reflectionStartup_generated() {
          member.flags |= StructMemberFlags_StaticArray;
          member.staticArraySize = GameButton_COUNT;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -994,6 +1162,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Rectf>();
          member.customUI = customUIRenderer<Rectf>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1018,6 +1188,8 @@ void reflectionStartup_generated() {
          member.type = reflect<ConvexPoly>();
          member.customUI = customUIRenderer<ConvexPoly>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1030,6 +1202,8 @@ void reflectionStartup_generated() {
          member.customUI = customUIRenderer<Rectf>();
          member.flags |= StructMemberFlags_ReadOnly;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1054,6 +1228,8 @@ void reflectionStartup_generated() {
          member.type = reflect<ColorRGBAf>();
          member.customUI = customUIRenderer<ColorRGBAf>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1065,6 +1241,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Coords>();
          member.customUI = customUIRenderer<Coords>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1076,6 +1254,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1087,6 +1267,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1098,6 +1280,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1109,6 +1293,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1120,6 +1306,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1144,6 +1332,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Float2>();
          member.customUI = customUIRenderer<Float2>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1155,6 +1345,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Array<Wall>>();
          member.customUI = customUIRenderer<Array<Wall>>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1166,6 +1358,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Array<Light>>();
          member.customUI = customUIRenderer<Array<Light>>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1178,6 +1372,8 @@ void reflectionStartup_generated() {
          member.customUI = customUIRenderer<Symbol*>();
          member.flags |= StructMemberFlags_ReadOnly;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1202,6 +1398,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1213,6 +1411,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1224,6 +1424,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1235,6 +1437,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Milliseconds>();
          member.customUI = customUIRenderer<Milliseconds>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1246,6 +1450,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Milliseconds>();
          member.customUI = customUIRenderer<Milliseconds>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1257,6 +1463,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Milliseconds>();
          member.customUI = customUIRenderer<Milliseconds>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1268,6 +1476,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Rectf>();
          member.customUI = customUIRenderer<Rectf>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1279,6 +1489,8 @@ void reflectionStartup_generated() {
          member.type = reflect<int>();
          member.customUI = customUIRenderer<int>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1290,6 +1502,8 @@ void reflectionStartup_generated() {
          member.type = reflect<int>();
          member.customUI = customUIRenderer<int>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1301,6 +1515,8 @@ void reflectionStartup_generated() {
          member.type = reflect<int>();
          member.customUI = customUIRenderer<int>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1325,6 +1541,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Array<AttackSwing>>();
          member.customUI = customUIRenderer<Array<AttackSwing>>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1337,6 +1555,8 @@ void reflectionStartup_generated() {
          member.customUI = customUIRenderer<Symbol*>();
          member.flags |= StructMemberFlags_ReadOnly;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1361,6 +1581,8 @@ void reflectionStartup_generated() {
          member.type = reflect<EngineConstants>();
          member.customUI = customUIRenderer<EngineConstants>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1372,6 +1594,8 @@ void reflectionStartup_generated() {
          member.type = reflect<std::unordered_map<Symbol*, Texture>>();
          member.customUI = customUIRenderer<std::unordered_map<Symbol*, Texture>>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1383,6 +1607,21 @@ void reflectionStartup_generated() {
          member.type = reflect<std::unordered_map<Symbol*, Map>>();
          member.customUI = customUIRenderer<std::unordered_map<Symbol*, Map>>();
          
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("sprites");
+         member.offset = offsetof(GameAssets, sprites);
+         member.type = reflect<std::unordered_map<Symbol*, Sprite>>();
+         member.customUI = customUIRenderer<std::unordered_map<Symbol*, Sprite>>();
+         
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1407,6 +1646,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1418,6 +1659,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1429,6 +1672,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Float2>();
          member.customUI = customUIRenderer<Float2>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1440,6 +1685,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Float2>();
          member.customUI = customUIRenderer<Float2>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1451,6 +1698,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Float2>();
          member.customUI = customUIRenderer<Float2>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1477,6 +1726,8 @@ void reflectionStartup_generated() {
          member.ui.min = (float)0;
          member.ui.max = (float)1;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1488,6 +1739,8 @@ void reflectionStartup_generated() {
          member.type = reflect<bool>();
          member.customUI = customUIRenderer<bool>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1512,6 +1765,8 @@ void reflectionStartup_generated() {
          member.type = reflect<int32_t>();
          member.customUI = customUIRenderer<int32_t>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1523,6 +1778,8 @@ void reflectionStartup_generated() {
          member.type = reflect<int32_t>();
          member.customUI = customUIRenderer<int32_t>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1547,6 +1804,8 @@ void reflectionStartup_generated() {
          member.type = reflect<int32_t>();
          member.customUI = customUIRenderer<int32_t>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1558,6 +1817,8 @@ void reflectionStartup_generated() {
          member.type = reflect<int32_t>();
          member.customUI = customUIRenderer<int32_t>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1569,6 +1830,8 @@ void reflectionStartup_generated() {
          member.type = reflect<int32_t>();
          member.customUI = customUIRenderer<int32_t>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1593,6 +1856,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1604,6 +1869,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1628,6 +1895,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1639,6 +1908,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1650,6 +1921,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1674,6 +1947,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Array<Float2>>();
          member.customUI = customUIRenderer<Array<Float2>>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1698,6 +1973,8 @@ void reflectionStartup_generated() {
          member.type = reflect<int32_t>();
          member.customUI = customUIRenderer<int32_t>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1709,6 +1986,8 @@ void reflectionStartup_generated() {
          member.type = reflect<int32_t>();
          member.customUI = customUIRenderer<int32_t>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1720,6 +1999,8 @@ void reflectionStartup_generated() {
          member.type = reflect<int32_t>();
          member.customUI = customUIRenderer<int32_t>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1731,6 +2012,8 @@ void reflectionStartup_generated() {
          member.type = reflect<int32_t>();
          member.customUI = customUIRenderer<int32_t>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1755,6 +2038,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1766,6 +2051,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1777,6 +2064,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1788,6 +2077,8 @@ void reflectionStartup_generated() {
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1814,6 +2105,8 @@ void reflectionStartup_generated() {
          member.flags |= StructMemberFlags_File;
          member.flags |= StructMemberFlags_Image;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1826,6 +2119,8 @@ void reflectionStartup_generated() {
          member.customUI = customUIRenderer<Symbol*>();
          member.flags |= StructMemberFlags_ReadOnly;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1838,6 +2133,8 @@ void reflectionStartup_generated() {
          member.customUI = customUIRenderer<Int2>();
          member.flags |= StructMemberFlags_ReadOnly;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1849,6 +2146,8 @@ void reflectionStartup_generated() {
          member.type = reflect<TextureFlag_>();
          member.customUI = customUIRenderer<TextureFlag_>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1860,6 +2159,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Blob>();
          member.customUI = customUIRenderer<Blob>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -1884,6 +2185,8 @@ void reflectionStartup_generated() {
          member.type = reflect<Int2>();
          member.customUI = customUIRenderer<Int2>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 

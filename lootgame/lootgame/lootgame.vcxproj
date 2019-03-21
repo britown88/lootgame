@@ -74,10 +74,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -218,7 +218,6 @@ $(SolutionDir)codegen/lootgame.exe -assetgen</Command>
     <ClInclude Include="..\imgui\examples\imgui_impl_sdl.h" />
     <ClInclude Include="app.h" />
     <ClInclude Include="array.h" />
-    <ClInclude Include="assets.h" />
     <ClInclude Include="assets_gen.h" />
     <ClInclude Include="coords.h" />
     <ClInclude Include="custom_ui_renders.h" />

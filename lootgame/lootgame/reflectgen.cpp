@@ -43,6 +43,10 @@ struct ParsedStructMember {
    struct {
       std::string min, max, step;
    } ui;
+
+   struct  {
+      std::string owner, key;
+   } reference;
 };
 
 struct ParsedStruct {
@@ -225,10 +229,6 @@ static bool _acceptType(StringParser& p, ParsedType& output) {
       }
       output.name.assign(typeStart, typeEnd);
 
-      for (int i = 0; i < output.pointers; ++i) {
-         output.name.append(1, '*');
-      }
-
       return true;
    }
 
@@ -326,9 +326,29 @@ static bool _acceptMember(StringParser& p, Array<VexNode*>& modifiers, ParsedStr
             child = child->next;
          }
       }
+      else if (mod->tag == "reference") {
+         auto child = mod->children;
+         while (child) {
+            if (child->tag == "owner") { newMember.reference.owner = std::string(child->body.begin, child->body.end); }
+            else if (child->tag == "key") { newMember.reference.key = std::string(child->body.begin, child->body.end); }
+            child = child->next;
+         }
+      }
    }
 
+   bool reference = !newMember.reference.key.empty() && !newMember.reference.owner.empty();
+
    if (_acceptType(p, newMember.type)) {
+
+      // post-process accepted type with pointer count
+      auto pointerCount = newMember.type.pointers;
+      if (reference) {
+         --pointerCount;
+         assert(pointerCount >= 0);
+      }
+      for (int i = 0; i < pointerCount; ++i) {
+         newMember.type.name.append(1, '*');
+      }
 
       if (!type_override.empty()) {
          newMember.type = {};
@@ -772,6 +792,15 @@ static void _generateMainHeaderImpl(Array<ParsedFile> &files) {
                   vexTemplateAddSubstitution(t, "size", m.arraySize.c_str());
                   vexTemplateEndScope(t);
                }
+               
+               bool reference = !m.reference.key.empty() && !m.reference.owner.empty();
+               if (reference) {
+                  vexTemplateBeginScope(t, "struct_reference");
+                  vexTemplateAddSubstitution(t, "reference_owner", m.reference.owner.c_str());
+                  vexTemplateAddSubstitution(t, "reference_key", m.reference.key.c_str());
+                  vexTemplateEndScope(t);
+               }
+
                vexTemplateEndScope(t);
             }
 
@@ -886,6 +915,15 @@ static void _generateFileInline(ParsedFile &file) {
             vexTemplateAddSubstitution(t, "size", m.arraySize.c_str());
             vexTemplateEndScope(t);
          }
+         
+         bool reference = !m.reference.key.empty() && !m.reference.owner.empty();
+         if (reference) {
+            vexTemplateBeginScope(t, "struct_reference");
+            vexTemplateAddSubstitution(t, "reference_owner", m.reference.owner.c_str());
+            vexTemplateAddSubstitution(t, "reference_key", m.reference.key.c_str());
+            vexTemplateEndScope(t);
+         }
+         
          vexTemplateEndScope(t);
       }
 

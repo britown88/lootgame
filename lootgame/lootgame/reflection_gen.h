@@ -96,6 +96,15 @@ struct Reflector<ColorRGBAf>{
 };
 
 
+// Sprite ----------------------------
+typedef struct Sprite Sprite;
+extern TypeMetadata* meta_Sprite;
+template<>
+struct Reflector<Sprite>{
+   static TypeMetadata const* type() { return meta_Sprite; }
+};
+
+
 // EngineConstants ----------------------------
 typedef struct EngineConstants EngineConstants;
 extern TypeMetadata* meta_EngineConstants;

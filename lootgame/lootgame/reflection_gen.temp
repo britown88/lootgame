@@ -49,6 +49,12 @@ void reflectionStartup_generated() {
          }@struct_static{member.staticArraySize = @size;
          }@struct_ui{member.ui.@key = (float)@value;
          }
+         @struct_reference{member.reference = true;
+         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, @member_type>>();
+         member.referenceOwner = (void*)&(@reference_owner);
+         member.referenceKeyMember = intern("@reference_key");
+         }
+
          structName->structMembers.push_back(member);
       }
 

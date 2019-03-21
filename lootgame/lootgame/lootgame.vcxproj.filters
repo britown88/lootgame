@@ -176,9 +176,6 @@
     <ClInclude Include="..\imgui\examples\imgui_impl_sdl.h">
       <Filter>Header Files\app</Filter>
     </ClInclude>
-    <ClInclude Include="assets.h">
-      <Filter>Header Files\game</Filter>
-    </ClInclude>
     <ClInclude Include="ui.h">
       <Filter>Header Files\game</Filter>
     </ClInclude>

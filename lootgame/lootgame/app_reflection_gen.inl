@@ -145,6 +145,8 @@ void app_reflectionStartup_generated(){
          member.type = reflect<MyEnum>();
          member.customUI = customUIRenderer<MyEnum>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -156,6 +158,8 @@ void app_reflectionStartup_generated(){
          member.type = reflect<Array<int>>();
          member.customUI = customUIRenderer<Array<int>>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -169,6 +173,8 @@ void app_reflectionStartup_generated(){
          member.flags |= StructMemberFlags_StaticArray;
          member.staticArraySize = 10;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -180,6 +186,8 @@ void app_reflectionStartup_generated(){
          member.type = reflect<MyBitfield_>();
          member.customUI = customUIRenderer<MyBitfield_>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -193,6 +201,8 @@ void app_reflectionStartup_generated(){
          member.ui.min = (float)0;
          member.ui.max = (float)100;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -207,6 +217,8 @@ void app_reflectionStartup_generated(){
          member.ui.max = (float)1;
          member.ui.step = (float)0.001;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -219,6 +231,8 @@ void app_reflectionStartup_generated(){
          member.customUI = customUIRenderer<std::string>();
          member.flags |= StructMemberFlags_ReadOnly;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -230,6 +244,8 @@ void app_reflectionStartup_generated(){
          member.type = reflect<std::unordered_map<Symbol*, MyBitfield_>>();
          member.customUI = customUIRenderer<std::unordered_map<Symbol*, MyBitfield_>>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -241,6 +257,8 @@ void app_reflectionStartup_generated(){
          member.type = reflect<ColorRGBAf>();
          member.customUI = customUIRenderer<ColorRGBAf>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -253,6 +271,8 @@ void app_reflectionStartup_generated(){
          member.customUI = customUIRenderer<std::string>();
          member.flags |= StructMemberFlags_File;
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -264,6 +284,8 @@ void app_reflectionStartup_generated(){
          member.type = reflect<Blob>();
          member.customUI = customUIRenderer<Blob>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -275,6 +297,8 @@ void app_reflectionStartup_generated(){
          member.type = reflect<Int2>();
          member.customUI = customUIRenderer<Int2>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 
@@ -286,6 +310,8 @@ void app_reflectionStartup_generated(){
          member.type = reflect<Float2>();
          member.customUI = customUIRenderer<Float2>();
          
+         
+
          structName->structMembers.push_back(member);
       }
 

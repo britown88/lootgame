@@ -2,7 +2,6 @@
 
 #include "math.h"
 #include "render.h"
-#include "assets.h"
 #include "phy.h"
 #include "coords.h"
 
@@ -33,6 +32,17 @@ void assetsReloadAll();
 
 // called in Graphics.Build()
 void assetsBuildTextureHandles();
+
+//@reflect{
+struct Sprite {
+   //@reference(owner=Assets.textures key=id)
+   Texture* texture;
+   //@reference(owner=Assets.textures key=id)
+   Texture* normalMap;
+
+   //@readonly
+   Symbol* id;
+};//}
 
 
 //@reflect{
@@ -200,6 +210,8 @@ struct GameAssets {
    EngineConstants constants;
    std::unordered_map<Symbol*, Texture> textures;
    std::unordered_map<Symbol*, Map> maps;
+
+   std::unordered_map<Symbol*, Sprite> sprites;
 };//}
 
 extern GameAssets Assets;

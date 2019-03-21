@@ -45,6 +45,11 @@ struct StructMemberMetadata {
    StructMemberFlags flags = 0;
    size_t staticArraySize = 0;
    StructMemberUIOptions ui;
+
+   bool reference = false;
+   TypeMetadata const* referenceOwnerType = nullptr;
+   void* referenceOwner = nullptr;
+   Symbol* referenceKeyMember = nullptr;
 };
 
 struct EnumEntryMetadata {
@@ -62,6 +67,7 @@ struct TypeMetadataFunctions {
    void(*clear)(void* data) = nullptr;
    void(*insert)(void* data, void* obj) = nullptr;
    void(*insertKVP)(void* data, void* key, void* value) = nullptr;
+   bool(*retrieveKVP)(void* data, void* key, void** target) = nullptr;
 
    void(*serialize)(SCFWriter* writer, void* data) = nullptr;
    void(*deserialize)(SCFReader& reader, void* target) = nullptr;
@@ -258,6 +264,20 @@ private:
                   deserializeEX(kvp, reflect<V>(), &value);
                   ((ThisType*)target)->insert({ key,  value });
                }
+            };
+
+            out.funcs.retrieveKVP = [](void* data, void* key, void** target) {
+               auto &thisObj = *((ThisType*)data);
+               
+               auto search = thisObj.find(*(K*)key);
+               if (search == thisObj.end()) {
+                  *target = nullptr;
+                  return false;
+               }
+
+               *(V**)(target) = &search->second;
+               return true;
+               
             };
 
             out.funcs.doUI = [](void* data, StructMemberMetadata const* parent, const char* label) {

@@ -1,6 +1,5 @@
 #include "stdafx.h"
 
-#include "assets.h"
 
 #include "app.h"
 #include "win.h"
