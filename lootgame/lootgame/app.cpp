@@ -317,9 +317,6 @@ void appCreateWindow(App* app, WindowConfig const& info) {
    assetsLoad();
    assetsStartup();
    Graphics.build(); 
-   
-
-   //Assets.sprites.insert({ intern("test1"), { Textures.Dude, Textures.DudeNormals,  intern("test1")} });
 
       
    uiOpenTextureManager();

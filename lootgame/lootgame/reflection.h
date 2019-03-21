@@ -69,6 +69,8 @@ struct TypeMetadataFunctions {
    void(*insertKVP)(void* data, void* key, void* value) = nullptr;
    bool(*retrieveKVP)(void* data, void* key, void** target) = nullptr;
 
+   Array<void*> (*listKVPKeys)(void* data) = nullptr;
+
    void(*serialize)(SCFWriter* writer, void* data) = nullptr;
    void(*deserialize)(SCFReader& reader, void* target) = nullptr;
 
@@ -97,6 +99,9 @@ struct MetadataPayload {
    TypeMetadata const* metadata;
    void* data;
 };
+
+// used by ui
+StructMemberMetadata* typeMetadataGetMemberById(TypeMetadata const* type, Symbol* id);
 
 void serializeEX(SCFWriter* writer, TypeMetadata const* type, void* data);
 void deserializeEX(SCFReader& reader, TypeMetadata const* type, void* target);
@@ -278,6 +283,15 @@ private:
                *(V**)(target) = &search->second;
                return true;
                
+            };
+
+            out.funcs.listKVPKeys = [](void* data)->Array<void*> {
+               auto &thisObj = *((ThisType*)data);
+               Array<void*> out;
+               for (auto&&kvp : thisObj) {
+                  out.push_back((void*)&kvp.first);
+               }
+               return out;
             };
 
             out.funcs.doUI = [](void* data, StructMemberMetadata const* parent, const char* label) {

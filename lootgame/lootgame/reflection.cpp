@@ -128,20 +128,20 @@ void assignEnumValue(size_t enumSize, int64_t entryValue, void*target) {
    }
 }
 
-// for serializing a reference, we find the member used for the key and serialize that symbol
-void serializeReference(SCFWriter* writer, StructMemberMetadata &member, void* data) {
-   assert(member.type->variety == TypeVariety_Struct); // only structs can be saved as references
-
-   auto null = nullptr;
-
-
-   StructMemberMetadata*keyMember = nullptr;
-   for (auto&& mchild : member.type->structMembers) {
-      if (mchild.name == member.referenceKeyMember) {
-         keyMember = &mchild;
-         break;
+StructMemberMetadata* typeMetadataGetMemberById(TypeMetadata const* type, Symbol* id) {
+   assert(type->variety == TypeVariety_Struct); // only structs can be saved as references
+   for (auto&& mchild : type->structMembers) {
+      if (mchild.name == id) {
+         return &mchild;
       }
    }
+   return nullptr;
+}
+
+// for serializing a reference, we find the member used for the key and serialize that symbol
+static void serializeReference(SCFWriter* writer, StructMemberMetadata &member, void* data) {
+   StructMemberMetadata* keyMember = typeMetadataGetMemberById(member.type, member.referenceKeyMember);
+
    assert(keyMember); // key member not found
    assert(keyMember->type == meta_symbol); // only symbols can be used for keys
    assert(*(byte**)data); // symbol is null
@@ -235,7 +235,7 @@ void serializeEX(SCFWriter* writer, TypeMetadata const* type, void* data) {
 
 }
 
-void deserializeReference(SCFReader& reader, StructMemberMetadata &member, void* data) {
+static void deserializeReference(SCFReader& reader, StructMemberMetadata &member, void* data) {
    assert(member.referenceOwnerType->variety == TypeVariety_KVP); // owner must be a kvp
 
    Symbol* key = nullptr;

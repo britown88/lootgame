@@ -124,6 +124,11 @@ static void _doTextureManager(TextureManagerState& state) {
 
          ImGui::Unindent();
       }
+   
+
+      if (ImGui::CollapsingHeader("spritetest")) {
+         doTypeUI(&Assets.sprites, "spritetest");
+      }
    }
    ImGui::End();
 }

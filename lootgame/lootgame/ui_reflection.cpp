@@ -145,13 +145,38 @@ static bool _doFloatType(void* data, StructMemberMetadata const* member, const c
    return changed;
 }
 
+bool doTypeUIReference(TypeMetadata const* type, void* data, StructMemberMetadata const* parent, const char* label) {
+
+   auto dataPtr = (byte*)*(void**)data;
+
+   Symbol *preview = "";
+   if (dataPtr) {
+      if (auto keyMember = typeMetadataGetMemberById(type, parent->referenceKeyMember)) {
+         preview = *(Symbol**)(dataPtr + keyMember->offset);
+      }
+   }
+
+   if (ImGui::BeginCombo(label, preview)) {
+      auto keys = parent->referenceOwnerType->funcs.listKVPKeys(parent->referenceOwner);
+      std::sort(keys.begin(), keys.end(), [](void*a, void*b) {return natstrcmp(*(Symbol**)a, *(Symbol**)b) < 0; });
+
+      for (auto&&key : keys) {
+         Symbol* keysym = *(Symbol**)key;
+         if(ImGui::Selectable(keysym, keysym == preview)) {
+            parent->referenceOwnerType->funcs.retrieveKVP(parent->referenceOwner, key, (void**)data);
+         }
+      }
+
+      ImGui::EndCombo();
+   }
+
+   return false;
+}
 
 bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const* parent, const char* label) {
    if (!type) {
       return false;
    }
-
-   
 
    StringView str_label = nullptr;
    if (parent) {
@@ -178,6 +203,10 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
 
    if (parent && parent->customUI) {
       return parent->customUI(type, data, parent, label);
+   }
+
+   if (parent && parent->reference) {
+      return doTypeUIReference(type, data, parent, str_label);
    }
 
    if (parent && parent->flags&StructMemberFlags_File) {
