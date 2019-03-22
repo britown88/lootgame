@@ -14,31 +14,19 @@ namespace Paths {
    static const std::filesystem::path gameAssets = "lootgame.bin";
 }
 
-static void _clearDeleted(GameAssets& assets) {
-   Array<Symbol*> texToDelete;
-   for (auto&& kvp : assets.textures) {
+template<typename T>
+static void _clearDeleted(std::unordered_map<Symbol*, T>& map) {
+   Array<Symbol*> toDelete;
+   for (auto&& kvp : map) {
       if (kvp.second.markForDelete) {
-         texToDelete.push_back(kvp.first);
+         toDelete.push_back(kvp.first);
       }
    }
-   if (!texToDelete.empty()) {
-      WARN("Ignoring %d deleted textures from save.", texToDelete.size());
+   if (!toDelete.empty()) {
+      WARN("Ignoring %d deleted %s from save.", toDelete.size(), reflect<T>()->name);
    }
-   for (auto&& td : texToDelete) {
-      assets.textures.erase(td);
-   }
-
-   Array<Symbol*> mapsToDelete;
-   for (auto&& kvp : assets.maps) {
-      if (kvp.second.markForDelete) {
-         mapsToDelete.push_back(kvp.first);
-      }
-   }
-   if (!mapsToDelete.empty()) {
-      WARN("Ignoring %d deleted maps from save.", mapsToDelete.size());
-   }
-   for (auto&& td : mapsToDelete) {
-      assets.maps.erase(td);
+   for (auto&& td : toDelete) {
+      map.erase(td);
    }
 }
 
@@ -50,7 +38,11 @@ void assetsSave() {
 
    // we clone our assets before save so we can ignore deleted objects when we save
    auto assetCopy = Assets;
-   _clearDeleted(assetCopy);
+
+   // add markForDelete maps here
+   _clearDeleted(assetCopy.textures);
+   _clearDeleted(assetCopy.maps);
+   _clearDeleted(assetCopy.sprites);
 
    serialize(writer, &assetCopy);
    auto output = scfWriteToBuffer(writer, &sz);
@@ -126,8 +118,12 @@ void assetsReloadAll() {
 
    if (_loadAssets(reloaded, fpath)) {
       Const = reloaded.constants;
+
+      // add reload merge maps here
       _mergeMap(reloaded.maps, Assets.maps);
       _mergeMap(reloaded.textures, Assets.textures);
+      _mergeMap(reloaded.sprites, Assets.sprites);
+
       LOG("Reloaded %s", fpath.string().c_str());
    }
    else {

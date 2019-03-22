@@ -5,6 +5,7 @@
 #include "scf.h"
 
 #define UNKNOWN_ENUM_ENTRY "__UNKNOWN_ENUM__"
+#define NULL_REFERENCE_ENTRY "__NULL_REFERENCE__"
 
 TypeMetadata const* meta_blob;
 TypeMetadata const* meta_bool;
@@ -151,9 +152,14 @@ static void serializeReference(SCFWriter* writer, StructMemberMetadata &member, 
 
    assert(keyMember); // key member not found
    assert(keyMember->type == meta_symbol); // only symbols can be used for keys
-   assert(*(byte**)data); // symbol is null
 
-   serializeEX(writer, meta_symbol, (void*)(*(byte**)data + keyMember->offset));
+   if (!(*(byte**)data)) {
+      auto nullSym = intern(NULL_REFERENCE_ENTRY);
+      serializeEX(writer, meta_symbol, (void*)&nullSym);
+   }
+   else {
+      serializeEX(writer, meta_symbol, (void*)(*(byte**)data + keyMember->offset));
+   }
 }
 
 void serializeEX(SCFWriter* writer, TypeMetadata const* type, void* data) {
@@ -248,7 +254,9 @@ static void deserializeReference(SCFReader& reader, StructMemberMetadata &member
    Symbol* key = nullptr;
    deserializeEX(reader, meta_symbol, &key);
 
-   member.referenceOwnerType->funcs.retrieveKVP(member.referenceOwner, &key, (void**)data);
+   if (key != intern(NULL_REFERENCE_ENTRY)) {
+      member.referenceOwnerType->funcs.retrieveKVP(member.referenceOwner, &key, (void**)data);
+   }
 }
 
 void deserializeEX(SCFReader& reader, TypeMetadata const* type, void* target) {
