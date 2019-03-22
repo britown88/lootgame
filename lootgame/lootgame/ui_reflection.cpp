@@ -170,6 +170,13 @@ bool doTypeUIReference(TypeMetadata const* type, void* data, StructMemberMetadat
       ImGui::EndCombo();
    }
 
+   if (ImGui::BeginDragDropTarget()) {
+      if (auto obj = typeMetadataImGuiPayloadAcceptEX(type)) {
+         *(void**)data = obj;
+      }
+      ImGui::EndDragDropTarget();
+   }
+
    return false;
 }
 

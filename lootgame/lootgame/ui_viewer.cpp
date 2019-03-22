@@ -874,11 +874,8 @@ static bool _showWindowedViewer(GameInstance& gi) {
       
 
       if (ImGui::BeginDragDropTarget()) {
-         if (auto pload = ImGui::AcceptDragDropPayload(TypePayload)) {
-            auto mdata = (MetadataPayload *)pload->Data;
-            if (mdata->metadata == reflect<Map>()) {
-               g.map = (Map*)mdata->data;
-            }
+         if (auto map = typeMetadataImGuiPayloadAccept<Map>()) {
+            g.map = map;
          }
          ImGui::EndDragDropTarget();
       }

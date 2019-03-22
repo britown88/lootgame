@@ -100,6 +100,9 @@ struct MetadataPayload {
    void* data;
 };
 
+TypeMetadata const*typeMetadataImGuiPayloadPeek();
+void* typeMetadataImGuiPayloadAcceptEX(TypeMetadata const* type);
+
 // used by ui
 StructMemberMetadata* typeMetadataGetMemberById(TypeMetadata const* type, Symbol* id);
 void* getReflectedMember(void* data, TypeMetadata const* type, Symbol* id);
@@ -134,6 +137,20 @@ template<typename T>
 void deserialize(SCFReader& reader, T* target) {
    deserializeEX(reader, reflect<T>(), target);
 }
+
+template<typename T>
+void typeMetadataImGuiPayloadSet(T* t) {
+   MetadataPayload pload;
+   pload.metadata = reflect<T>();
+   pload.data = t;
+   ImGui::SetDragDropPayload(TypePayload, &pload, sizeof(MetadataPayload), ImGuiCond_Once);
+}
+
+template<typename T>
+T* typeMetadataImGuiPayloadAccept() {
+   return (T*)typeMetadataImGuiPayloadAcceptEX(reflect<T>());
+}
+
 
 
 #define BASIC_TYPE_REFLECT(c_type, metaname) \

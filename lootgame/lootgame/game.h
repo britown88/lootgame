@@ -36,12 +36,12 @@ void assetsBuildTextureHandles();
 //@reflect{
 struct Sprite {
    //@reference(owner=Assets.textures key=id)
-   Texture* texture;
+   Texture* texture = nullptr;
    //@reference(owner=Assets.textures key=id)
-   Texture* normalMap;
+   Texture* normalMap = nullptr;
 
    //@readonly
-   Symbol* id;
+   Symbol* id = nullptr;
 };//}
 
 

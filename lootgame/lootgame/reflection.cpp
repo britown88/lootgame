@@ -347,3 +347,29 @@ void deserializeEX(SCFReader& reader, TypeMetadata const* type, void* target) {
    }
 }
 
+TypeMetadata const*typeMetadataImGuiPayloadPeek() {
+   if (auto pload = ImGui::AcceptDragDropPayload(TypePayload, ImGuiDragDropFlags_AcceptPeekOnly)) {
+      auto mdata = (MetadataPayload *)pload->Data;
+      return mdata->metadata;
+   }
+   return nullptr;
+}
+
+static MetadataPayload *_typeMetadataImGuiPayloadAcceptEX() {
+   if (auto pload = ImGui::AcceptDragDropPayload(TypePayload)) {
+      return (MetadataPayload *)pload->Data;
+   }
+   return nullptr;
+}
+
+void* typeMetadataImGuiPayloadAcceptEX(TypeMetadata const* type) {
+   if (typeMetadataImGuiPayloadPeek() == type) {
+      if (auto pload = _typeMetadataImGuiPayloadAcceptEX()) {
+         return pload->data;
+      }
+   }
+   return nullptr;
+}
+
+
+
