@@ -70,6 +70,7 @@ struct TypeMetadataFunctions {
    bool(*retrieveKVP)(void* data, void* key, void** target) = nullptr;
 
    Array<void*> (*listKVPKeys)(void* data) = nullptr;
+   Array<void*>(*listKVPValues)(void* data) = nullptr;
 
    void(*serialize)(SCFWriter* writer, void* data) = nullptr;
    void(*deserialize)(SCFReader& reader, void* target) = nullptr;
@@ -304,6 +305,15 @@ private:
                *(V**)(target) = &search->second;
                return true;
                
+            };
+
+            out.funcs.listKVPValues = [](void* data)->Array<void*> {
+               auto &thisObj = *((ThisType*)data);
+               Array<void*> out;
+               for (auto&&kvp : thisObj) {
+                  out.push_back((void*)&kvp.second);
+               }
+               return out;
             };
 
             out.funcs.listKVPKeys = [](void* data)->Array<void*> {

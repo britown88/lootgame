@@ -42,6 +42,9 @@ struct Sprite {
 
    //@readonly
    Symbol* id = nullptr;
+   //@ignore{
+   bool markForDelete = false;
+   //}
 };//}
 
 

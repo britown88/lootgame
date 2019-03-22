@@ -37,6 +37,7 @@ static void _doAssetEditor(AssetManagerState& state) {
    }
 }
 
+
 template<typename T>
 static void _doMapTreeview(const char* label, AssetManagerState& state, std::unordered_map<Symbol*, T>& map) {
 
@@ -45,7 +46,7 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
    }
 
    auto mapType = reflectFromRef(map);
-   auto keys = mapType->funcs.listKVPKeys(&map);
+   auto values = mapType->funcs.listKVPValues(&map);
 
    
    if (ImGui::Button("Add New")) {
@@ -70,30 +71,35 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
       ImGui::EndPopup();
    }
 
-   for (auto& key : keys) {
-      auto sym = *(Symbol**)key;
-      if (state.searchFilter.PassFilter(sym)) {
+   for (auto& value : values) {
+      auto t = (T*)value;
 
-         bool clicked = ImGui::Selectable(sym);
+      if (t->markForDelete) {
+         continue;
+      }
+
+      if (state.searchFilter.PassFilter(t->id)) {
+
+         bool clicked = ImGui::Selectable(t->id);
+
+         if (ImGui::BeginPopupContextItem(t->id)) {
+            if (ImGui::Selectable("Delete")) {
+               t->markForDelete = true;
+            }
+            ImGui::EndPopup();
+         }
          
          if (ImGui::BeginDragDropSource()) {
-            T* item = nullptr;
-            if (mapType->funcs.retrieveKVP(&map, key, (void**)&item)) {
-               typeMetadataImGuiPayloadSet(item);
-            }  
+            typeMetadataImGuiPayloadSet(t);  
 
-            ImGui::Text("%s: %s", label, sym);
+            ImGui::Text("%s: %s", label, t->id);
             ImGui::EndDragDropSource();
          }
 
          if (clicked) {
-            T* item = nullptr;
-            if (mapType->funcs.retrieveKVP(&map, key, (void**)&item)) {
-
-               state.selectedType = reflect<T>();
-               state.selectedAsset = item;
-               state.asset_open = true;
-            }
+            state.selectedType = reflect<T>();
+            state.selectedAsset = t;
+            state.asset_open = true;
          }
       }
    }
