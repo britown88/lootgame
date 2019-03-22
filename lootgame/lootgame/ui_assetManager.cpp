@@ -49,7 +49,8 @@ static void _doAssetEditor(AssetManagerState& state) {
 template<typename T>
 static void _doMapTreeview(const char* label, AssetManagerState& state, std::unordered_map<Symbol*, T>& map) {
 
-   if (!ImGui::TreeNode(label)) {
+
+   if (!ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_DefaultOpen)) {
       return;
    }
 

@@ -7,8 +7,6 @@
 void doRootUI();
 bool gameDoUIWindow(GameInstance& instance);
 void uiDoGameDebugger(GameInstance& instance);
-void uiOpenTextureManager();
-void uiOpenMapManager();
 
 void beginDisabled();
 void endDisabled();

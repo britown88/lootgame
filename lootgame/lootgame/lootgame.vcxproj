@@ -193,13 +193,11 @@ $(SolutionDir)codegen/lootgame.exe -assetgen</Command>
     <ClCompile Include="reflection.cpp" />
     <ClCompile Include="shadows.cpp" />
     <ClCompile Include="ui_assetManager.cpp" />
-    <ClCompile Include="ui_mapManager.cpp" />
     <ClCompile Include="ui_reflection.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="ui_textureManager.cpp" />
     <ClCompile Include="ui_viewer.cpp" />
     <ClCompile Include="vex.cpp" />
     <ClCompile Include="win.cpp" />

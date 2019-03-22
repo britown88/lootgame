@@ -320,8 +320,6 @@ void appCreateWindow(App* app, WindowConfig const& info) {
 
       
    uiOpenAssetManager();
-   uiOpenTextureManager();
-   uiOpenMapManager();
    _openLogger();
    appBeginNewGameInstance();
 

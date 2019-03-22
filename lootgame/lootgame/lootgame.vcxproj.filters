@@ -120,9 +120,6 @@
     <ClCompile Include="ui.cpp">
       <Filter>Source Files\ui</Filter>
     </ClCompile>
-    <ClCompile Include="ui_textureManager.cpp">
-      <Filter>Source Files\ui</Filter>
-    </ClCompile>
     <ClCompile Include="ui_reflection.cpp">
       <Filter>Source Files\ui</Filter>
     </ClCompile>
@@ -131,9 +128,6 @@
     </ClCompile>
     <ClCompile Include="shadows.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ui_mapManager.cpp">
-      <Filter>Source Files\ui</Filter>
     </ClCompile>
     <ClCompile Include="assetgen.cpp">
       <Filter>Source Files</Filter>
