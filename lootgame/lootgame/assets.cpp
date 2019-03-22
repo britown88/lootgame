@@ -98,58 +98,27 @@ static void _textureInitHandle(Texture&t) {
    }
 }
 
+template<typename T> static void _preLoad(T& t) {}
+template<> static void _preLoad<Texture>(Texture& t) { render::textureDestroy(t.handle); }
 
-static void _mergeMaps(GameAssets& from) {
-   for (auto&&kvp : from.maps) {
-      auto result = Assets.maps.insert({ kvp.first, kvp.second });
+template<typename T> static void _postLoad(T& t) {}
+template<> static void _postLoad<Texture>(Texture& t) { _textureInitHandle(t); }
+
+template<typename T>
+static void _mergeMap(std::unordered_map<Symbol*, T>& from, std::unordered_map<Symbol*, T>& to) {
+   for (auto&&kvp : from) {
+      auto result = to.insert({ kvp.first, kvp.second });
       if (!result.second) {
-         auto& existing = Assets.maps[kvp.first];
+         auto& existing = to[kvp.first];
+
+         _preLoad(existing);
+
          existing = kvp.second;
          existing.markForDelete = false;
+
+         _postLoad(existing);
       }
    }
-}
-
-static void _mergeTextures(GameAssets& from) {
-   for (auto&&kvp : from.textures) {
-      auto result = Assets.textures.insert({ kvp.first, kvp.second });
-      if (!result.second) {
-         auto& existing = Assets.textures[kvp.first];
-         render::textureDestroy(existing.handle);
-         existing = kvp.second;
-         existing.markForDelete = false;
-         _textureInitHandle(existing);
-      }
-   }
-}
-
-
-void assetsReloadMaps() {
-   std::filesystem::path fpath;
-   GameAssets reloaded;
-
-   if (_loadAssets(reloaded, fpath)) {
-      _mergeMaps(reloaded);
-      LOG("Reloaded maps from %s", fpath.string().c_str());
-   }
-   else {
-      ERR("Failed to reload maps from %s", fpath.string().c_str());
-   }
-}
-
-
-void assetsReloadTextures() {
-   std::filesystem::path fpath;
-   GameAssets reloaded;
-
-   if (_loadAssets(reloaded, fpath)) {
-      _mergeTextures(reloaded);
-      LOG("Reloaded textures from %s", fpath.string().c_str());
-   }
-   else {
-      ERR("Failed to reload textures from %s", fpath.string().c_str());
-   }
-
 }
 void assetsReloadAll() {
    std::filesystem::path fpath;
@@ -157,8 +126,8 @@ void assetsReloadAll() {
 
    if (_loadAssets(reloaded, fpath)) {
       Const = reloaded.constants;
-      _mergeMaps(reloaded);
-      _mergeTextures(reloaded);
+      _mergeMap(reloaded.maps, Assets.maps);
+      _mergeMap(reloaded.textures, Assets.textures);
       LOG("Reloaded %s", fpath.string().c_str());
    }
    else {

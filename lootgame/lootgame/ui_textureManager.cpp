@@ -26,7 +26,7 @@ static void _doTextureManager(TextureManagerState& state) {
       }
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_RECYCLE)) {
-         assetsReloadTextures();
+        // assetsReloadTextures();
       }
 
 

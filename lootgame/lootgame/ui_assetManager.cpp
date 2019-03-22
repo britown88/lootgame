@@ -124,6 +124,14 @@ static void _doAssetTreeview(AssetManagerState& state) {
 static void _doAssetManager(AssetManagerState& state) {
 
    if (ImGui::Begin("Assets")) {
+      if (ImGui::Button(ICON_FA_SAVE)) {
+         assetsSave();
+      }
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_FA_RECYCLE)) {
+         assetsReloadAll();
+      }
+
       state.searchFilter.Draw(ICON_FA_SEARCH);
 
       if (ImGui::BeginChild("tree", ImVec2(0, 0), true)) {

@@ -24,7 +24,7 @@ static void _doMapManager(MapManagerState& state) {
       }
       ImGui::SameLine();
       if (ImGui::Button(ICON_FA_RECYCLE)) {
-         assetsReloadMaps();
+         //assetsReloadMaps();
       }
 
 

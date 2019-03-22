@@ -25,9 +25,6 @@ struct GraphicObjects {
 
 void assetsSave();
 void assetsLoad();
-
-void assetsReloadMaps();
-void assetsReloadTextures();
 void assetsReloadAll();
 
 // called in Graphics.Build()
