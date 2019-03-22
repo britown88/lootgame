@@ -319,6 +319,7 @@ void appCreateWindow(App* app, WindowConfig const& info) {
    Graphics.build(); 
 
       
+   uiOpenAssetManager();
    uiOpenTextureManager();
    uiOpenMapManager();
    _openLogger();

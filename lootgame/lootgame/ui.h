@@ -12,3 +12,5 @@ void uiOpenMapManager();
 
 void beginDisabled();
 void endDisabled();
+
+void uiOpenAssetManager();

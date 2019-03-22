@@ -138,6 +138,13 @@ StructMemberMetadata* typeMetadataGetMemberById(TypeMetadata const* type, Symbol
    return nullptr;
 }
 
+void* getReflectedMember(void* data, TypeMetadata const* type, Symbol* id) {
+   if (auto member = typeMetadataGetMemberById(type, id)) {
+      return (byte*)data + member->offset;
+   }
+   return nullptr;
+}
+
 // for serializing a reference, we find the member used for the key and serialize that symbol
 static void serializeReference(SCFWriter* writer, StructMemberMetadata &member, void* data) {
    StructMemberMetadata* keyMember = typeMetadataGetMemberById(member.type, member.referenceKeyMember);

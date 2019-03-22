@@ -102,6 +102,7 @@ struct MetadataPayload {
 
 // used by ui
 StructMemberMetadata* typeMetadataGetMemberById(TypeMetadata const* type, Symbol* id);
+void* getReflectedMember(void* data, TypeMetadata const* type, Symbol* id);
 
 void serializeEX(SCFWriter* writer, TypeMetadata const* type, void* data);
 void deserializeEX(SCFReader& reader, TypeMetadata const* type, void* target);
@@ -115,6 +116,9 @@ struct Reflector {
 
 template<typename T>
 TypeMetadata const*reflect() { return Reflector<T>::type(); }
+
+template<typename T>
+TypeMetadata const*reflectFromRef(T const&) { return Reflector<T>::type(); }
 
 template<typename T>
 bool doTypeUI(T*data, const char* label = nullptr) {
