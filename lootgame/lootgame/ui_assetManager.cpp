@@ -11,9 +11,11 @@ struct AssetManagerState {
    bool asset_open = false;
    void *selectedAsset = nullptr;
    TypeMetadata const* selectedType = nullptr;
+   UIRenderFunc customSelectedRenderer = nullptr;
 
    bool focusNewKey = false;
    Symbol* newKey = nullptr;
+   
 };
 
 static void _doAssetEditor(AssetManagerState& state) {
@@ -26,7 +28,12 @@ static void _doAssetEditor(AssetManagerState& state) {
    auto lbl = format("%s %s###AssetEditor", state.selectedType->name, id, (uintptr_t)state.selectedAsset);
 
    if (ImGui::Begin(lbl.c_str(), &p_open)) {
-      doTypeUIEX(state.selectedType, state.selectedAsset);
+      if (state.customSelectedRenderer) {
+         state.customSelectedRenderer(state.selectedType, state.selectedAsset, nullptr, nullptr);
+      }
+      else {
+         doTypeUIEX(state.selectedType, state.selectedAsset);
+      }
    }
    ImGui::End();
 
@@ -98,6 +105,7 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
 
          if (clicked) {
             state.selectedType = reflect<T>();
+            state.customSelectedRenderer = customUIRenderer<T>();
             state.selectedAsset = t;
             state.asset_open = true;
          }

@@ -11,6 +11,7 @@
 #include "win.h"
 #include "app.h"
 #include "ui.h"
+#include "render.h"
 
 bool customUIRender_ColorRGBAf(TypeMetadata const* type, void* data, StructMemberMetadata const* parent, const char* label) {
    auto c = linearToSrgbf(*(ColorRGBAf*)data);
@@ -65,7 +66,40 @@ bool customUIRender_Float2(TypeMetadata const* type, void* data, StructMemberMet
 
    return changed;
 }
+bool customUIRender_Texture(TypeMetadata const* type, void* data, StructMemberMetadata const* member, const char* label)
+{
+   auto &tex = *(Texture*)data;
 
+   if (ImGui::Button(ICON_FA_RECYCLE)) {
+      render::textureRefresh(tex);
+   }
+
+   bool edited = doTypeUIEX(reflect<Texture>(), &tex);
+   if (edited) {
+      render::textureRefresh(tex);
+   }
+
+   auto w = ImGui::GetContentRegionAvailWidth() * 0.5f;
+   ImVec2 imgsz = ImVec2(w, (w / tex.sz.x) * tex.sz.y);   
+
+   if (tex.handle) {
+      static bool srgbPreview = true;
+      ImGui::Checkbox("SRGB Preview", &srgbPreview);
+
+      ImDrawList* draw_list = ImGui::GetWindowDrawList();
+      if (srgbPreview) {
+         draw_list->AddCallback([](auto, auto) { render::enableSRGB();  }, nullptr);
+      }
+
+      ImGui::Image((ImTextureID)(intptr_t)tex.handle, imgsz);
+
+      if (srgbPreview) {
+         draw_list->AddCallback([](auto, auto) { render::disableSRGB();  }, nullptr);
+      }
+   }
+
+   return edited;
+}
 
 template<typename T>
 static bool _doIntegerType(void* data, StructMemberMetadata const* member, const char* label) {
@@ -144,6 +178,10 @@ static bool _doFloatType(void* data, StructMemberMetadata const* member, const c
 
    return changed;
 }
+
+
+
+
 
 bool doTypeUIReference(TypeMetadata const* type, void* data, StructMemberMetadata const* parent, const char* label) {
 
