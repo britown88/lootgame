@@ -15,7 +15,8 @@ struct AssetManagerState {
 
    bool focusNewKey = false;
    Symbol* newKey = nullptr;
-   
+   std::string renameLbl;
+   void* renameAsset = nullptr;
 };
 
 static void _doAssetEditor(AssetManagerState& state) {
@@ -82,17 +83,54 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
       auto t = (T*)value;
 
       if (t->markForDelete) {
+         if (value == state.selectedAsset) {
+            state.asset_open = false;
+            state.selectedAsset = nullptr;
+         }
          continue;
       }
 
       if (state.searchFilter.PassFilter(t->id)) {
 
          bool clicked = ImGui::Selectable(t->id);
+         bool renamed = false;
 
          if (ImGui::BeginPopupContextItem(t->id)) {
             if (ImGui::Selectable("Delete")) {
                t->markForDelete = true;
             }
+            else if (ImGui::Selectable("Rename")) {
+               renamed = true;               
+            }
+            
+            ImGui::EndPopup();
+         }
+
+         if (renamed) {
+            state.renameLbl = format("Rename##%d", (uintptr_t)value);
+            ImGui::OpenPopup(state.renameLbl.c_str());
+            state.renameAsset = value;
+            state.newKey = t->id;
+            state.focusNewKey = true;
+         }
+
+         if (state.renameAsset == value && ImGui::BeginPopupModal(state.renameLbl.c_str())) {
+            if (state.focusNewKey) {
+               ImGui::SetKeyboardFocusHere();
+               state.focusNewKey = false;
+            }
+
+            doTypeUIEX(reflect<Symbol*>(), &state.newKey, nullptr, "key");
+            if (ImGui::Button("OK") || ImGui::IsKeyPressed(ImGui::GetIO().KeyMap[ImGuiKey_Enter])) {
+               if (state.newKey != t->id) {
+                  t->id = state.newKey;
+                  T newobj = *t;
+                  t->markForDelete = true;
+                  map.insert({ state.newKey, newobj });
+               }
+               ImGui::CloseCurrentPopup();
+            }
+
             ImGui::EndPopup();
          }
          
