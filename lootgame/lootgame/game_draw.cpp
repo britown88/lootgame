@@ -17,20 +17,21 @@ static void _renderSwing(Dude&dude) {
    uber::resetToDefault();
    uber::set(Uniform_TransformNormals, true);
    uber::set(Uniform_NormalTransform,
-      Matrix::rotate2D(v2Angle({ dude.atk.weaponVector.x, -dude.atk.weaponVector.y }))
+      Matrix::rotate2D(v2Angle(v2Conjugate(dude.atk.weaponVector)))
    );
    uber::set(Uniform_ModelMatrix, model);
    uber::set(Uniform_Height, Const.dudeHeight);
       
 
-   uber::bindTexture(Uniform_DiffuseTexture, Textures.ShittySword->handle);
-   uber::bindTexture(Uniform_NormalsTexture, Textures.SwordNormals->handle);
+   uber::bindTexture(Uniform_DiffuseTexture, wpn->sprite->texture->handle);
+   uber::bindTexture(Uniform_NormalsTexture, wpn->sprite->normalMap->handle);
 
    render::meshRender(Graphics.meshUncentered);
 }
 
 static void _renderDude(GameState& g, Dude& dude) {
    auto model = Matrix::identity();
+   auto sprite = dude.tmplt->sprite;
 
    Float2 rotate = dude.mv.facing;
    if (dude.state == DudeState_ATTACKING) {
@@ -42,7 +43,7 @@ static void _renderDude(GameState& g, Dude& dude) {
 
    model *= Matrix::translate2f(dude.phy.pos);
    model *= Matrix::rotate2D(v2Angle(rotate));
-   model *= Matrix::scale2f(dude.texture->sz);
+   model *= Matrix::scale2f(sprite->texture->sz);
 
 
    uber::resetToDefault();
@@ -60,8 +61,8 @@ static void _renderDude(GameState& g, Dude& dude) {
    uber::set(Uniform_NormalTransform, Matrix::rotate2D(v2Angle({ rotate.x, -rotate.y })));
 
    uber::set(Uniform_ModelMatrix, model);
-   uber::bindTexture(Uniform_DiffuseTexture, dude.texture->handle);   
-   uber::bindTexture(Uniform_NormalsTexture, Textures.DudeNormals->handle);
+   uber::bindTexture(Uniform_DiffuseTexture, sprite->texture->handle);   
+   uber::bindTexture(Uniform_NormalsTexture, sprite->normalMap->handle);
    render::meshRender(Graphics.mesh);
 
    //uber::set(Uniform_OutlineOnly, true);

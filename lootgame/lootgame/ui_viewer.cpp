@@ -792,7 +792,7 @@ static void _renderDudeDebug(GameState&g, Dude&d) {
    if (d.state == DudeState_ATTACKING) {
       auto origin = d.phy.pos + d.atk.weaponVector * d.phy.circle.size;
       auto angle = d.atk.weaponVector;
-      auto& hbox = d.moveset.swings[d.atk.combo].hitbox;
+
 
       auto rotOrigin = d.tmplt->weapon->rotationOrigin;
       auto renderSize = d.tmplt->weapon->renderSize;

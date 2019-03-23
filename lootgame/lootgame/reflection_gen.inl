@@ -1251,19 +1251,6 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
-         member.name = intern("hitbox");
-         member.offset = offsetof(AttackSwing, hitbox);
-         member.type = reflect<Rectf>();
-         member.customUI = customUIRenderer<Rectf>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
          member.name = intern("staminaDamage");
          member.offset = offsetof(AttackSwing, staminaDamage);
          member.type = reflect<int>();

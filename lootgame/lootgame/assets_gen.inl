@@ -54,6 +54,8 @@ void assetsStartup(){
    Weapons.Sword = &Assets.weapons[intern("Sword")];
    Weapons.array[Weapons_Sword] = Weapons.Sword;
    
+   MoveSets.Sword = &Assets.moveSets[intern("Sword")];
+   MoveSets.array[MoveSets_Sword] = MoveSets.Sword;
    
    DudeTemplates.Dude = &Assets.dudeTemplates[intern("Dude")];
    DudeTemplates.array[DudeTemplates_Dude] = DudeTemplates.Dude;

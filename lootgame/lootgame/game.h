@@ -171,14 +171,12 @@ struct Sprite {
 //@reflect{
 struct AttackSwing {
    float lungeDist; // character will luinge forward between windup and swing
-   float lungeSpeed; // perms
+   float lungeSpeed;
 
    float swipeAngle; // full range of the weapon swipe, in degrees
-   Milliseconds swingDur; // total time for the attack
-   Milliseconds windupDur; // vulnerability period before swing
-   Milliseconds cooldownDur; // period before user is free again
-   Rectf hitbox; // axis-aligned, The origin here is the bottom center of the attack while facing up
-                 // attack will rotate around that origin
+   Milliseconds swingDur; // active hurtbox time
+   Milliseconds windupDur; // startup
+   Milliseconds cooldownDur; // recovery
 
    int staminaDamage = 1;
    int healthDamage = 1;
@@ -371,7 +369,6 @@ struct Dude {
    DashState dash;
    FreeState free;
 
-   Texture* texture = nullptr;
    ColorRGBAf c;
 
    PhyObject phy;
@@ -384,7 +381,6 @@ struct Dude {
 
    Milliseconds stateClock; // incremented by one every ms
 
-   MoveSet moveset;
 };
 
 void dudeApplyTemplate(Dude& d, DudeTemplate* tmplt);

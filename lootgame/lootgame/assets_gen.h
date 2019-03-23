@@ -96,7 +96,7 @@ struct AssetWeapons{
 extern AssetWeapons Weapons;
 
 enum MoveSets_{
-   MoveSets_DUMMY,
+   MoveSets_Sword,
    
    MoveSets_COUNT
 };
@@ -104,6 +104,7 @@ enum MoveSets_{
 struct AssetMoveSets{
    MoveSet* array[MoveSets_COUNT] = { 0 };
 
+   MoveSet* Sword = nullptr;
    
 };
 extern AssetMoveSets MoveSets;

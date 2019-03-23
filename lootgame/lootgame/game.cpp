@@ -248,9 +248,11 @@ void dudeUpdateStateDash(Dude& d) {
 
 void dudeBeginAttack(Dude& d, int swingDir, int combo) {
 
+   auto moveset = d.tmplt->weapon->moveSet;
+
 
    bool hasStamina = dudeCanAffordStamina(d, 1, PipState_Spent);
-   bool overExtend = !hasStamina && (combo > 0 && combo < d.moveset.swings.size());
+   bool overExtend = !hasStamina && (combo > 0 && combo < moveset->swings.size());
    if (hasStamina || overExtend) {
       dudeSetState(d, DudeState_ATTACKING);
       d.atk.hits.clear();
@@ -263,12 +265,12 @@ void dudeBeginAttack(Dude& d, int swingDir, int combo) {
          d.atk.overExtended = true;
       }
 
-      if (combo >= d.moveset.swings.size()) {
+      if (combo >= moveset->swings.size()) {
          combo = 0;
       }
 
       d.atk.combo = combo;
-      d.atk.swing = d.moveset.swings[combo];
+      d.atk.swing = moveset->swings[combo];
 
       // stop, setting face to 0 is fine here because rotation checks so you stop at your current facing and cease any facevector rotation
       d.mv.moveVector = d.mv.faceVector = { 0.0f, 0.0f };
@@ -329,8 +331,10 @@ void dudeUpdateStateAttack(Dude& d, Milliseconds tickSize) {
       //    or obey a fraction of the base cd
 
       if (d.stateClock >= Const.dudeMinimumSwingCooldown && d.atk.queuedAttacked) {
+         auto moveset = d.tmplt->weapon->moveSet;
+
          d.atk.queuedAttacked = false;
-         if (d.atk.combo + 1 < d.moveset.swings.size()) {
+         if (d.atk.combo + 1 < moveset->swings.size()) {
             dudeBeginAttack(d, -d.atk.swingDir, d.atk.combo + 1);
          }
       }
@@ -951,9 +955,10 @@ void gameUpdate(GameState& g) {
    g.frameClock += ms;
    g.gameClock += ms;
 
-   if (g.maindude.state == DudeState_FREE) {
-      dudeBeginAttack(g.maindude, 1, 0);
-   }
+   // debug
+   //if (g.maindude.state == DudeState_FREE) {
+   //   dudeBeginAttack(g.maindude, 1, 0);
+   //}
 
    while (g.otherFrameClock > FrameLength * 2) {
       _otherFrameStep(g);
