@@ -26,6 +26,21 @@ EngineConstants& Const = Assets.constants;
 EngineState Engine;
 GraphicObjects Graphics;
 
+void dudeApplyTemplate(Dude& d, DudeTemplate* tmplt) {
+   d.tmplt = tmplt;
+
+   d.c = White;
+
+   d.phy.circle.size = tmplt->size;
+   d.phy.type = PhyObject::PhyType_Circle;
+   d.phy.invMass = tmplt->inverseMass;
+   d.phy.maxSpeed = tmplt->walkSpeed;
+
+   d.status.stamina.clear();
+   d.status.stamina.resize(tmplt->stamina);
+   d.status.health = d.status.healthMax = tmplt->health;
+}
+
 
 void dudeBeginCooldown(Dude&d, Milliseconds duration);
 void dudeSetState(Dude& d, DudeState state, Milliseconds startTimeOffset = 0);

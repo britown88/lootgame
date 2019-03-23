@@ -43,6 +43,9 @@ void assetsSave() {
    _clearDeleted(assetCopy.textures);
    _clearDeleted(assetCopy.maps);
    _clearDeleted(assetCopy.sprites);
+   _clearDeleted(assetCopy.moveSets);
+   _clearDeleted(assetCopy.weapons);
+   _clearDeleted(assetCopy.dudeTemplates);
 
    serialize(writer, &assetCopy);
    auto output = scfWriteToBuffer(writer, &sz);
@@ -123,6 +126,9 @@ void assetsReloadAll() {
       _mergeMap(reloaded.maps, Assets.maps);
       _mergeMap(reloaded.textures, Assets.textures);
       _mergeMap(reloaded.sprites, Assets.sprites);
+      _mergeMap(reloaded.moveSets, Assets.moveSets);
+      _mergeMap(reloaded.weapons, Assets.weapons);
+      _mergeMap(reloaded.dudeTemplates, Assets.dudeTemplates);
 
       LOG("Reloaded %s", fpath.string().c_str());
    }

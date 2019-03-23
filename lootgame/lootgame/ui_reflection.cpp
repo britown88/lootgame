@@ -246,12 +246,12 @@ bool doTypeUIEX(TypeMetadata const* type, void* data, StructMemberMetadata const
       ImGui::PopID(); 
    };
 
-   if (parent && parent->customUI) {
-      return parent->customUI(type, data, parent, label);
-   }
-
    if (parent && parent->reference) {
       return doTypeUIReference(type, data, parent, str_label);
+   }
+
+   if (parent && parent->customUI) {
+      return parent->customUI(type, data, parent, label);
    }
 
    if (parent && parent->flags&StructMemberFlags_File) {

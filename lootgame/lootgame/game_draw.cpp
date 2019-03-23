@@ -41,7 +41,7 @@ static void _renderDude(GameState& g, Dude& dude) {
 
    model *= Matrix::translate2f(dude.phy.pos);
    model *= Matrix::rotate2D(v2Angle(rotate));
-   model *= Matrix::scale2f(dude.renderSize);
+   model *= Matrix::scale2f(dude.texture->sz);
 
 
    uber::resetToDefault();

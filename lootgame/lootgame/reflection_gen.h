@@ -5,15 +5,6 @@
 #include "reflection.h"
 
 
-// SwingPhase ----------------------------
-extern TypeMetadata* meta_SwingPhase;
-typedef enum SwingPhase SwingPhase;
-template<>
-struct Reflector<SwingPhase>{
-   static TypeMetadata const* type() { return meta_SwingPhase; }
-};
-
-
 // DudeState ----------------------------
 extern TypeMetadata* meta_DudeState;
 typedef enum DudeState DudeState;
@@ -96,15 +87,6 @@ struct Reflector<ColorRGBAf>{
 };
 
 
-// Sprite ----------------------------
-typedef struct Sprite Sprite;
-extern TypeMetadata* meta_Sprite;
-template<>
-struct Reflector<Sprite>{
-   static TypeMetadata const* type() { return meta_Sprite; }
-};
-
-
 // EngineConstants ----------------------------
 typedef struct EngineConstants EngineConstants;
 extern TypeMetadata* meta_EngineConstants;
@@ -123,21 +105,12 @@ struct Reflector<EngineState>{
 };
 
 
-// IO ----------------------------
-typedef struct IO IO;
-extern TypeMetadata* meta_IO;
+// Sprite ----------------------------
+typedef struct Sprite Sprite;
+extern TypeMetadata* meta_Sprite;
 template<>
-struct Reflector<IO>{
-   static TypeMetadata const* type() { return meta_IO; }
-};
-
-
-// GameCamera ----------------------------
-typedef struct GameCamera GameCamera;
-extern TypeMetadata* meta_GameCamera;
-template<>
-struct Reflector<GameCamera>{
-   static TypeMetadata const* type() { return meta_GameCamera; }
+struct Reflector<Sprite>{
+   static TypeMetadata const* type() { return meta_Sprite; }
 };
 
 
@@ -186,6 +159,24 @@ struct Reflector<MoveSet>{
 };
 
 
+// Weapon ----------------------------
+typedef struct Weapon Weapon;
+extern TypeMetadata* meta_Weapon;
+template<>
+struct Reflector<Weapon>{
+   static TypeMetadata const* type() { return meta_Weapon; }
+};
+
+
+// DudeTemplate ----------------------------
+typedef struct DudeTemplate DudeTemplate;
+extern TypeMetadata* meta_DudeTemplate;
+template<>
+struct Reflector<DudeTemplate>{
+   static TypeMetadata const* type() { return meta_DudeTemplate; }
+};
+
+
 // GameAssets ----------------------------
 typedef struct GameAssets GameAssets;
 extern TypeMetadata* meta_GameAssets;
@@ -195,30 +186,12 @@ struct Reflector<GameAssets>{
 };
 
 
-// Movement ----------------------------
-typedef struct Movement Movement;
-extern TypeMetadata* meta_Movement;
-template<>
-struct Reflector<Movement>{
-   static TypeMetadata const* type() { return meta_Movement; }
-};
-
-
 // GameStateDebug ----------------------------
 typedef struct GameStateDebug GameStateDebug;
 extern TypeMetadata* meta_GameStateDebug;
 template<>
 struct Reflector<GameStateDebug>{
    static TypeMetadata const* type() { return meta_GameStateDebug; }
-};
-
-
-// Int2 ----------------------------
-typedef struct Int2 Int2;
-extern TypeMetadata* meta_Int2;
-template<>
-struct Reflector<Int2>{
-   static TypeMetadata const* type() { return meta_Int2; }
 };
 
 
@@ -246,6 +219,15 @@ extern TypeMetadata* meta_Float3;
 template<>
 struct Reflector<Float3>{
    static TypeMetadata const* type() { return meta_Float3; }
+};
+
+
+// Int2 ----------------------------
+typedef struct Int2 Int2;
+extern TypeMetadata* meta_Int2;
+template<>
+struct Reflector<Int2>{
+   static TypeMetadata const* type() { return meta_Int2; }
 };
 
 

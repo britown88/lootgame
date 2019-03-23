@@ -10,25 +10,23 @@ TypeMetadata* meta_ColorRGBA = new TypeMetadata;
 TypeMetadata* meta_ColorRGBf = new TypeMetadata;
 TypeMetadata* meta_ColorHSV = new TypeMetadata;
 TypeMetadata* meta_ColorRGBAf = new TypeMetadata;
-TypeMetadata* meta_SwingPhase = new TypeMetadata;
 TypeMetadata* meta_DudeState = new TypeMetadata;
-TypeMetadata* meta_Sprite = new TypeMetadata;
 TypeMetadata* meta_EngineConstants = new TypeMetadata;
 TypeMetadata* meta_EngineState = new TypeMetadata;
-TypeMetadata* meta_IO = new TypeMetadata;
-TypeMetadata* meta_GameCamera = new TypeMetadata;
+TypeMetadata* meta_Sprite = new TypeMetadata;
 TypeMetadata* meta_Wall = new TypeMetadata;
 TypeMetadata* meta_Light = new TypeMetadata;
 TypeMetadata* meta_Map = new TypeMetadata;
 TypeMetadata* meta_AttackSwing = new TypeMetadata;
 TypeMetadata* meta_MoveSet = new TypeMetadata;
+TypeMetadata* meta_Weapon = new TypeMetadata;
+TypeMetadata* meta_DudeTemplate = new TypeMetadata;
 TypeMetadata* meta_GameAssets = new TypeMetadata;
-TypeMetadata* meta_Movement = new TypeMetadata;
 TypeMetadata* meta_GameStateDebug = new TypeMetadata;
-TypeMetadata* meta_Int2 = new TypeMetadata;
 TypeMetadata* meta_Int3 = new TypeMetadata;
 TypeMetadata* meta_Float2 = new TypeMetadata;
 TypeMetadata* meta_Float3 = new TypeMetadata;
+TypeMetadata* meta_Int2 = new TypeMetadata;
 TypeMetadata* meta_ConvexPoly = new TypeMetadata;
 TypeMetadata* meta_Recti = new TypeMetadata;
 TypeMetadata* meta_Rectf = new TypeMetadata;
@@ -38,49 +36,6 @@ TypeMetadata* meta_FBO = new TypeMetadata;
 
 
 void reflectionStartup_generated() {
-   
-   {
-      auto& enumName = meta_SwingPhase;
-      enumName->name = intern("SwingPhase");
-      enumName->size = sizeof(SwingPhase);
-      enumName->variety = TypeVariety_Enum;
-      
-
-      
-      {
-         EnumEntryMetadata entry;
-         entry.name = intern("SwingPhase_Windup");
-         entry.value = SwingPhase_Windup;
-         enumName->enumEntries.push_back(entry);
-      }
-
-      
-      {
-         EnumEntryMetadata entry;
-         entry.name = intern("SwingPhase_Lunge");
-         entry.value = SwingPhase_Lunge;
-         enumName->enumEntries.push_back(entry);
-      }
-
-      
-      {
-         EnumEntryMetadata entry;
-         entry.name = intern("SwingPhase_Swing");
-         entry.value = SwingPhase_Swing;
-         enumName->enumEntries.push_back(entry);
-      }
-
-      
-      {
-         EnumEntryMetadata entry;
-         entry.name = intern("SwingPhase_Cooldown");
-         entry.value = SwingPhase_Cooldown;
-         enumName->enumEntries.push_back(entry);
-      }
-
-      
-   }
-
    
    {
       auto& enumName = meta_DudeState;
@@ -597,67 +552,6 @@ void reflectionStartup_generated() {
 
    
    {
-      auto& structName = meta_Sprite;
-      structName->name = intern("Sprite");
-      structName->size = sizeof(Sprite);
-      structName->variety = TypeVariety_Struct;
-
-      structName->funcs.create = [](void* data) {new (data) Sprite;};
-      structName->funcs.destroy = [](void* data) {((Sprite*)data)->~Sprite(); };
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("texture");
-         member.offset = offsetof(Sprite, texture);
-         member.type = reflect<Texture>();
-         member.customUI = customUIRenderer<Texture>();
-         
-         member.reference = true;
-         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, Texture>>();
-         member.referenceOwner = (void*)&(Assets.textures);
-         member.referenceKeyMember = intern("id");
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("normalMap");
-         member.offset = offsetof(Sprite, normalMap);
-         member.type = reflect<Texture>();
-         member.customUI = customUIRenderer<Texture>();
-         
-         member.reference = true;
-         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, Texture>>();
-         member.referenceOwner = (void*)&(Assets.textures);
-         member.referenceKeyMember = intern("id");
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("id");
-         member.offset = offsetof(Sprite, id);
-         member.type = reflect<Symbol*>();
-         member.customUI = customUIRenderer<Symbol*>();
-         member.flags |= StructMemberFlags_ReadOnly;
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-   }
-
-   
-   {
       auto& structName = meta_EngineConstants;
       structName->name = intern("EngineConstants");
       structName->size = sizeof(EngineConstants);
@@ -997,22 +891,26 @@ void reflectionStartup_generated() {
 
    
    {
-      auto& structName = meta_IO;
-      structName->name = intern("IO");
-      structName->size = sizeof(IO);
+      auto& structName = meta_Sprite;
+      structName->name = intern("Sprite");
+      structName->size = sizeof(Sprite);
       structName->variety = TypeVariety_Struct;
 
-      structName->funcs.create = [](void* data) {new (data) IO;};
-      structName->funcs.destroy = [](void* data) {((IO*)data)->~IO(); };
+      structName->funcs.create = [](void* data) {new (data) Sprite;};
+      structName->funcs.destroy = [](void* data) {((Sprite*)data)->~Sprite(); };
 
       
       {
          StructMemberMetadata member;
-         member.name = intern("mousePos");
-         member.offset = offsetof(IO, mousePos);
-         member.type = reflect<Coords>();
-         member.customUI = customUIRenderer<Coords>();
+         member.name = intern("texture");
+         member.offset = offsetof(Sprite, texture);
+         member.type = reflect<Texture>();
+         member.customUI = customUIRenderer<Texture>();
          
+         member.reference = true;
+         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, Texture>>();
+         member.referenceOwner = (void*)&(Assets.textures);
+         member.referenceKeyMember = intern("id");
          
 
          structName->structMembers.push_back(member);
@@ -1021,24 +919,15 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
-         member.name = intern("leftStick_RAW");
-         member.offset = offsetof(IO, leftStick_RAW);
-         member.type = reflect<Float2>();
-         member.customUI = customUIRenderer<Float2>();
+         member.name = intern("normalMap");
+         member.offset = offsetof(Sprite, normalMap);
+         member.type = reflect<Texture>();
+         member.customUI = customUIRenderer<Texture>();
          
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("rightStick_RAW");
-         member.offset = offsetof(IO, rightStick_RAW);
-         member.type = reflect<Float2>();
-         member.customUI = customUIRenderer<Float2>();
-         
+         member.reference = true;
+         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, Texture>>();
+         member.referenceOwner = (void*)&(Assets.textures);
+         member.referenceKeyMember = intern("id");
          
 
          structName->structMembers.push_back(member);
@@ -1047,120 +936,11 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
-         member.name = intern("leftStick");
-         member.offset = offsetof(IO, leftStick);
-         member.type = reflect<Float2>();
-         member.customUI = customUIRenderer<Float2>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("rightStick");
-         member.offset = offsetof(IO, rightStick);
-         member.type = reflect<Float2>();
-         member.customUI = customUIRenderer<Float2>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("leftTrigger");
-         member.offset = offsetof(IO, leftTrigger);
-         member.type = reflect<float>();
-         member.customUI = customUIRenderer<float>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("rightTrigger");
-         member.offset = offsetof(IO, rightTrigger);
-         member.type = reflect<float>();
-         member.customUI = customUIRenderer<float>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("buttonDown");
-         member.offset = offsetof(IO, buttonDown);
-         member.type = reflect<bool>();
-         member.customUI = customUIRenderer<bool>();
-         member.flags |= StructMemberFlags_StaticArray;
-         member.staticArraySize = GameButton_COUNT;
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("buttonPressed");
-         member.offset = offsetof(IO, buttonPressed);
-         member.type = reflect<bool>();
-         member.customUI = customUIRenderer<bool>();
-         member.flags |= StructMemberFlags_StaticArray;
-         member.staticArraySize = GameButton_COUNT;
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("buttonReleased");
-         member.offset = offsetof(IO, buttonReleased);
-         member.type = reflect<bool>();
-         member.customUI = customUIRenderer<bool>();
-         member.flags |= StructMemberFlags_StaticArray;
-         member.staticArraySize = GameButton_COUNT;
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-   }
-
-   
-   {
-      auto& structName = meta_GameCamera;
-      structName->name = intern("GameCamera");
-      structName->size = sizeof(GameCamera);
-      structName->variety = TypeVariety_Struct;
-
-      structName->funcs.create = [](void* data) {new (data) GameCamera;};
-      structName->funcs.destroy = [](void* data) {((GameCamera*)data)->~GameCamera(); };
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("viewport");
-         member.offset = offsetof(GameCamera, viewport);
-         member.type = reflect<Rectf>();
-         member.customUI = customUIRenderer<Rectf>();
+         member.name = intern("id");
+         member.offset = offsetof(Sprite, id);
+         member.type = reflect<Symbol*>();
+         member.customUI = customUIRenderer<Symbol*>();
+         member.flags |= StructMemberFlags_ReadOnly;
          
          
 
@@ -1565,6 +1345,219 @@ void reflectionStartup_generated() {
 
    
    {
+      auto& structName = meta_Weapon;
+      structName->name = intern("Weapon");
+      structName->size = sizeof(Weapon);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) Weapon;};
+      structName->funcs.destroy = [](void* data) {((Weapon*)data)->~Weapon(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("sprite");
+         member.offset = offsetof(Weapon, sprite);
+         member.type = reflect<Sprite>();
+         member.customUI = customUIRenderer<Sprite>();
+         
+         member.reference = true;
+         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, Sprite>>();
+         member.referenceOwner = (void*)&(Assets.sprites);
+         member.referenceKeyMember = intern("id");
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("moveSet");
+         member.offset = offsetof(Weapon, moveSet);
+         member.type = reflect<MoveSet>();
+         member.customUI = customUIRenderer<MoveSet>();
+         
+         member.reference = true;
+         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, MoveSet>>();
+         member.referenceOwner = (void*)&(Assets.moveSets);
+         member.referenceKeyMember = intern("id");
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("id");
+         member.offset = offsetof(Weapon, id);
+         member.type = reflect<Symbol*>();
+         member.customUI = customUIRenderer<Symbol*>();
+         member.flags |= StructMemberFlags_ReadOnly;
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
+      auto& structName = meta_DudeTemplate;
+      structName->name = intern("DudeTemplate");
+      structName->size = sizeof(DudeTemplate);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) DudeTemplate;};
+      structName->funcs.destroy = [](void* data) {((DudeTemplate*)data)->~DudeTemplate(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("stamina");
+         member.offset = offsetof(DudeTemplate, stamina);
+         member.type = reflect<int>();
+         member.customUI = customUIRenderer<int>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("health");
+         member.offset = offsetof(DudeTemplate, health);
+         member.type = reflect<int>();
+         member.customUI = customUIRenderer<int>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("size");
+         member.offset = offsetof(DudeTemplate, size);
+         member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("inverseMass");
+         member.offset = offsetof(DudeTemplate, inverseMass);
+         member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("walkSpeed");
+         member.offset = offsetof(DudeTemplate, walkSpeed);
+         member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("runSpeed");
+         member.offset = offsetof(DudeTemplate, runSpeed);
+         member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("rotationSpeed");
+         member.offset = offsetof(DudeTemplate, rotationSpeed);
+         member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("sprite");
+         member.offset = offsetof(DudeTemplate, sprite);
+         member.type = reflect<Sprite>();
+         member.customUI = customUIRenderer<Sprite>();
+         
+         member.reference = true;
+         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, Sprite>>();
+         member.referenceOwner = (void*)&(Assets.sprites);
+         member.referenceKeyMember = intern("id");
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("weapon");
+         member.offset = offsetof(DudeTemplate, weapon);
+         member.type = reflect<Weapon>();
+         member.customUI = customUIRenderer<Weapon>();
+         
+         member.reference = true;
+         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, Weapon>>();
+         member.referenceOwner = (void*)&(Assets.weapons);
+         member.referenceKeyMember = intern("id");
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("id");
+         member.offset = offsetof(DudeTemplate, id);
+         member.type = reflect<Symbol*>();
+         member.customUI = customUIRenderer<Symbol*>();
+         member.flags |= StructMemberFlags_ReadOnly;
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
       auto& structName = meta_GameAssets;
       structName->name = intern("GameAssets");
       structName->size = sizeof(GameAssets);
@@ -1626,25 +1619,12 @@ void reflectionStartup_generated() {
       }
 
       
-   }
-
-   
-   {
-      auto& structName = meta_Movement;
-      structName->name = intern("Movement");
-      structName->size = sizeof(Movement);
-      structName->variety = TypeVariety_Struct;
-
-      structName->funcs.create = [](void* data) {new (data) Movement;};
-      structName->funcs.destroy = [](void* data) {((Movement*)data)->~Movement(); };
-
-      
       {
          StructMemberMetadata member;
-         member.name = intern("moveSpeedCap");
-         member.offset = offsetof(Movement, moveSpeedCap);
-         member.type = reflect<float>();
-         member.customUI = customUIRenderer<float>();
+         member.name = intern("moveSets");
+         member.offset = offsetof(GameAssets, moveSets);
+         member.type = reflect<std::unordered_map<Symbol*, MoveSet>>();
+         member.customUI = customUIRenderer<std::unordered_map<Symbol*, MoveSet>>();
          
          
 
@@ -1654,10 +1634,10 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
-         member.name = intern("moveSpeedCapTarget");
-         member.offset = offsetof(Movement, moveSpeedCapTarget);
-         member.type = reflect<float>();
-         member.customUI = customUIRenderer<float>();
+         member.name = intern("weapons");
+         member.offset = offsetof(GameAssets, weapons);
+         member.type = reflect<std::unordered_map<Symbol*, Weapon>>();
+         member.customUI = customUIRenderer<std::unordered_map<Symbol*, Weapon>>();
          
          
 
@@ -1667,36 +1647,10 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
-         member.name = intern("moveVector");
-         member.offset = offsetof(Movement, moveVector);
-         member.type = reflect<Float2>();
-         member.customUI = customUIRenderer<Float2>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("faceVector");
-         member.offset = offsetof(Movement, faceVector);
-         member.type = reflect<Float2>();
-         member.customUI = customUIRenderer<Float2>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("facing");
-         member.offset = offsetof(Movement, facing);
-         member.type = reflect<Float2>();
-         member.customUI = customUIRenderer<Float2>();
+         member.name = intern("dudeTemplates");
+         member.offset = offsetof(GameAssets, dudeTemplates);
+         member.type = reflect<std::unordered_map<Symbol*, DudeTemplate>>();
+         member.customUI = customUIRenderer<std::unordered_map<Symbol*, DudeTemplate>>();
          
          
 
@@ -1738,45 +1692,6 @@ void reflectionStartup_generated() {
          member.offset = offsetof(GameStateDebug, AI);
          member.type = reflect<bool>();
          member.customUI = customUIRenderer<bool>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-   }
-
-   
-   {
-      auto& structName = meta_Int2;
-      structName->name = intern("Int2");
-      structName->size = sizeof(Int2);
-      structName->variety = TypeVariety_Struct;
-
-      structName->funcs.create = [](void* data) {new (data) Int2;};
-      structName->funcs.destroy = [](void* data) {((Int2*)data)->~Int2(); };
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("x");
-         member.offset = offsetof(Int2, x);
-         member.type = reflect<int32_t>();
-         member.customUI = customUIRenderer<int32_t>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("y");
-         member.offset = offsetof(Int2, y);
-         member.type = reflect<int32_t>();
-         member.customUI = customUIRenderer<int32_t>();
          
          
 
@@ -1920,6 +1835,45 @@ void reflectionStartup_generated() {
          member.offset = offsetof(Float3, z);
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
+      auto& structName = meta_Int2;
+      structName->name = intern("Int2");
+      structName->size = sizeof(Int2);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) Int2;};
+      structName->funcs.destroy = [](void* data) {((Int2*)data)->~Int2(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("x");
+         member.offset = offsetof(Int2, x);
+         member.type = reflect<int32_t>();
+         member.customUI = customUIRenderer<int32_t>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("y");
+         member.offset = offsetof(Int2, y);
+         member.type = reflect<int32_t>();
+         member.customUI = customUIRenderer<int32_t>();
          
          
 

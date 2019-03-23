@@ -8,10 +8,7 @@ static const float DEG2RAD = PI / 180.0f;
 
 static const float EPSILON = 0.00001f;
 
-//@reflect{
-struct Int2 {
-   int32_t x, y;
-};//}
+
 
 //@reflect{
 struct Int3 {
@@ -40,6 +37,14 @@ struct Float2 {
 //@reflect{
 struct Float3 {
    float x, y, z;
+};//}
+
+  //@reflect{
+struct Int2 {
+   int32_t x, y;
+
+   operator Float2() const { return { (float)x, (float)y }; }
+
 };//}
 
 Float3 vCross(Float3 a, Float3 b);

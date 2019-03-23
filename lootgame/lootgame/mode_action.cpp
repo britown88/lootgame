@@ -58,7 +58,7 @@ static Dude _createDude(GameState& game) {
    out.phy.circle.size = 7.0f;
    out.phy.maxSpeed = Const.dudeMoveSpeed;
    out.phy.invMass =  0.01f;
-   out.renderSize = { (float)out.texture->sz.x, (float)out.texture->sz.y };
+   //out.renderSize = { (float)out.texture->sz.x, (float)out.texture->sz.y };
 
    out.status.stamina.resize(4);
    out.status.health = out.status.healthMax = 2;
@@ -79,7 +79,7 @@ static Dude _createEnemy(Float2 pos) {
    out.phy.velocity = { 0,0 };
    out.phy.maxSpeed = Const.dudeMoveSpeed;
    out.phy.invMass = 1.0f;// (float)(rand() % 50 + 5) / 100.0f;
-   out.renderSize = { (float)out.texture->sz.x, (float)out.texture->sz.y };
+   //out.renderSize = { (float)out.texture->sz.x, (float)out.texture->sz.y };
 
    out.status.stamina.resize(3);
    out.status.health = out.status.healthMax = 1;

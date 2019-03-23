@@ -192,6 +192,9 @@ static void _doAssetTreeview(AssetManagerState& state) {
    _doMapTreeview("Textures", state, Assets.textures);
    _doMapTreeview("Sprites", state, Assets.sprites);
    _doMapTreeview("Maps", state, Assets.maps);
+   _doMapTreeview("MoveSets", state, Assets.moveSets);
+   _doMapTreeview("Weapons", state, Assets.weapons);
+   _doMapTreeview("Dude Templates", state, Assets.dudeTemplates);
 }
 
 

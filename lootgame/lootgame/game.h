@@ -31,21 +31,6 @@ void assetsReloadAll();
 void assetsBuildTextureHandles();
 
 //@reflect{
-struct Sprite {
-   //@reference(owner=Assets.textures key=id)
-   Texture* texture = nullptr;
-   //@reference(owner=Assets.textures key=id)
-   Texture* normalMap = nullptr;
-
-   //@readonly
-   Symbol* id = nullptr;
-   //@ignore{
-   bool markForDelete = false;
-   //}
-};//}
-
-
-//@reflect{
 struct EngineConstants {
    //@readonly
    Int2 resolution = { 1920, 1080 };
@@ -74,8 +59,6 @@ struct EngineConstants {
    Milliseconds dudeSpentStaminaRecoveryTime = 400;
    Milliseconds dudeCrackedStaminaRecoveryTime = 800;
    Milliseconds overExtendedStaminaRecoveryTime = 2000;
-
-
 
    Milliseconds cooldownOnDamagedStaminaEmpty = 1000;
    Milliseconds cooldownOnDamagedStamina = 250;
@@ -110,7 +93,7 @@ enum GameButton_ {
 } ;
 typedef byte GameButton;
 
-//@reflect{
+
 struct IO {
    Coords mousePos = { { 0,0 } };
 
@@ -126,12 +109,25 @@ struct IO {
    bool buttonDown[GameButton_COUNT];
    bool buttonPressed[GameButton_COUNT];
    bool buttonReleased[GameButton_COUNT];
-};//}
+};
 
-//@reflect{
 struct GameCamera {
    Rectf viewport;
    
+};
+
+//@reflect{
+struct Sprite {
+   //@reference(owner=Assets.textures key=id)
+   Texture* texture = nullptr;
+   //@reference(owner=Assets.textures key=id)
+   Texture* normalMap = nullptr;
+
+   //@readonly
+   Symbol* id = nullptr;
+   //@ignore{
+   bool markForDelete = false;
+   //}
 };//}
 
 //@reflect{
@@ -144,7 +140,7 @@ struct Wall {
    //@ignore{
    Array<PhyObject> phyObjs;
    //}
-}; //}
+};//}
 
 //@reflect{
 struct Light {
@@ -166,18 +162,9 @@ struct Map {
 
    // @readonly
    Symbol* id = nullptr;
-
    //@ignore{
    bool markForDelete = false;
    //}
-};//}
-
-//@reflect{
-enum SwingPhase {
-   SwingPhase_Windup = 0,
-   SwingPhase_Lunge,
-   SwingPhase_Swing,
-   SwingPhase_Cooldown
 };//}
 
 //@reflect{
@@ -203,6 +190,48 @@ struct MoveSet {
 
    // @readonly
    Symbol* id = nullptr;
+   //@ignore{
+   bool markForDelete = false;
+   //}
+};//}
+
+//@reflect{
+struct Weapon {
+   //@reference(owner=Assets.sprites key=id)
+   Sprite* sprite = nullptr;
+
+   //@reference(owner=Assets.moveSets key=id)
+   MoveSet* moveSet = nullptr;
+
+   // @readonly
+   Symbol* id = nullptr;
+   //@ignore{
+   bool markForDelete = false;
+   //}
+};//}
+
+//@reflect{
+struct DudeTemplate {
+   int stamina = 3;
+   int health = 1;
+
+   float size = 7.0f;
+   float inverseMass = 1.0f;
+   float walkSpeed = 0.080f;
+   float runSpeed = 0.2f;
+   float rotationSpeed = 0.15f;
+
+   //@reference(owner=Assets.sprites key=id)
+   Sprite* sprite = nullptr;
+
+   //@reference(owner=Assets.weapons key=id)
+   Weapon* weapon = nullptr;
+
+   // @readonly
+   Symbol* id = nullptr;
+   //@ignore{
+   bool markForDelete = false;
+   //}
 };//}
 
 //@reflect{
@@ -212,6 +241,11 @@ struct GameAssets {
    std::unordered_map<Symbol*, Map> maps;
 
    std::unordered_map<Symbol*, Sprite> sprites;
+   std::unordered_map<Symbol*, MoveSet> moveSets;
+   std::unordered_map<Symbol*, Weapon> weapons;
+
+   std::unordered_map<Symbol*, DudeTemplate> dudeTemplates;
+
 };//}
 
 extern GameAssets Assets;
@@ -240,14 +274,13 @@ extern EngineConstants& Const;
   */
 
 
-//@reflect{
 struct Movement {
    float moveSpeedCap = 0.0f;       // updated per frame, interpolates toward moveSpeedCapTarget
    float moveSpeedCapTarget = 0.0f; // updated per frame, max speed based on length of move vector and velocity direction vs facing
    Float2 moveVector = { 0.0f, 0.0f };   // vector length 0-1 for movement amount/direction
    Float2 faceVector = { 0.0f, 0.0f };  // unit vector for target facing, facing will interpolate toward this angle
    Float2 facing = { 1, 0 };  // unit vector for character facing, interpolated every frame toward faceVector
-};//}
+};
 
 struct Dude;
 
@@ -256,6 +289,13 @@ struct Behavior {
    Dude* target = nullptr;
    int dir = 1;
    bool attack = false;
+};
+
+enum SwingPhase {
+   SwingPhase_Windup = 0,
+   SwingPhase_Lunge,
+   SwingPhase_Swing,
+   SwingPhase_Cooldown
 };
 
 struct AttackState {
@@ -319,6 +359,8 @@ struct Shove {
 };
 
 struct Dude {
+   DudeTemplate *tmplt = nullptr;
+
    DudeState state = DudeState_FREE;
    AttackState atk;
    CooldownState cd;
@@ -326,7 +368,6 @@ struct Dude {
    FreeState free;
 
    Texture* texture = nullptr;
-   Float2 renderSize;
    ColorRGBAf c;
 
    PhyObject phy;
@@ -341,6 +382,8 @@ struct Dude {
 
    MoveSet moveset;
 };
+
+void dudeApplyTemplate(Dude& d, DudeTemplate* tmplt);
 
 enum ModeType_ {
    ModeType_ACTION = 0,
