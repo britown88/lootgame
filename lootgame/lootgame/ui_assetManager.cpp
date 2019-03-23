@@ -5,10 +5,17 @@
 
 #include "reflection_gen.h"
 
+enum EditorMode {
+   EditorMode_Closed,
+   EditorMode_Const,
+   EditorMode_Asset,
+};
+
 struct AssetManagerState {
    ImGuiTextFilter searchFilter;
 
-   bool asset_open = false;
+   EditorMode mode;
+
    void *selectedAsset = nullptr;
    TypeMetadata const* selectedType = nullptr;
    UIRenderFunc customSelectedRenderer = nullptr;
@@ -19,8 +26,25 @@ struct AssetManagerState {
    void* renameAsset = nullptr;
 };
 
+static void _doConstEditor(AssetManagerState& state) {
+   if (state.mode != EditorMode_Const) {
+      return;
+   }
+   bool p_open = true;
+
+
+   if (ImGui::Begin("Constants###AssetEditor", &p_open)) {
+      doTypeUI(&Assets.constants);
+   }
+   ImGui::End();
+
+   if (!p_open) {
+      state.mode = EditorMode_Closed;
+   }
+}
+
 static void _doAssetEditor(AssetManagerState& state) {
-   if (!state.asset_open) {
+   if (state.mode != EditorMode_Asset) {
       return;
    }
    bool p_open = true;
@@ -39,16 +63,13 @@ static void _doAssetEditor(AssetManagerState& state) {
    ImGui::End();
 
    if (!p_open) {
-      state.asset_open = false;
-      state.selectedAsset = nullptr;
-      state.selectedType = nullptr;
+      state.mode = EditorMode_Closed;
    }
 }
 
 
 template<typename T>
 static void _doMapTreeview(const char* label, AssetManagerState& state, std::unordered_map<Symbol*, T>& map) {
-
 
    if (!ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_DefaultOpen)) {
       return;
@@ -84,8 +105,8 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
       auto t = (T*)value;
 
       if (t->markForDelete) {
-         if (value == state.selectedAsset) {
-            state.asset_open = false;
+         if (state.mode == EditorMode_Asset && value == state.selectedAsset) {
+            state.mode = EditorMode_Closed;
             state.selectedAsset = nullptr;
          }
          continue;
@@ -93,7 +114,9 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
 
       if (state.searchFilter.PassFilter(t->id)) {
 
-         bool clicked = ImGui::Selectable(t->id);
+         bool selected = value == state.selectedAsset;
+
+         bool clicked = ImGui::Selectable(t->id, selected && state.mode == EditorMode_Asset);
          bool renamed = false;
 
          if (ImGui::BeginPopupContextItem(t->id)) {
@@ -146,7 +169,7 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
             state.selectedType = reflect<T>();
             state.customSelectedRenderer = customUIRenderer<T>();
             state.selectedAsset = t;
-            state.asset_open = true;
+            state.mode = EditorMode_Asset;
          }
       }
    }
@@ -157,14 +180,18 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
 
 static void _doAssetTreeview(AssetManagerState& state) {
 
+   auto constFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+   if (state.mode == EditorMode_Const) {
+      constFlags |= ImGuiTreeNodeFlags_Selected;
+   }
+   ImGui::TreeNodeEx("Constants", constFlags);
+   if (ImGui::IsItemClicked()) {
+      state.mode = EditorMode_Const;
+   }
+
    _doMapTreeview("Textures", state, Assets.textures);
    _doMapTreeview("Sprites", state, Assets.sprites);
    _doMapTreeview("Maps", state, Assets.maps);
-
-
-   
-
-
 }
 
 
@@ -197,6 +224,7 @@ void uiOpenAssetManager() {
    appAddGUI("Assets", [=]()mutable {
       _doAssetManager(state);
       _doAssetEditor(state);
+      _doConstEditor(state);
       return true;
    });
 }

@@ -5,7 +5,6 @@
 #include "game.h"
 
 enum Textures_{
-   Textures_Circle,
    Textures_Dude,
    Textures_DudeNormals,
    Textures_GemCracked,
@@ -13,10 +12,8 @@ enum Textures_{
    Textures_GemFilled,
    Textures_HeartEmpty,
    Textures_HeartFilled,
-   Textures_Light,
    Textures_ShittySword,
    Textures_SwordNormals,
-   Textures_Target,
    Textures_Tile,
    Textures_TileNormals,
    Textures_TinyHeartEmpty,
@@ -31,7 +28,6 @@ enum Textures_{
 struct AssetTextures{
    Texture* array[Textures_COUNT] = { 0 };
 
-   Texture* Circle = nullptr;
    Texture* Dude = nullptr;
    Texture* DudeNormals = nullptr;
    Texture* GemCracked = nullptr;
@@ -39,10 +35,8 @@ struct AssetTextures{
    Texture* GemFilled = nullptr;
    Texture* HeartEmpty = nullptr;
    Texture* HeartFilled = nullptr;
-   Texture* Light = nullptr;
    Texture* ShittySword = nullptr;
    Texture* SwordNormals = nullptr;
-   Texture* Target = nullptr;
    Texture* Tile = nullptr;
    Texture* TileNormals = nullptr;
    Texture* TinyHeartEmpty = nullptr;
@@ -55,7 +49,6 @@ struct AssetTextures{
 extern AssetTextures Textures;
 
 enum Maps_{
-   Maps_secondmap,
    Maps_test,
    
    Maps_COUNT
@@ -64,7 +57,6 @@ enum Maps_{
 struct AssetMaps{
    Map* array[Maps_COUNT] = { 0 };
 
-   Map* secondmap = nullptr;
    Map* test = nullptr;
    
 };
