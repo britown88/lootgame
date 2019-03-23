@@ -13,10 +13,10 @@ TypeMetadata* meta_ColorRGBAf = new TypeMetadata;
 TypeMetadata* meta_DudeState = new TypeMetadata;
 TypeMetadata* meta_EngineConstants = new TypeMetadata;
 TypeMetadata* meta_EngineState = new TypeMetadata;
-TypeMetadata* meta_Sprite = new TypeMetadata;
 TypeMetadata* meta_Wall = new TypeMetadata;
 TypeMetadata* meta_Light = new TypeMetadata;
 TypeMetadata* meta_Map = new TypeMetadata;
+TypeMetadata* meta_Sprite = new TypeMetadata;
 TypeMetadata* meta_AttackSwing = new TypeMetadata;
 TypeMetadata* meta_MoveSet = new TypeMetadata;
 TypeMetadata* meta_Weapon = new TypeMetadata;
@@ -891,67 +891,6 @@ void reflectionStartup_generated() {
 
    
    {
-      auto& structName = meta_Sprite;
-      structName->name = intern("Sprite");
-      structName->size = sizeof(Sprite);
-      structName->variety = TypeVariety_Struct;
-
-      structName->funcs.create = [](void* data) {new (data) Sprite;};
-      structName->funcs.destroy = [](void* data) {((Sprite*)data)->~Sprite(); };
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("texture");
-         member.offset = offsetof(Sprite, texture);
-         member.type = reflect<Texture>();
-         member.customUI = customUIRenderer<Texture>();
-         
-         member.reference = true;
-         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, Texture>>();
-         member.referenceOwner = (void*)&(Assets.textures);
-         member.referenceKeyMember = intern("id");
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("normalMap");
-         member.offset = offsetof(Sprite, normalMap);
-         member.type = reflect<Texture>();
-         member.customUI = customUIRenderer<Texture>();
-         
-         member.reference = true;
-         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, Texture>>();
-         member.referenceOwner = (void*)&(Assets.textures);
-         member.referenceKeyMember = intern("id");
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("id");
-         member.offset = offsetof(Sprite, id);
-         member.type = reflect<Symbol*>();
-         member.customUI = customUIRenderer<Symbol*>();
-         member.flags |= StructMemberFlags_ReadOnly;
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-   }
-
-   
-   {
       auto& structName = meta_Wall;
       structName->name = intern("Wall");
       structName->size = sizeof(Wall);
@@ -1162,6 +1101,67 @@ void reflectionStartup_generated() {
 
    
    {
+      auto& structName = meta_Sprite;
+      structName->name = intern("Sprite");
+      structName->size = sizeof(Sprite);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) Sprite;};
+      structName->funcs.destroy = [](void* data) {((Sprite*)data)->~Sprite(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("texture");
+         member.offset = offsetof(Sprite, texture);
+         member.type = reflect<Texture>();
+         member.customUI = customUIRenderer<Texture>();
+         
+         member.reference = true;
+         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, Texture>>();
+         member.referenceOwner = (void*)&(Assets.textures);
+         member.referenceKeyMember = intern("id");
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("normalMap");
+         member.offset = offsetof(Sprite, normalMap);
+         member.type = reflect<Texture>();
+         member.customUI = customUIRenderer<Texture>();
+         
+         member.reference = true;
+         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, Texture>>();
+         member.referenceOwner = (void*)&(Assets.textures);
+         member.referenceKeyMember = intern("id");
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("id");
+         member.offset = offsetof(Sprite, id);
+         member.type = reflect<Symbol*>();
+         member.customUI = customUIRenderer<Symbol*>();
+         member.flags |= StructMemberFlags_ReadOnly;
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
       auto& structName = meta_AttackSwing;
       structName->name = intern("AttackSwing");
       structName->size = sizeof(AttackSwing);
@@ -1352,6 +1352,45 @@ void reflectionStartup_generated() {
 
       structName->funcs.create = [](void* data) {new (data) Weapon;};
       structName->funcs.destroy = [](void* data) {((Weapon*)data)->~Weapon(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("renderSize");
+         member.offset = offsetof(Weapon, renderSize);
+         member.type = reflect<Float2>();
+         member.customUI = customUIRenderer<Float2>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("rotationOrigin");
+         member.offset = offsetof(Weapon, rotationOrigin);
+         member.type = reflect<Float2>();
+         member.customUI = customUIRenderer<Float2>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("hitbox");
+         member.offset = offsetof(Weapon, hitbox);
+         member.type = reflect<Rectf>();
+         member.customUI = customUIRenderer<Rectf>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
 
       
       {

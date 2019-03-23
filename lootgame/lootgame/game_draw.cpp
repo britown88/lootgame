@@ -6,12 +6,13 @@
 
 static void _renderSwing(Dude&dude) {
    auto origin = dude.phy.pos + dude.atk.weaponVector * dude.phy.circle.size;
+   auto wpn = dude.tmplt->weapon;
 
    auto model = Matrix::identity();
    model *= Matrix::translate2f(origin);
    model *= Matrix::rotate2D(v2Angle(dude.atk.weaponVector));
-   model *= Matrix::translate2f({ dude.atk.swing.hitbox.x, dude.atk.swing.hitbox.y });
-   model *= Matrix::scale2f({ dude.atk.swing.hitbox.w, dude.atk.swing.hitbox.h });
+   model *= Matrix::translate2f(-wpn->rotationOrigin);
+   model *= Matrix::scale2f(wpn->renderSize);
 
    uber::resetToDefault();
    uber::set(Uniform_TransformNormals, true);

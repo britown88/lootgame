@@ -105,15 +105,6 @@ struct Reflector<EngineState>{
 };
 
 
-// Sprite ----------------------------
-typedef struct Sprite Sprite;
-extern TypeMetadata* meta_Sprite;
-template<>
-struct Reflector<Sprite>{
-   static TypeMetadata const* type() { return meta_Sprite; }
-};
-
-
 // Wall ----------------------------
 typedef struct Wall Wall;
 extern TypeMetadata* meta_Wall;
@@ -138,6 +129,15 @@ extern TypeMetadata* meta_Map;
 template<>
 struct Reflector<Map>{
    static TypeMetadata const* type() { return meta_Map; }
+};
+
+
+// Sprite ----------------------------
+typedef struct Sprite Sprite;
+extern TypeMetadata* meta_Sprite;
+template<>
+struct Reflector<Sprite>{
+   static TypeMetadata const* type() { return meta_Sprite; }
 };
 
 

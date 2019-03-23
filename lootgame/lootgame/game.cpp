@@ -174,6 +174,8 @@ void dudeUpdateShove(Dude& d, Milliseconds tickSize) {
    
 }
 
+void dudeBeginAttack(Dude& d, int swingDir, int combo);
+
 void dudeBeginFree(Dude&d) {
    dudeSetState(d, DudeState_FREE);
    //d.free.staminaClockStart = 0;
@@ -183,6 +185,7 @@ void dudeBeginFree(Dude&d) {
 void dudeUpdateStateFree(Dude& d, Milliseconds tickSize) {
    // handle stamina regain
    dudeRecoverStamina(d, tickSize);
+   
    //d.free.staminaClockStart += tickSize;
    //if (d.free.staminaClockStart > d.free.nextTickAt && d.status.stamina < d.status.staminaMax) {
    //   //d.status.stamina = d.status.staminaMax;
@@ -224,7 +227,7 @@ void dudeBeginDash(Dude& d, float speed) {
    //}
 }
 
-void dudeBeginAttack(Dude& d, int swingDir, int combo);
+
 
 // dude will begin dash state by being shoved, this will start a cooldown
 // once the shove is complete
@@ -348,10 +351,16 @@ bool dudeCheckAttackCollision(Dude& attacker, Dude& defender) {
    }
 
    auto origin = attacker.phy.pos + attacker.atk.weaponVector * attacker.phy.circle.size;
-   auto defendPos = v2Rotate(defender.phy.pos - origin, v2Conjugate(attacker.atk.weaponVector));
-   auto wbox = attacker.moveset.swings[attacker.atk.combo].hitbox;
 
-   return circleVsAabb(defendPos, defender.phy.circle.size, wbox);
+   // note to future me this is rotating the defender position by the INVERSE of the attack rotation
+   // to bring them into the same coordinate system. v2conjugate inverts the rotation of a unit vector
+   auto defendPos = v2Rotate(defender.phy.pos - origin, v2Conjugate(attacker.atk.weaponVector));
+   auto wpn = attacker.tmplt->weapon;
+   Float2 wpnTopLeft = -wpn->rotationOrigin + wpn->hitbox.Min();
+   Rectf weaponHitbox = { wpnTopLeft .x, wpnTopLeft .y,  wpn->hitbox.w,  wpn->hitbox.h};
+
+
+   return circleVsAabb(defendPos, defender.phy.circle.size, weaponHitbox);
 }
 
 void dudeUpdateState(Dude& d, Milliseconds tickSize) {
@@ -941,6 +950,10 @@ void gameUpdate(GameState& g) {
    g.otherFrameClock += ms;
    g.frameClock += ms;
    g.gameClock += ms;
+
+   if (g.maindude.state == DudeState_FREE) {
+      dudeBeginAttack(g.maindude, 1, 0);
+   }
 
    while (g.otherFrameClock > FrameLength * 2) {
       _otherFrameStep(g);

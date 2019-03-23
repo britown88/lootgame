@@ -15,7 +15,7 @@ static MoveSet _createMoveSet() {
    out.swings[0].lungeSpeed = 0.3f;
    out.swings[0].lungeDist = 0.0f;
    out.swings[0].windupDur = 400;
-   out.swings[0].swingDur = 100;
+   out.swings[0].swingDur = 3000;
    out.swings[0].cooldownDur = 300;
    out.swings[0].hitbox = hitbox;
 
@@ -63,6 +63,8 @@ static Dude _createDude(GameState& game) {
    out.status.stamina.resize(4);
    out.status.health = out.status.healthMax = 2;
 
+   dudeApplyTemplate(out, DudeTemplates.Dude);
+
    return out;
 }
 
@@ -81,8 +83,12 @@ static Dude _createEnemy(Float2 pos) {
    out.phy.invMass = 1.0f;// (float)(rand() % 50 + 5) / 100.0f;
    //out.renderSize = { (float)out.texture->sz.x, (float)out.texture->sz.y };
 
-   out.status.stamina.resize(3);
+   dudeApplyTemplate(out, DudeTemplates.Dude);
+
+   out.status.stamina.resize(10);
    out.status.health = out.status.healthMax = 1;
+
+
 
    return out;
 }

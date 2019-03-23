@@ -51,7 +51,11 @@ void assetsStartup(){
    Maps.test = &Assets.maps[intern("test")];
    Maps.array[Maps_test] = Maps.test;
    
+   Weapons.Sword = &Assets.weapons[intern("Sword")];
+   Weapons.array[Weapons_Sword] = Weapons.Sword;
    
    
+   DudeTemplates.Dude = &Assets.dudeTemplates[intern("Dude")];
+   DudeTemplates.array[DudeTemplates_Dude] = DudeTemplates.Dude;
    
 }

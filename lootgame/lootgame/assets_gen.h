@@ -82,7 +82,7 @@ struct AssetMaps{
 extern AssetMaps Maps;
 
 enum Weapons_{
-   Weapons_DUMMY,
+   Weapons_Sword,
    
    Weapons_COUNT
 };
@@ -90,6 +90,7 @@ enum Weapons_{
 struct AssetWeapons{
    Weapon* array[Weapons_COUNT] = { 0 };
 
+   Weapon* Sword = nullptr;
    
 };
 extern AssetWeapons Weapons;
@@ -108,7 +109,7 @@ struct AssetMoveSets{
 extern AssetMoveSets MoveSets;
 
 enum DudeTemplates_{
-   DudeTemplates_DUMMY,
+   DudeTemplates_Dude,
    
    DudeTemplates_COUNT
 };
@@ -116,6 +117,7 @@ enum DudeTemplates_{
 struct AssetDudeTemplates{
    DudeTemplate* array[DudeTemplates_COUNT] = { 0 };
 
+   DudeTemplate* Dude = nullptr;
    
 };
 extern AssetDudeTemplates DudeTemplates;

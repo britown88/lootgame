@@ -117,20 +117,6 @@ struct GameCamera {
 };
 
 //@reflect{
-struct Sprite {
-   //@reference(owner=Assets.textures key=id)
-   Texture* texture = nullptr;
-   //@reference(owner=Assets.textures key=id)
-   Texture* normalMap = nullptr;
-
-   //@readonly
-   Symbol* id = nullptr;
-   //@ignore{
-   bool markForDelete = false;
-   //}
-};//}
-
-//@reflect{
 struct Wall {
    ConvexPoly poly;
 
@@ -142,25 +128,40 @@ struct Wall {
    //}
 };//}
 
-//@reflect{
+  //@reflect{
 struct Light {
    ColorRGBAf color = White;
 
    Coords pos;
    float radius = 100.0f;
-   float height = 0.2f, 
-      linearPortion = 0.5f, 
-      smoothingFactor = 0.4f, 
+   float height = 0.2f,
+      linearPortion = 0.5f,
+      smoothingFactor = 0.4f,
       intensity = 1.0f;
 }; //}
 
-//@reflect{
+   //@reflect{
 struct Map {
-   Float2 size; 
+   Float2 size;
    Array<Wall> walls;
    Array<Light> lights;
 
    // @readonly
+   Symbol* id = nullptr;
+   //@ignore{
+   bool markForDelete = false;
+   //}
+};//}
+
+
+//@reflect{
+struct Sprite {
+   //@reference(owner=Assets.textures key=id)
+   Texture* texture = nullptr;
+   //@reference(owner=Assets.textures key=id)
+   Texture* normalMap = nullptr;
+
+   //@readonly
    Symbol* id = nullptr;
    //@ignore{
    bool markForDelete = false;
@@ -197,6 +198,12 @@ struct MoveSet {
 
 //@reflect{
 struct Weapon {
+   // readonly
+
+   Float2 renderSize;
+   Float2 rotationOrigin; // (0,0) is the top left of the unrotated renderSize
+   Rectf hitbox = { 0, 0, 0, 0 };
+
    //@reference(owner=Assets.sprites key=id)
    Sprite* sprite = nullptr;
 
@@ -228,7 +235,7 @@ struct DudeTemplate {
    Weapon* weapon = nullptr;
 
    // @readonly
-   Symbol* id = nullptr;
+   Symbol* id = nullptr; 
    //@ignore{
    bool markForDelete = false;
    //}
@@ -237,13 +244,12 @@ struct DudeTemplate {
 //@reflect{
 struct GameAssets {
    EngineConstants constants;
+
    std::unordered_map<Symbol*, Texture> textures;
    std::unordered_map<Symbol*, Map> maps;
-
    std::unordered_map<Symbol*, Sprite> sprites;
    std::unordered_map<Symbol*, MoveSet> moveSets;
    std::unordered_map<Symbol*, Weapon> weapons;
-
    std::unordered_map<Symbol*, DudeTemplate> dudeTemplates;
 
 };//}
@@ -251,8 +257,6 @@ struct GameAssets {
 extern GameAssets Assets;
 extern EngineConstants& Const;
 #include "assets_gen.h"
-
-
 
   /*
   MOVEMENT PRIMER

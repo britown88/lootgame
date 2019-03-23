@@ -787,6 +787,61 @@ static void _renderDudeDebug(GameState&g, Dude&d) {
    
    //drawlist->AddText(pos + Float2{ 40,40 + ImGui::GetFrameHeightWithSpacing() }, IM_COL32_WHITE, format("%0.4f", d.mv.moveSpeedCapTarget).c_str());
    
+
+   // gonna try and replicate the weapon hitbox
+   if (d.state == DudeState_ATTACKING) {
+      auto origin = d.phy.pos + d.atk.weaponVector * d.phy.circle.size;
+      auto angle = d.atk.weaponVector;
+      auto& hbox = d.moveset.swings[d.atk.combo].hitbox;
+
+      auto rotOrigin = d.tmplt->weapon->rotationOrigin;
+      auto renderSize = d.tmplt->weapon->renderSize;
+      auto hitbox = d.tmplt->weapon->hitbox;
+
+      drawlist->AddCircleFilled(Coords::fromWorld(origin).toScreen(g), 5, IM_COL32(255, 0, 255, 255));
+
+      {
+         Float2 a = -rotOrigin;
+         Float2 b = { a.x + renderSize.x, a.y };
+         Float2 c = { a.x + renderSize.x, a.y + renderSize.y };
+         Float2 d = { a.x, a.y + renderSize.y };
+
+         a = v2Rotate(a, angle);
+         b = v2Rotate(b, angle);
+         c = v2Rotate(c, angle);
+         d = v2Rotate(d, angle);
+
+         ImVec2 pts[] = {
+            Coords::fromWorld(origin + a).toScreen(g),
+            Coords::fromWorld(origin + b).toScreen(g),
+            Coords::fromWorld(origin + c).toScreen(g),
+            Coords::fromWorld(origin + d).toScreen(g)
+         };
+         drawlist->AddPolyline(pts, 4, IM_COL32(255, 255, 255, 64), true, 2.0f);
+      }
+
+      {
+         Float2 a = -rotOrigin + Float2{hitbox.x, hitbox.y};
+         Float2 b = { a.x + hitbox.w, a.y };
+         Float2 c = { a.x + hitbox.w, a.y + hitbox.h };
+         Float2 d = { a.x, a.y + hitbox.h };
+
+         a = v2Rotate(a, angle);
+         b = v2Rotate(b, angle);
+         c = v2Rotate(c, angle);
+         d = v2Rotate(d, angle);
+
+         ImVec2 pts[] = {
+            Coords::fromWorld(origin + a).toScreen(g),
+            Coords::fromWorld(origin + b).toScreen(g),
+            Coords::fromWorld(origin + c).toScreen(g),
+            Coords::fromWorld(origin + d).toScreen(g)
+         };
+         drawlist->AddPolyline(pts, 4, IM_COL32(255, 0, 0, 255), true, 2.0f);
+      }
+
+      
+   }
 }
 
 
@@ -814,7 +869,7 @@ static void _renderHelpers(GameState& g) {
       }
 
       _renderWalls(g);
-      //_renderPhyObjs(g);
+      _renderPhyObjs(g);
       //_renderShadowCalc(g);     
 
       _renderDudeDebug(g, g.maindude);
