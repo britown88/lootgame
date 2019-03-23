@@ -4,32 +4,21 @@
 
 #include "game.h"
 
-enum Textures_{
-   @texture{Textures_@name,
+@asset_def{
+enum @asset_typename{}_{
+   @asset_dummy{@asset_typename{}_DUMMY,
+   }@asset{@asset_typename{}_@asset_name,
    }
-   Textures_COUNT
+   @asset_typename{}_COUNT
 };
 
-struct AssetTextures{
-   Texture* array[Textures_COUNT] = { 0 };
+struct Asset@asset_typename{}{
+   @asset_type* array[@asset_typename{}_COUNT] = { 0 };
 
-   @texture{Texture* @name = nullptr;
+   @asset{@asset_type* @asset_name = nullptr;
    }
 };
-extern AssetTextures Textures;
-
-enum Maps_{
-   @map{Maps_@name,
-   }
-   Maps_COUNT
-};
-
-struct AssetMaps{
-   Map* array[Maps_COUNT] = { 0 };
-
-   @map{Map* @name = nullptr;
-   }
-};
-extern AssetMaps Maps;
+extern Asset@asset_typename{} @asset_typename{};
+}
 
 void assetsStartup();

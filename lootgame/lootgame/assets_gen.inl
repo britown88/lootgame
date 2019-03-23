@@ -1,7 +1,13 @@
 AssetTextures Textures;
+AssetSprites Sprites;
 AssetMaps Maps;
+AssetWeapons Weapons;
+AssetMoveSets MoveSets;
+AssetDudeTemplates DudeTemplates;
+
 
 void assetsStartup(){
+   
    Textures.Dude = &Assets.textures[intern("Dude")];
    Textures.array[Textures_Dude] = Textures.Dude;
    Textures.DudeNormals = &Assets.textures[intern("DudeNormals")];
@@ -35,8 +41,17 @@ void assetsStartup(){
    Textures.TinyStamFull = &Assets.textures[intern("TinyStamFull")];
    Textures.array[Textures_TinyStamFull] = Textures.TinyStamFull;
    
-
+   Sprites.Dude = &Assets.sprites[intern("Dude")];
+   Sprites.array[Sprites_Dude] = Sprites.Dude;
+   Sprites.Sword = &Assets.sprites[intern("Sword")];
+   Sprites.array[Sprites_Sword] = Sprites.Sword;
+   Sprites.Tile = &Assets.sprites[intern("Tile")];
+   Sprites.array[Sprites_Tile] = Sprites.Tile;
+   
    Maps.test = &Assets.maps[intern("test")];
    Maps.array[Maps_test] = Maps.test;
+   
+   
+   
    
 }

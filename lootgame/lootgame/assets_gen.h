@@ -4,6 +4,7 @@
 
 #include "game.h"
 
+
 enum Textures_{
    Textures_Dude,
    Textures_DudeNormals,
@@ -48,6 +49,24 @@ struct AssetTextures{
 };
 extern AssetTextures Textures;
 
+enum Sprites_{
+   Sprites_Dude,
+   Sprites_Sword,
+   Sprites_Tile,
+   
+   Sprites_COUNT
+};
+
+struct AssetSprites{
+   Sprite* array[Sprites_COUNT] = { 0 };
+
+   Sprite* Dude = nullptr;
+   Sprite* Sword = nullptr;
+   Sprite* Tile = nullptr;
+   
+};
+extern AssetSprites Sprites;
+
 enum Maps_{
    Maps_test,
    
@@ -61,5 +80,45 @@ struct AssetMaps{
    
 };
 extern AssetMaps Maps;
+
+enum Weapons_{
+   Weapons_DUMMY,
+   
+   Weapons_COUNT
+};
+
+struct AssetWeapons{
+   Weapon* array[Weapons_COUNT] = { 0 };
+
+   
+};
+extern AssetWeapons Weapons;
+
+enum MoveSets_{
+   MoveSets_DUMMY,
+   
+   MoveSets_COUNT
+};
+
+struct AssetMoveSets{
+   MoveSet* array[MoveSets_COUNT] = { 0 };
+
+   
+};
+extern AssetMoveSets MoveSets;
+
+enum DudeTemplates_{
+   DudeTemplates_DUMMY,
+   
+   DudeTemplates_COUNT
+};
+
+struct AssetDudeTemplates{
+   DudeTemplate* array[DudeTemplates_COUNT] = { 0 };
+
+   
+};
+extern AssetDudeTemplates DudeTemplates;
+
 
 void assetsStartup();
