@@ -185,6 +185,7 @@ $(TargetPath) -assetgen</Command>
     <ClCompile Include="assets.cpp" />
     <ClCompile Include="coords.cpp" />
     <ClCompile Include="game_draw.cpp" />
+    <ClCompile Include="input.cpp" />
     <ClCompile Include="lpp.cpp" />
     <ClCompile Include="mode_action.cpp" />
     <ClCompile Include="natsort.cpp" />
@@ -221,6 +222,7 @@ $(TargetPath) -assetgen</Command>
     <ClInclude Include="coords.h" />
     <ClInclude Include="custom_ui_renders.h" />
     <ClInclude Include="fsys.h" />
+    <ClInclude Include="input.h" />
     <ClInclude Include="lpp.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="phy.h" />

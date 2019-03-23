@@ -71,6 +71,7 @@ static void _doAssetEditor(AssetManagerState& state) {
 template<typename T>
 static void _doMapTreeview(const char* label, AssetManagerState& state, std::unordered_map<Symbol*, T>& map) {
 
+   ImGui::AlignTextToFramePadding();
    if (!ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_DefaultOpen)) {
       return;
    }
@@ -78,8 +79,8 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
    auto mapType = reflectFromRef(map);
    auto values = mapType->funcs.listKVPValues(&map);
 
-   
-   if (ImGui::Button("Add New")) {
+   ImGui::SameLine();
+   if (ImGui::Button(ICON_FA_PLUS)) {
       ImGui::OpenPopup("newkey");
       state.newKey = nullptr;
       state.focusNewKey = true;
@@ -95,6 +96,13 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
          T newobj;
          newobj.id = state.newKey;
          map.insert({ state.newKey, newobj });
+         state.mode = EditorMode_Asset;
+         state.selectedAsset = &map[state.newKey];
+         state.selectedType = reflect<T>();
+         ImGui::CloseCurrentPopup();
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGui::GetIO().KeyMap[ImGuiKey_Escape])) {
          ImGui::CloseCurrentPopup();
       }
 
@@ -151,6 +159,10 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
                   T newobj = *t;
                   t->markForDelete = true;
                   map.insert({ state.newKey, newobj });
+
+                  state.mode = EditorMode_Asset;
+                  state.selectedAsset = &map[state.newKey];
+                  state.selectedType = reflect<T>();
                }
                ImGui::CloseCurrentPopup();
             }
@@ -209,6 +221,9 @@ static void _doAssetManager(AssetManagerState& state) {
          assetsReloadAll();
       }
 
+      if (ImGui::IsKeyPressed(SCANCODE_F) && ImGui::GetIO().KeyCtrl) {
+         ImGui::SetKeyboardFocusHere();
+      }
       state.searchFilter.Draw(ICON_FA_SEARCH);
 
       if (ImGui::BeginChild("tree", ImVec2(0, 0), true)) {

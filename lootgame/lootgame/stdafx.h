@@ -19,5 +19,6 @@ namespace std {
 }
 
 #include "array.h"
+#include "input.h"
 
 //#include "defs.h"
