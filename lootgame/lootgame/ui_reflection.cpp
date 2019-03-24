@@ -100,6 +100,48 @@ bool customUIRender_Texture(TypeMetadata const* type, void* data, StructMemberMe
 
    return edited;
 }
+bool customUIRender_Weapon(TypeMetadata const* type, void* data, StructMemberMetadata const* member, const char* label)
+{
+   auto &wpn = *(Weapon*)data;
+   auto &tex = *wpn.sprite->texture;
+
+   bool edited = doTypeUIEX(type, &wpn);
+
+   auto w = ImGui::GetContentRegionAvailWidth();
+
+   float ratio =  w / wpn.renderSize.x;
+   ImVec2 imgsz = ImVec2(w, ratio * wpn.renderSize.y);
+
+   if (tex.handle) {
+      ImGui::TextUnformatted("Hitbox preview:");
+
+      static bool srgbPreview = true;
+      ImGui::Checkbox("SRGB Preview", &srgbPreview);
+
+      ImDrawList* draw_list = ImGui::GetWindowDrawList();
+      if (srgbPreview) {
+         draw_list->AddCallback([](auto, auto) { render::enableSRGB();  }, nullptr);
+      }
+
+      auto cpos = ImGui::GetCursorScreenPos();
+      ImGui::Image((ImTextureID)(intptr_t)tex.handle, imgsz);
+
+      if (srgbPreview) {
+         draw_list->AddCallback([](auto, auto) { render::disableSRGB();  }, nullptr);
+      }
+
+      auto drawlist = ImGui::GetWindowDrawList();
+      ImVec2 origin = {cpos.x + wpn.rotationOrigin.x * ratio, cpos.y + wpn.rotationOrigin.y * ratio };
+
+      ImVec2 a = { cpos.x + wpn.hitbox.x * ratio, cpos.y + wpn.hitbox.y * ratio };
+      ImVec2 b = { a.x + wpn.hitbox.w * ratio, a.y + wpn.hitbox.h * ratio };
+      drawlist->AddRect(a, b, IM_COL32(255, 0, 0, 160), 0.0f, 15, 3.0f);
+      drawlist->AddCircleFilled(origin, 3.0f, IM_COL32(255, 0, 255, 255));
+      drawlist->AddCircle(origin, 10.0f, IM_COL32(255, 0, 255, 255), 12, 1.0f);
+   }
+
+   return edited;
+}
 
 template<typename T>
 static bool _doIntegerType(void* data, StructMemberMetadata const* member, const char* label) {
