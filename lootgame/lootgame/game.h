@@ -39,22 +39,14 @@ struct EngineConstants {
    float floorHeight = 0.0f;
    float dudeHeight = 0.1f;
 
-                                    // frame equivalent to ~16ms
-   float dudeRotationSpeed = 0.15f; // radian per-frame angle the character can rotate by
-   float dudeMoveSpeed = 0.080f;    // default starting max movespeed, measured per frame
-   float dudeDashSpeed = 0.200f;    // max move speed during dash
-
    float dudeAccelerationRate = 0.0015f; // linear rate the speed cap increases toward the target cap
    float dudeDeccelerationRate = 0.003f; // linear rate the speed cap decreases toward the target cap
 
    float dudeBackwardsPenalty = 0.250f; // percentage of movespeed max removed by moving perfectly away from facing
-
-   float dudeDashDistance = 40.0f;
-   float dudeKnockbackDistance = 0.0f;
+      
    Milliseconds dudePostDashCooldown = 300;
-   Milliseconds dudeBaseStaminaTickRecoveryTime = 500;
 
-   Milliseconds dudeMinimumSwingCooldown = 100; // global minimum cooldown after a swing, even if a combo is queued
+   Milliseconds dudeSwingQueueWindow = 100; //ms before the end of a swing's active frames taht the next combo hit can be queued
 
    Milliseconds dudeSpentStaminaRecoveryTime = 400;
    Milliseconds dudeCrackedStaminaRecoveryTime = 800;
@@ -225,6 +217,8 @@ struct DudeTemplate {
    float walkSpeed = 0.080f;
    float runSpeed = 0.2f;
    float rotationSpeed = 0.15f;
+   float dashSpeed = 0.200f;    // max move speed during dash
+   float dashDistance = 40.0f;
 
    //@reference(owner=Assets.sprites key=id)
    Sprite* sprite = nullptr;

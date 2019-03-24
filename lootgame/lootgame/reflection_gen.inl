@@ -616,45 +616,6 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
-         member.name = intern("dudeRotationSpeed");
-         member.offset = offsetof(EngineConstants, dudeRotationSpeed);
-         member.type = reflect<float>();
-         member.customUI = customUIRenderer<float>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("dudeMoveSpeed");
-         member.offset = offsetof(EngineConstants, dudeMoveSpeed);
-         member.type = reflect<float>();
-         member.customUI = customUIRenderer<float>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("dudeDashSpeed");
-         member.offset = offsetof(EngineConstants, dudeDashSpeed);
-         member.type = reflect<float>();
-         member.customUI = customUIRenderer<float>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
          member.name = intern("dudeAccelerationRate");
          member.offset = offsetof(EngineConstants, dudeAccelerationRate);
          member.type = reflect<float>();
@@ -694,32 +655,6 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
-         member.name = intern("dudeDashDistance");
-         member.offset = offsetof(EngineConstants, dudeDashDistance);
-         member.type = reflect<float>();
-         member.customUI = customUIRenderer<float>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("dudeKnockbackDistance");
-         member.offset = offsetof(EngineConstants, dudeKnockbackDistance);
-         member.type = reflect<float>();
-         member.customUI = customUIRenderer<float>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
          member.name = intern("dudePostDashCooldown");
          member.offset = offsetof(EngineConstants, dudePostDashCooldown);
          member.type = reflect<Milliseconds>();
@@ -733,21 +668,8 @@ void reflectionStartup_generated() {
       
       {
          StructMemberMetadata member;
-         member.name = intern("dudeBaseStaminaTickRecoveryTime");
-         member.offset = offsetof(EngineConstants, dudeBaseStaminaTickRecoveryTime);
-         member.type = reflect<Milliseconds>();
-         member.customUI = customUIRenderer<Milliseconds>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("dudeMinimumSwingCooldown");
-         member.offset = offsetof(EngineConstants, dudeMinimumSwingCooldown);
+         member.name = intern("dudeSwingQueueWindow");
+         member.offset = offsetof(EngineConstants, dudeSwingQueueWindow);
          member.type = reflect<Milliseconds>();
          member.customUI = customUIRenderer<Milliseconds>();
          
@@ -1523,6 +1445,32 @@ void reflectionStartup_generated() {
          StructMemberMetadata member;
          member.name = intern("rotationSpeed");
          member.offset = offsetof(DudeTemplate, rotationSpeed);
+         member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("dashSpeed");
+         member.offset = offsetof(DudeTemplate, dashSpeed);
+         member.type = reflect<float>();
+         member.customUI = customUIRenderer<float>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("dashDistance");
+         member.offset = offsetof(DudeTemplate, dashDistance);
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
          

@@ -26,20 +26,25 @@ EngineConstants& Const = Assets.constants;
 EngineState Engine;
 GraphicObjects Graphics;
 
+void dudeUpdatePhyObjWithTemplate(Dude&d) {
+   d.phy.circle.size = d.tmplt->size;
+   d.phy.type = PhyObject::PhyType_Circle;
+   d.phy.invMass = d.tmplt->inverseMass;
+   d.phy.maxSpeed = d.tmplt->walkSpeed;
+}
+
 void dudeApplyTemplate(Dude& d, DudeTemplate* tmplt) {
    d.tmplt = tmplt;
 
    d.c = White;
-
-   d.phy.circle.size = tmplt->size;
-   d.phy.type = PhyObject::PhyType_Circle;
-   d.phy.invMass = tmplt->inverseMass;
-   d.phy.maxSpeed = tmplt->walkSpeed;
-
    d.status.stamina.clear();
    d.status.stamina.resize(tmplt->stamina);
    d.status.health = d.status.healthMax = tmplt->health;
+
+   dudeUpdatePhyObjWithTemplate(d);
 }
+
+
 
 
 void dudeBeginCooldown(Dude&d, Milliseconds duration);
@@ -137,10 +142,6 @@ void dudeSetState(Dude& d, DudeState state, Milliseconds startTimeOffset) {
    d.stateClock = startTimeOffset;
 }
 
-Milliseconds calcNextStaminaTickTime(int stam, int max) {
-   auto ratio = (float)stam / max;
-   return Const.dudeBaseStaminaTickRecoveryTime + (Milliseconds)(Const.dudeBaseStaminaTickRecoveryTime * cosInterp(1 - ratio));
-}
 
 void dudeShove(Dude&d, Float2 dir, float speed, float distance) {
    if (distance <= 0.0f || speed <= 0.0f) {
@@ -164,8 +165,8 @@ void dudeUpdateShove(Dude& d, Milliseconds tickSize) {
       d.shove.start += tickSize;
       if (d.shove.start >= d.shove.dur) {
          d.mv.moveVector = { 0,0 };
-         if (d.shove.speed > Const.dudeMoveSpeed) {
-            d.phy.maxSpeed = Const.dudeMoveSpeed;
+         if (d.shove.speed > d.tmplt->walkSpeed) {
+            d.phy.maxSpeed = d.tmplt->walkSpeed;
          }
          d.mv.moveSpeedCapTarget = d.mv.moveSpeedCap = d.phy.maxSpeed;
          d.shoved = false;
@@ -209,7 +210,7 @@ void dudeUpdateStateCooldown(Dude& d) {
    }
 }
 
-void dudeBeginDash(Dude& d, float speed) {
+void dudeBeginDash(Dude& d) {
    // gonna try making dashing free for a while
    //if (dudeSpendStamina(d, 1)) {
       
@@ -223,7 +224,7 @@ void dudeBeginDash(Dude& d, float speed) {
          dashDir = d.mv.faceVector;
       }
 
-      dudeShove(d, dashDir, Const.dudeDashSpeed, Const.dudeDashDistance );
+      dudeShove(d, dashDir, d.tmplt->dashSpeed, d.tmplt->dashDistance);
    //}
 }
 
@@ -319,26 +320,25 @@ void dudeUpdateStateAttack(Dude& d, Milliseconds tickSize) {
 
       if (d.stateClock >= d.atk.swing.swingDur) {
          d.stateClock -= d.atk.swing.swingDur;
-         d.atk.weaponVector = v2Normalized(v2Rotate(d.mv.facing, v2FromAngle(-d.atk.swingDir * d.atk.swing.swipeAngle / 2.0f * DEG2RAD)));
-         d.atk.swingPhase = SwingPhase_Cooldown;
-      }
-   }  break;
-   case SwingPhase_Cooldown:
-      // so queued attacks cancel the cooldown phase but 
-      // im not sure if it should:
-      //    cancel it completely, 
-      //    still obey a global minimum cd, 
-      //    or obey a fraction of the base cd
 
-      if (d.stateClock >= Const.dudeMinimumSwingCooldown && d.atk.queuedAttacked) {
-         auto moveset = d.tmplt->weapon->moveSet;
-
-         d.atk.queuedAttacked = false;
-         if (d.atk.combo + 1 < moveset->swings.size()) {
-            dudeBeginAttack(d, -d.atk.swingDir, d.atk.combo + 1);
+         bool executedQueued = false;
+         if (d.atk.queuedAttacked) {
+            auto moveset = d.tmplt->weapon->moveSet;
+            d.atk.queuedAttacked = false;
+            if (d.atk.combo + 1 < moveset->swings.size()) {
+               dudeBeginAttack(d, -d.atk.swingDir, d.atk.combo + 1);
+               executedQueued = true;
+            }
+         }
+         if (!executedQueued) {
+            d.atk.weaponVector = v2Normalized(v2Rotate(d.mv.facing, v2FromAngle(-d.atk.swingDir * d.atk.swing.swipeAngle / 2.0f * DEG2RAD)));
+            d.atk.swingPhase = SwingPhase_Cooldown;
          }
       }
-      else if (d.stateClock >= d.atk.swing.cooldownDur) {
+   }  break;
+   case SwingPhase_Cooldown:  
+
+      if (d.stateClock >= d.atk.swing.cooldownDur) {
          // at the end of an attack cooldown, check to see if we over extended
          if (d.atk.overExtended && dudeStaminaEmpty(d)) {
             d.status.stamina[0].fullCharge += Const.overExtendedStaminaRecoveryTime;
@@ -409,7 +409,7 @@ void mainDudeCheckAttackCollisions(Dude& dude, Array<Dude> &targets) {
       if (dudeCheckAttackCollision(dude, t)) {
          dudeDoDamage(t, dude.atk.swing, dude.atk.overExtended);
          auto pushdir = v2Normalized(t.phy.pos - dude.phy.pos);
-         dudeShove(t, pushdir, Const.dudeDashSpeed, Const.dudeKnockbackDistance);
+         //dudeShove(t, pushdir, Const.dudeDashSpeed, Const.dudeKnockbackDistance);
          dude.atk.hits.push_back(&t);
       }
    }
@@ -442,7 +442,7 @@ void badDudeCheckAttackCollision(GameState& g, Dude& dude, Dude& t) {
    if (dudeCheckAttackCollision(dude, t)) {
       dudeDoDamage(t, dude.atk.swing, dude.atk.overExtended);
       auto pushdir = v2Normalized(t.phy.pos - dude.phy.pos);
-      dudeShove(t, pushdir, Const.dudeDashSpeed, Const.dudeKnockbackDistance);
+      //dudeShove(t, pushdir, Const.dudeDashSpeed, Const.dudeKnockbackDistance);
       dude.atk.hits.push_back(&t);
    }
 }
@@ -485,7 +485,7 @@ void dudeApplyInputAiming(GameState& g, Dude& d) {
 void dudeApplyInputFreeActions(GameState& g, Dude& d) {
    auto& io = g.io;
    if (io.buttonPressed[GameButton_LT]){
-      dudeBeginDash(d, Const.dudeDashSpeed);
+      dudeBeginDash(d);
    }
    else if (io.buttonPressed[GameButton_RT]) {
       dudeBeginAttack(d, 1, 0);
@@ -510,18 +510,20 @@ void dudeApplyInputAttack(GameState& g, Dude& d) {
 
    auto& io = g.io;
    if (io.buttonPressed[GameButton_RT]) {
-      //switch (d.atk.swingPhase) {
-      //case SwingPhase_Windup:
-      //case SwingPhase_Lunge:
-      //case SwingPhase_Swing:
-         d.atk.queuedAttacked = true;
-         //break;
-      //case SwingPhase_Cooldown:
-      //   if (d.atk.combo + 1 < d.moveset.swings.size()) {
-      //      dudeBeginAttack(d, -d.atk.swingDir, d.atk.combo + 1);
-      //   }
-      //   break;
-      //}
+      switch (d.atk.swingPhase) {
+      case SwingPhase_Swing:
+         // queue next attack if pressed during the cancel window
+         if (d.stateClock >= d.atk.swing.swingDur - Const.dudeSwingQueueWindow) {
+            d.atk.queuedAttacked = true;
+         }
+         break;
+      case SwingPhase_Cooldown:
+         // attacked during recovery, just start it
+         if (d.atk.combo + 1 < d.tmplt->weapon->moveSet->swings.size()) {
+            dudeBeginAttack(d, -d.atk.swingDir, d.atk.combo + 1);
+         }
+         break;
+      }
    }
 }
 
@@ -578,7 +580,7 @@ void dudeUpdateVelocity(Dude& d) {
 // rotate facing vector toward the facevector
 void dudeUpdateRotation(Dude& d) {
    if (v2LenSquared(d.mv.faceVector) > 0.0f) {
-      d.mv.facing = v2Normalized(v2RotateTowards(d.mv.facing, d.mv.faceVector, v2FromAngle(Const.dudeRotationSpeed)));
+      d.mv.facing = v2Normalized(v2RotateTowards(d.mv.facing, d.mv.faceVector, v2FromAngle(d.tmplt->rotationSpeed)));
    }
 }
 

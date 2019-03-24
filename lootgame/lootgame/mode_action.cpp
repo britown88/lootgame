@@ -5,13 +5,6 @@
 
 #define DUDE_COUNT 1
 
-
-static MoveSet _createMoveSet() {
-   MoveSet out;
-
-   return out;
-}
-
 static Dude _createDude(GameState& game) {
    Dude out;
    out.phy.pos = { 270,150 };
