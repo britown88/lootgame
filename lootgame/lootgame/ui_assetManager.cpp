@@ -24,6 +24,7 @@ struct AssetManagerState {
    Symbol* newKey = nullptr;
    std::string renameLbl;
    void* renameAsset = nullptr;
+   void* cloneAsset = nullptr;
 };
 
 static void _doConstEditor(AssetManagerState& state) {
@@ -41,6 +42,14 @@ static void _doConstEditor(AssetManagerState& state) {
    if (!p_open) {
       state.mode = EditorMode_Closed;
    }
+}
+
+template<typename T>
+static void _setActiveAsset(AssetManagerState& state, T* t) {
+   state.selectedType = reflect<T>();
+   state.customSelectedRenderer = customUIRenderer<T>();
+   state.selectedAsset = t;
+   state.mode = EditorMode_Asset;
 }
 
 static void _doAssetEditor(AssetManagerState& state) {
@@ -96,9 +105,7 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
          T newobj;
          newobj.id = state.newKey;
          map.insert({ state.newKey, newobj });
-         state.mode = EditorMode_Asset;
-         state.selectedAsset = &map[state.newKey];
-         state.selectedType = reflect<T>();
+         _setActiveAsset(state, &map[state.newKey]);
          ImGui::CloseCurrentPopup();
       }
       ImGui::SameLine();
@@ -126,6 +133,7 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
 
          bool clicked = ImGui::Selectable(t->id, selected && state.mode == EditorMode_Asset);
          bool renamed = false;
+         bool cloned = false;
 
          if (ImGui::BeginPopupContextItem(t->id)) {
             if (ImGui::Selectable("Delete")) {
@@ -134,19 +142,32 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
             else if (ImGui::Selectable("Rename")) {
                renamed = true;               
             }
+            else if (ImGui::Selectable("Clone")) {
+               cloned = true;
+            }
             
             ImGui::EndPopup();
          }
 
-         if (renamed) {
-            state.renameLbl = format("Rename##%d", (uintptr_t)value);
-            ImGui::OpenPopup(state.renameLbl.c_str());
-            state.renameAsset = value;
+         if (renamed || cloned) {
+            if (renamed) {
+               state.renameLbl = format("Rename##%d", (uintptr_t)value);
+               state.renameAsset = value;
+            }
+            else {
+               state.renameLbl = format("Clone##%d", (uintptr_t)value);
+               state.cloneAsset = value;
+            }
+
+            ImGui::OpenPopup(state.renameLbl.c_str());            
             state.newKey = t->id;
             state.focusNewKey = true;
          }
 
-         if (state.renameAsset == value && ImGui::BeginPopupModal(state.renameLbl.c_str())) {
+         
+
+         if ((state.renameAsset == value || state.cloneAsset == value) &&
+            ImGui::BeginPopupModal(state.renameLbl.c_str())) {
             if (state.focusNewKey) {
                ImGui::SetKeyboardFocusHere();
                state.focusNewKey = false;
@@ -155,14 +176,19 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
             doTypeUIEX(reflect<Symbol*>(), &state.newKey, nullptr, "key");
             if (ImGui::Button("OK") || ImGui::IsKeyPressed(ImGui::GetIO().KeyMap[ImGuiKey_Enter])) {
                if (state.newKey != t->id) {
-                  t->id = state.newKey;
-                  T newobj = *t;
-                  t->markForDelete = true;
-                  map.insert({ state.newKey, newobj });
+                  if (state.renameAsset) {
+                     t->id = state.newKey;
+                     T newobj = *t;
+                     t->markForDelete = true;
+                     map.insert({ state.newKey, newobj });
+                  }
+                  else {
+                     T newobj = *t;
+                     newobj.id = state.newKey;
+                     map.insert({ state.newKey, newobj });
+                  }                  
 
-                  state.mode = EditorMode_Asset;
-                  state.selectedAsset = &map[state.newKey];
-                  state.selectedType = reflect<T>();
+                  _setActiveAsset(state, &map[state.newKey]);
                }
                ImGui::CloseCurrentPopup();
             }
@@ -178,10 +204,7 @@ static void _doMapTreeview(const char* label, AssetManagerState& state, std::uno
          }
 
          if (clicked) {
-            state.selectedType = reflect<T>();
-            state.customSelectedRenderer = customUIRenderer<T>();
-            state.selectedAsset = t;
-            state.mode = EditorMode_Asset;
+            _setActiveAsset(state, t);
          }
       }
    }
