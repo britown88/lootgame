@@ -15,12 +15,13 @@ TypeMetadata* meta_EngineConstants = new TypeMetadata;
 TypeMetadata* meta_EngineState = new TypeMetadata;
 TypeMetadata* meta_Wall = new TypeMetadata;
 TypeMetadata* meta_Light = new TypeMetadata;
-TypeMetadata* meta_Map = new TypeMetadata;
 TypeMetadata* meta_Sprite = new TypeMetadata;
 TypeMetadata* meta_AttackSwing = new TypeMetadata;
 TypeMetadata* meta_MoveSet = new TypeMetadata;
 TypeMetadata* meta_Weapon = new TypeMetadata;
 TypeMetadata* meta_DudeTemplate = new TypeMetadata;
+TypeMetadata* meta_DudeSpawn = new TypeMetadata;
+TypeMetadata* meta_Map = new TypeMetadata;
 TypeMetadata* meta_GameAssets = new TypeMetadata;
 TypeMetadata* meta_GameStateDebug = new TypeMetadata;
 TypeMetadata* meta_Int3 = new TypeMetadata;
@@ -957,72 +958,6 @@ void reflectionStartup_generated() {
 
    
    {
-      auto& structName = meta_Map;
-      structName->name = intern("Map");
-      structName->size = sizeof(Map);
-      structName->variety = TypeVariety_Struct;
-
-      structName->funcs.create = [](void* data) {new (data) Map;};
-      structName->funcs.destroy = [](void* data) {((Map*)data)->~Map(); };
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("size");
-         member.offset = offsetof(Map, size);
-         member.type = reflect<Float2>();
-         member.customUI = customUIRenderer<Float2>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("walls");
-         member.offset = offsetof(Map, walls);
-         member.type = reflect<Array<Wall>>();
-         member.customUI = customUIRenderer<Array<Wall>>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("lights");
-         member.offset = offsetof(Map, lights);
-         member.type = reflect<Array<Light>>();
-         member.customUI = customUIRenderer<Array<Light>>();
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-      {
-         StructMemberMetadata member;
-         member.name = intern("id");
-         member.offset = offsetof(Map, id);
-         member.type = reflect<Symbol*>();
-         member.customUI = customUIRenderer<Symbol*>();
-         member.flags |= StructMemberFlags_ReadOnly;
-         
-         
-
-         structName->structMembers.push_back(member);
-      }
-
-      
-   }
-
-   
-   {
       auto& structName = meta_Sprite;
       structName->name = intern("Sprite");
       structName->size = sizeof(Sprite);
@@ -1518,6 +1453,128 @@ void reflectionStartup_generated() {
          StructMemberMetadata member;
          member.name = intern("id");
          member.offset = offsetof(DudeTemplate, id);
+         member.type = reflect<Symbol*>();
+         member.customUI = customUIRenderer<Symbol*>();
+         member.flags |= StructMemberFlags_ReadOnly;
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
+      auto& structName = meta_DudeSpawn;
+      structName->name = intern("DudeSpawn");
+      structName->size = sizeof(DudeSpawn);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) DudeSpawn;};
+      structName->funcs.destroy = [](void* data) {((DudeSpawn*)data)->~DudeSpawn(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("tmplt");
+         member.offset = offsetof(DudeSpawn, tmplt);
+         member.type = reflect<DudeTemplate>();
+         member.customUI = customUIRenderer<DudeTemplate>();
+         
+         member.reference = true;
+         member.referenceOwnerType = reflect<std::unordered_map<Symbol*, DudeTemplate>>();
+         member.referenceOwner = (void*)&(Assets.dudeTemplates);
+         member.referenceKeyMember = intern("id");
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("pos");
+         member.offset = offsetof(DudeSpawn, pos);
+         member.type = reflect<Float2>();
+         member.customUI = customUIRenderer<Float2>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
+      auto& structName = meta_Map;
+      structName->name = intern("Map");
+      structName->size = sizeof(Map);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) Map;};
+      structName->funcs.destroy = [](void* data) {((Map*)data)->~Map(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("size");
+         member.offset = offsetof(Map, size);
+         member.type = reflect<Float2>();
+         member.customUI = customUIRenderer<Float2>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("walls");
+         member.offset = offsetof(Map, walls);
+         member.type = reflect<Array<Wall>>();
+         member.customUI = customUIRenderer<Array<Wall>>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("lights");
+         member.offset = offsetof(Map, lights);
+         member.type = reflect<Array<Light>>();
+         member.customUI = customUIRenderer<Array<Light>>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("dudes");
+         member.offset = offsetof(Map, dudes);
+         member.type = reflect<Array<DudeSpawn>>();
+         member.customUI = customUIRenderer<Array<DudeSpawn>>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("id");
+         member.offset = offsetof(Map, id);
          member.type = reflect<Symbol*>();
          member.customUI = customUIRenderer<Symbol*>();
          member.flags |= StructMemberFlags_ReadOnly;

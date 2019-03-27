@@ -32,15 +32,23 @@ void gameStartActionMode(GameState &g) {
 
    g.maindude = _createDude(g);
 
+   for (auto&ds : g.map->dudes) {
+      Dude d;
+      d.phy.pos = ds.pos;
+      dudeApplyTemplate(d, ds.tmplt);
+      d.ai.target = &g.maindude;
+      g.baddudes.push_back(d);
+   }
+
    //auto e = _createEnemy({ 1000, 1000 });
    //e.ai.target = &g.maindude;
    //g.baddudes.push_back(e);
 
-   for (int i = 0; i < g.mode.action.waveSize; ++i) {
-      auto e = _createEnemy({ (float)(rand() % (int)g.map->size.x) + 100, (float)(rand() % (int)g.map->size.y) + 100 });
-      e.ai.target = &g.maindude;
-      g.baddudes.push_back(e);
-   }
+   //for (int i = 0; i < g.mode.action.waveSize; ++i) {
+   //   auto e = _createEnemy({ (float)(rand() % (int)g.map->size.x) + 100, (float)(rand() % (int)g.map->size.y) + 100 });
+   //   e.ai.target = &g.maindude;
+   //   g.baddudes.push_back(e);
+   //}
 
    //appAddGUI("dudeeditor", [=]() {
    //   uiEditDude(game->maindude);
@@ -49,22 +57,22 @@ void gameStartActionMode(GameState &g) {
 }
 
 void gameUpdateActionMode(GameState &g) {
-   bool allDead = true;
-   for (auto&& d : g.baddudes) {
-      if (dudeAlive(d)) {
-         allDead = false;
-         break;
-      }
-   }
+   //bool allDead = true;
+   //for (auto&& d : g.baddudes) {
+   //   if (dudeAlive(d)) {
+   //      allDead = false;
+   //      break;
+   //   }
+   //}
 
-   if (allDead) {
-      ++g.mode.action.waveSize;
-      for (int i = 0; i < g.mode.action.waveSize; ++i) {
-         auto e = _createEnemy({ (float)(rand() % (int)g.map->size.x) + 100, (float)(rand() % (int)g.map->size.y) + 100 });
-         e.ai.target = &g.maindude;
-         g.baddudes.push_back(e);
-      }
-   }
+   //if (allDead) {
+   //   ++g.mode.action.waveSize;
+   //   for (int i = 0; i < g.mode.action.waveSize; ++i) {
+   //      auto e = _createEnemy({ (float)(rand() % (int)g.map->size.x) + 100, (float)(rand() % (int)g.map->size.y) + 100 });
+   //      e.ai.target = &g.maindude;
+   //      g.baddudes.push_back(e);
+   //   }
+   //}
 
    if (!dudeAlive(g.maindude)) {
       g.mode.type = ModeType_YOUDIED;

@@ -95,6 +95,9 @@ static void _setEditMode(GameState& g, GameEditMode mode) {
    case GameEditMode_Lights:
       g.ui.editLight = &g.ui.newLight;
       break;
+   case GameEditMode_Spawns:
+      g.ui.editSpawn = &g.ui.newSpawn;
+      break;
    }
 
    if (g.ui.mode == mode) {
@@ -153,6 +156,10 @@ static void _viewerMenuBar(GameState& g) {
       if (m == GameEditMode_Lights) { ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive)); }
       if (ImGui::Button("Lights")) { _setEditMode(g, GameEditMode_Lights); }
       if (m == GameEditMode_Lights) { ImGui::PopStyleColor(); }
+
+      if (m == GameEditMode_Spawns) { ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive)); }
+      if (ImGui::Button("Spawns")) { _setEditMode(g, GameEditMode_Spawns); }
+      if (m == GameEditMode_Spawns) { ImGui::PopStyleColor(); }
 
       if (m == GameEditMode_Move) { ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive)); }
       if (ImGui::Button("Edit")) { _setEditMode(g, GameEditMode_Move); }
@@ -224,6 +231,12 @@ static void _handleWallInputs(GameState& g) {
    }
 }
 
+static void _handleSpawnInputs(GameState& g) {
+   if (ImGui::IsMouseClicked(MOUSE_LEFT)) {
+      g.map->dudes.push_back(*g.ui.editSpawn);
+   }
+}
+
 static void _handleLightInputs(GameState& g) {
    
    if (ImGui::IsMouseClicked(MOUSE_LEFT)) {
@@ -234,7 +247,8 @@ static void _handleLightInputs(GameState& g) {
 enum ObjectType {
    ObjectType_None = 0,
    ObjectType_Wall,
-   ObjectType_Light
+   ObjectType_Light,
+   ObjectType_DudeSpawn
 };
 
 struct SelectedObject {
@@ -242,10 +256,19 @@ struct SelectedObject {
    union {
       Wall* wall = nullptr;
       Light* light;
+      DudeSpawn* spawn;
    };
 
    operator bool() { return type != ObjectType_None; }
 };
+
+static float _dudeSpawnRadius(DudeSpawn const& spawn) {
+   float radius = 10.0f;
+   if (spawn.tmplt) {
+      radius = spawn.tmplt->size;
+   }
+   return radius;
+}
 
 SelectedObject _getObjectAtCoords(GameState&g, Coords c) {
    SelectedObject out;
@@ -265,6 +288,16 @@ SelectedObject _getObjectAtCoords(GameState&g, Coords c) {
       if (v2DistSquared(light.pos.toWorld(), mouse) < light.radius * light.radius) {
          out.type = ObjectType_Light;
          out.light = &light;
+         return out;
+      }
+   }
+
+   for (auto&& spawn : g.map->dudes) {
+      auto radius = _dudeSpawnRadius(spawn);
+
+      if (v2DistSquared(spawn.pos, mouse) < radius * radius) {
+         out.type = ObjectType_DudeSpawn;
+         out.spawn = &spawn;
          return out;
       }
    }
@@ -299,6 +332,13 @@ static void _handleDragInputs(GameState& g) {
             else {
                g.ui.editLight = nullptr;
             }
+
+            if (obj.type == ObjectType_DudeSpawn) {
+               g.ui.editSpawn = obj.spawn;
+            }
+            else {
+               g.ui.editSpawn = nullptr;
+            }
          }
          else {
             g.ui.editWall = nullptr;
@@ -323,6 +363,9 @@ static void _handleDragInputs(GameState& g) {
          case ObjectType_Light:
             obj.light->pos.world += delta;
             break;
+         case ObjectType_DudeSpawn:
+            obj.spawn->pos += delta;
+            break;
          }
          obj = {};
       }
@@ -344,8 +387,15 @@ static void _handleDragInputs(GameState& g) {
             p = Coords::fromWorld(p).toScreen(g);
             auto r = Coords::worldToScreen(obj.light->radius, g);
             ImGui::GetWindowDrawList()->AddCircle(p, r, colDragPreview, 24, 5.0f);
-            break;
-         }
+         }  break;
+         case ObjectType_DudeSpawn: {
+            auto p = obj.spawn->pos + delta;
+            p = Coords::fromWorld(p).toScreen(g);
+            auto radius = _dudeSpawnRadius(*obj.spawn);
+            auto r = Coords::worldToScreen(radius, g);
+            ImGui::GetWindowDrawList()->AddCircle(p, r, colDragPreview, 24, 5.0f);
+         }  break;
+         
          }
 
       }
@@ -419,6 +469,9 @@ static void _viewerHandleInput(GameState& g) {
       case GameEditMode_Lights:
          _handleLightInputs(g);
          break;
+      case GameEditMode_Spawns:
+         _handleSpawnInputs(g);
+         break;
       }
    }
 }
@@ -453,6 +506,12 @@ static void _doRightClickMenu(GameState&g) {
                }
                g.map->walls.erase(obj.wall);
                break;
+            case ObjectType_DudeSpawn:
+               if (g.ui.editSpawn == obj.spawn) {
+                  g.ui.editSpawn = nullptr;
+               }
+               g.map->dudes.erase(obj.spawn);
+               break;
             }            
          }
       }
@@ -473,6 +532,14 @@ static void _doRightClickMenu(GameState&g) {
             _toggleEditing(g);
          }
          _setEditMode(g, GameEditMode_Lights);
+      }
+   }
+   if (g.ui.mode != GameEditMode_Spawns) {
+      if (ImGui::MenuItem("Add Spawns")) {
+         if (!g.ui.editing) {
+            _toggleEditing(g);
+         }
+         _setEditMode(g, GameEditMode_Spawns);
       }
    }
    if (g.ui.mode != GameEditMode_Move) {
@@ -683,6 +750,36 @@ static void _renderLights(GameState&g) {
    drawList->AddCircle(mouse, r, IM_COL32(255, 255, 0, 64), 24, 2.0f);
 }
 
+static void _renderSpawns(GameState&g) {
+   if (!g.ui.editSpawn) {
+      return;
+   }
+
+   auto &spawn = *g.ui.editSpawn;
+   spawn.pos = g.io.mousePos.toWorld();
+   auto radius = _dudeSpawnRadius(spawn);
+
+   auto drawList = ImGui::GetWindowDrawList();
+   auto mouse = g.io.mousePos.toScreen(g);
+
+   auto r = Coords::worldToScreen(radius, g);
+
+   auto c = IM_COL32(255, 255, 0, 255);
+
+   for (auto&& spawn : g.map->dudes) {
+      auto radius = _dudeSpawnRadius(spawn);
+
+      auto lp = Coords::fromWorld(spawn.pos).toScreen(g);
+      auto r = Coords::worldToScreen(radius, g);
+
+      drawList->AddCircle(lp, r, c, 24, 2.0f);
+      drawList->AddText(lp + Float2{r, r}, c, spawn.tmplt ? spawn.tmplt->id : "NO_ID");
+
+   }
+
+   drawList->AddCircle(mouse, r, c, 24, 2.0f);
+}
+
 static void _renderShadowCalc(GameState& g) {
    const float SightRadius = 200;
 
@@ -756,6 +853,24 @@ static void _renderMove(GameState& g) {
          c = selectedCol;
       }
       ImGui::GetWindowDrawList()->AddCircle(lp, r, c, 24, 2.0f);
+
+   }
+
+   for (auto&& spawn : g.map->dudes) {
+      auto radius = _dudeSpawnRadius(spawn);
+
+      auto lp = Coords::fromWorld(spawn.pos).toScreen(g);
+      auto r = Coords::worldToScreen(radius, g);
+      auto c = outlineCol;
+
+      if (&spawn == hovered.spawn) {
+         c = hoveredCol;
+      }
+      if (&spawn == g.ui.editSpawn) {
+         c = selectedCol;
+      }
+      ImGui::GetWindowDrawList()->AddCircle(lp, r, c, 24, 2.0f);
+      ImGui::GetWindowDrawList()->AddText(lp + Float2{ r, r }, c, spawn.tmplt ? spawn.tmplt->id : "NO_ID");
 
    }
 }
@@ -866,8 +981,12 @@ static void _renderHelpers(GameState& g) {
          _renderCursor(g, "Light");
          _renderLights(g);
          break;
+      case GameEditMode_Spawns:
+         _renderCursor(g, "Spawn");   
+         _renderSpawns(g);
+         break;
       }
-
+      
       _renderWalls(g);
       _renderPhyObjs(g);
       //_renderShadowCalc(g);     
@@ -899,6 +1018,9 @@ static void _doEditObjectWindow(GameState& g) {
          if (doTypeUI(g.ui.editWall)) {
             _rebuildWallBoundingBox(*g.ui.editWall);
          }
+      }
+      else if (g.ui.editSpawn) {
+         doTypeUI(g.ui.editSpawn);
       }
    }
    ImGui::End();

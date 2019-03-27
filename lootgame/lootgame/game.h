@@ -132,20 +132,6 @@ struct Light {
       intensity = 1.0f;
 }; //}
 
-   //@reflect{
-struct Map {
-   Float2 size;
-   Array<Wall> walls;
-   Array<Light> lights;
-
-   // @readonly
-   Symbol* id = nullptr;
-   //@ignore{
-   bool markForDelete = false;
-   //}
-};//}
-
-
 //@reflect{
 struct Sprite {
    //@reference(owner=Assets.textures key=id)
@@ -228,6 +214,27 @@ struct DudeTemplate {
 
    // @readonly
    Symbol* id = nullptr; 
+   //@ignore{
+   bool markForDelete = false;
+   //}
+};//}
+
+//@reflect{
+struct DudeSpawn {
+   //@reference(owner=Assets.dudeTemplates key=id)
+   DudeTemplate* tmplt = nullptr;
+   Float2 pos;
+};//}
+
+//@reflect{
+struct Map {
+   Float2 size;
+   Array<Wall> walls;
+   Array<Light> lights;
+   Array<DudeSpawn> dudes;
+
+   // @readonly
+   Symbol* id = nullptr;
    //@ignore{
    bool markForDelete = false;
    //}
@@ -412,6 +419,7 @@ enum GameEditMode {
    GameEditMode_None = 0,
    GameEditMode_Walls,
    GameEditMode_Lights,
+   GameEditMode_Spawns,
    GameEditMode_Move,
 };
 
@@ -431,6 +439,9 @@ struct GameStateUI {
 
    Light newLight;
    Light* editLight = nullptr;
+
+   DudeSpawn newSpawn;
+   DudeSpawn* editSpawn = nullptr;
 
    Coords rightClickMousePos;
 };

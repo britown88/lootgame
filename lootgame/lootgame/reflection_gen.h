@@ -123,15 +123,6 @@ struct Reflector<Light>{
 };
 
 
-// Map ----------------------------
-typedef struct Map Map;
-extern TypeMetadata* meta_Map;
-template<>
-struct Reflector<Map>{
-   static TypeMetadata const* type() { return meta_Map; }
-};
-
-
 // Sprite ----------------------------
 typedef struct Sprite Sprite;
 extern TypeMetadata* meta_Sprite;
@@ -174,6 +165,24 @@ extern TypeMetadata* meta_DudeTemplate;
 template<>
 struct Reflector<DudeTemplate>{
    static TypeMetadata const* type() { return meta_DudeTemplate; }
+};
+
+
+// DudeSpawn ----------------------------
+typedef struct DudeSpawn DudeSpawn;
+extern TypeMetadata* meta_DudeSpawn;
+template<>
+struct Reflector<DudeSpawn>{
+   static TypeMetadata const* type() { return meta_DudeSpawn; }
+};
+
+
+// Map ----------------------------
+typedef struct Map Map;
+extern TypeMetadata* meta_Map;
+template<>
+struct Reflector<Map>{
+   static TypeMetadata const* type() { return meta_Map; }
 };
 
 
