@@ -1054,6 +1054,13 @@ static bool _showWindowedViewer(GameInstance& gi) {
          if (auto map = typeMetadataImGuiPayloadAccept<Map>()) {
             g.map = map;
          }
+         else if (auto tmplt = typeMetadataImGuiPayloadAccept<DudeTemplate>()) {
+            Dude d;
+            dudeApplyTemplate(d, tmplt);
+            d.phy.pos = g.io.mousePos.toWorld();
+            d.ai.target = &g.maindude;
+            g.baddudes.push_back(d);
+         }
          ImGui::EndDragDropTarget();
       }
 
