@@ -115,8 +115,10 @@
 xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>$(TargetPath) -reflectgen "$(ProjectDir)."
-$(TargetPath) -assetgen</Command>
+      <Command>if exist "$(TargetPath)" (
+   "$(TargetPath)" -reflectgen "$(ProjectDir)."
+   "$(TargetPath)" -assetgen
+)</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -162,8 +164,10 @@ $(TargetPath) -assetgen</Command>
 xcopy /y "$(sdl2)bin" "$(OutDir)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>$(TargetPath) -reflectgen "$(ProjectDir)."
-$(TargetPath) -assetgen</Command>
+      <Command>if exist "$(TargetPath)" (
+   "$(TargetPath)" -reflectgen "$(ProjectDir)."
+   "$(TargetPath)" -assetgen
+)</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

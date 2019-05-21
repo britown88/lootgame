@@ -274,6 +274,17 @@ SelectedObject _getObjectAtCoords(GameState&g, Coords c) {
    SelectedObject out;
    auto mouse = c.toWorld();
 
+   for (auto&& spawn : g.map->dudes) {
+      auto radius = _dudeSpawnRadius(spawn);
+
+      if (v2DistSquared(spawn.pos, mouse) < radius * radius) {
+         out.type = ObjectType_DudeSpawn;
+         out.spawn = &spawn;
+         return out;
+      }
+   }
+
+
    for (auto&&w : g.map->walls) {
       if (w.bb.containsPoint(mouse)) {
          if (pointInPoly(mouse, w.poly.points.data(), (int)w.poly.points.size())) {
@@ -292,16 +303,7 @@ SelectedObject _getObjectAtCoords(GameState&g, Coords c) {
       }
    }
 
-   for (auto&& spawn : g.map->dudes) {
-      auto radius = _dudeSpawnRadius(spawn);
-
-      if (v2DistSquared(spawn.pos, mouse) < radius * radius) {
-         out.type = ObjectType_DudeSpawn;
-         out.spawn = &spawn;
-         return out;
-      }
-   }
-
+   
    return out;
 }
 
@@ -1020,6 +1022,9 @@ static void _doEditObjectWindow(GameState& g) {
          }
       }
       else if (g.ui.editSpawn) {
+         if (!g.ui.editSpawn->tmplt) {
+            g.ui.editSpawn->tmplt = DudeTemplates.Dude;
+         }
          doTypeUI(g.ui.editSpawn);
       }
    }
