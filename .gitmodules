@@ -1,3 +1,6 @@
 [submodule "lootgame/imgui"]
 	path = lootgame/imgui
 	url = https://github.com/ocornut/imgui.git
+[submodule "lootgame/recastnavigation"]
+	path = lootgame/recastnavigation
+	url = git@github.com:recastnavigation/recastnavigation.git
