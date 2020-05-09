@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "input.h"
 
-#include <SDL2/SDL_scancode.h>
+#include <SDL_scancode.h>
 
 int SCANCODE_A = SDL_SCANCODE_A;
 int SCANCODE_B = SDL_SCANCODE_B;

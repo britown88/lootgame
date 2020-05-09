@@ -6,7 +6,7 @@
 
 #include <misc/cpp/imgui_stdlib.h>
 #include <imgui_internal.h>
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include "scf.h"
 #include "vex.h"

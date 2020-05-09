@@ -5,7 +5,7 @@
 #include "app.h"
 
 #include "reflection_gen.h"
-#include <SDL2/SDL_keycode.h>
+#include <SDL_keycode.h>
 
 static ImGuiWindowFlags BorderlessFlags =
       ImGuiWindowFlags_NoMove |
@@ -212,18 +212,18 @@ static void _handleWallInputs(GameState& g) {
       else {
          if (v2Dist(g.io.mousePos.toScreen(g), Coords::fromWorld(current.poly.points[0]).toScreen(g)) < 10.0f) {
             if (current.poly.points.size() >= 3) {
-               if (polyConvex(current.poly.points.data(), (int)current.poly.points.size())) {
+               //if (polyConvex(current.poly.points.data(), (int)current.poly.points.size())) {
                   _rebuildWallBoundingBox(current);
                   g.map->walls.push_back(current);
                   current.poly.points.clear();
-               }
+               //}
             }
          }
          else {
             auto mouse = g.io.mousePos.toWorld();
-            if (_wallIsConvex(current.poly.points, mouse)) {
+            //if (_wallIsConvex(current.poly.points, mouse)) {
                current.poly.points.push_back(mouse);
-            }
+            //}
          }
 
                   
@@ -694,7 +694,7 @@ static void _renderWalls(GameState& g) {
       }
 
       
-      drawlist->AddConvexPolyFilled(screenPts.data(), (int)screenPts.size(), greenFill);
+      //drawlist->AddConvexPolyFilled(screenPts.data(), (int)screenPts.size(), greenFill);
       drawlist->AddPolyline(screenPts.data(), (int)screenPts.size(), greenLine, true, 2.0f);
    }
 
@@ -711,9 +711,9 @@ static void _renderWalls(GameState& g) {
       auto mouse = g.io.mousePos.toScreen(g);
 
       auto c = greenWorking;
-      if (!_wallIsConvex(screenPts, mouse)) {
-         c = redWorking;
-      }
+      //if (!_wallIsConvex(screenPts, mouse)) {
+      //   c = redWorking;
+      //}
 
       bool closing = v2Dist(startPt, mouse) < 10.0f;
 
@@ -991,7 +991,7 @@ static void _renderHelpers(GameState& g) {
       
       _renderWalls(g);
       _renderPhyObjs(g);
-      //_renderShadowCalc(g);     
+      _renderShadowCalc(g);     
 
       _renderDudeDebug(g, g.maindude);
    }

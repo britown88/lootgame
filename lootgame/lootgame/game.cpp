@@ -12,7 +12,7 @@ Map _defaultMap = { {1000,1000} };
 #include "assets_gen.inl"
 
 #include <GL/glew.h>
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <stb/stb_image.h>
 
 #define AXIS_DEADZONE 0.25f
