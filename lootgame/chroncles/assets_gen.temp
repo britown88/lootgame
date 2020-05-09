@@ -1,0 +1,9 @@
+@asset_def{Asset@asset_typename @asset_typename;
+}
+
+void assetsStartup(){
+   @asset_def{
+   @asset{@asset_typename{}.@asset_name = &@asset_globalmap{}[intern("@asset_name")];
+   @asset_typename{}.array[@asset_typename{}_@asset_name] = @asset_typename{}.@asset_name;
+   }}
+}

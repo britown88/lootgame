@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{5B1EC5F9-1467-4471-B99C-3CF562354A50}</ProjectGuid>
+    <RootNamespace>chroncles</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\props.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\props.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\props.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\props.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>
+      </SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(imgui)examples/;$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;D:/LivePP/API/;</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SDL_MAIN_HANDLED;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+    </ClCompile>
+    <Link>
+      <SubSystem>
+      </SubSystem>
+      <AdditionalLibraryDirectories>$(sdl2)lib;$(glew)lib</AdditionalLibraryDirectories>
+      <CreateHotPatchableImage>Enabled</CreateHotPatchableImage>
+      <AdditionalDependencies>sdl2.lib;sdl2main.lib;glew32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OptimizeReferences>false</OptimizeReferences>
+      <EnableCOMDATFolding>false</EnableCOMDATFolding>
+    </Link>
+    <PreBuildEvent>
+      <Command>if exist "$(TargetDir)codegen.exe" (
+   "$(TargetDir)codegen.exe" -reflectgen "$(ProjectDir)."
+   "$(TargetDir)codegen.exe" -assetgen
+)</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>echo Coppying dependencies to output...
+xcopy /y "$(glew)bin" "$(OutDir)"
+xcopy /y "$(sdl2)bin" "$(OutDir)"
+
+echo f | xcopy /y "$(TargetPath)" "$(TargetDir)codegen.exe"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>
+      </SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(imgui)examples/;$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SDL_MAIN_HANDLED;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+    </ClCompile>
+    <Link>
+      <SubSystem>
+      </SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(sdl2)lib;$(glew)lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>sdl2.lib;sdl2main.lib;glew32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PreBuildEvent>
+      <Command>if exist "$(TargetDir)codegen.exe" (
+   "$(TargetDir)codegen.exe" -reflectgen "$(ProjectDir)."
+   "$(TargetDir)codegen.exe" -assetgen
+)</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>echo Coppying dependencies to output...
+xcopy /y "$(glew)bin" "$(OutDir)"
+xcopy /y "$(sdl2)bin" "$(OutDir)"
+
+echo f | xcopy /y "$(TargetPath)" "$(TargetDir)codegen.exe"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\imgui\examples\imgui_impl_opengl3.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\imgui\examples\imgui_impl_sdl.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="app.cpp" />
+    <ClCompile Include="assetgen.cpp" />
+    <ClCompile Include="assets.cpp" />
+    <ClCompile Include="colors.cpp" />
+    <ClCompile Include="coords.cpp" />
+    <ClCompile Include="game.cpp" />
+    <ClCompile Include="game_draw.cpp" />
+    <ClCompile Include="implementations.cpp" />
+    <ClCompile Include="input.cpp" />
+    <ClCompile Include="lpp.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="math.cpp" />
+    <ClCompile Include="natsort.cpp" />
+    <ClCompile Include="reflectgen.cpp" />
+    <ClCompile Include="reflection.cpp" />
+    <ClCompile Include="render.cpp" />
+    <ClCompile Include="scf.cpp" />
+    <ClCompile Include="shadows.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="stringformat.cpp" />
+    <ClCompile Include="symbol.cpp" />
+    <ClCompile Include="ui.cpp" />
+    <ClCompile Include="ui_reflection.cpp" />
+    <ClCompile Include="ui_viewer.cpp" />
+    <ClCompile Include="vex.cpp" />
+    <ClCompile Include="win.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\imgui\examples\imgui_impl_opengl3.h" />
+    <ClInclude Include="..\imgui\examples\imgui_impl_sdl.h" />
+    <ClInclude Include="app.h" />
+    <ClInclude Include="array.h" />
+    <ClInclude Include="assets_gen.h" />
+    <ClInclude Include="coords.h" />
+    <ClInclude Include="custom_ui_renders.h" />
+    <ClInclude Include="defs.h" />
+    <ClInclude Include="fsys.h" />
+    <ClInclude Include="game.h" />
+    <ClInclude Include="IconsFontAwesome.h" />
+    <ClInclude Include="input.h" />
+    <ClInclude Include="lpp.h" />
+    <ClInclude Include="math.h" />
+    <ClInclude Include="parser.h" />
+    <ClInclude Include="reflection.h" />
+    <ClInclude Include="reflection_gen.h" />
+    <ClInclude Include="render.h" />
+    <ClInclude Include="scf.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="ui.h" />
+    <ClInclude Include="vex.h" />
+    <ClInclude Include="win.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app_reflection_gen.inl" />
+    <None Include="assets\fragment.glsl" />
+    <None Include="assets\vertex.glsl" />
+    <None Include="assets_gen.h.temp" />
+    <None Include="assets_gen.inl" />
+    <None Include="assets_gen.temp" />
+    <None Include="config.ini" />
+    <None Include="main_reflection_gen.inl" />
+    <None Include="reflection_gen.h.temp" />
+    <None Include="reflection_gen.inl" />
+    <None Include="reflection_gen.temp" />
+    <None Include="reflection_gen_file.temp" />
+    <None Include="uniforms.x" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="chroncles.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\lgimgui\lgimgui.vcxproj">
+      <Project>{3e7f7f20-e0fc-4f6a-9ba6-aba10fb743f9}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="assets\gamecontrollerdb.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
