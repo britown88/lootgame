@@ -208,7 +208,7 @@ void GraphicObjects::build() {
    meshUncentered = render::meshBuild(vboUncentered, 6);
 
    auto& res = Const.resolution;
-   scene = render::fboBuild(res);
+   //scene = render::fboBuild(res);
 }
 
 bool GraphicObjects::reloadShaders() {

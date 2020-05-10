@@ -23,6 +23,11 @@ EngineConstants& Const = Assets.constants;
 EngineState Engine;
 GraphicObjects Graphics;
 
+void gameBeginNewGame(GameState& g) {
+   // starting mode
+   gameBeginExploreMode(g);
+}
+
 void gameBeginFrame(GameState& g) {
    auto& mPos = ImGui::GetIO().MousePos;
    auto& io = g.io;
@@ -180,11 +185,116 @@ bool gameProcessEvent(GameState& g, SDL_Event* event) {
    return false;
 }
 
+static void _applyInputs(GameState&g) {
+   //g.io.leftStick = _scaleStick(g.io.leftStick_RAW);
+   //g.io.rightStick = _scaleStick(g.io.rightStick_RAW);
+
+   //if (dudeAlive(g.maindude)) {
+   //   dudeApplyInput(g, g.maindude);
+   //}
+}
+
+static void _otherFrameStep(GameState& g) {
+   Milliseconds tickSize = 32;
+   //LOG("32 milis step");
+}
+
+static void _updateMode(GameState&g, Milliseconds tickSize) {
+   //g.mode.clock += tickSize;
+   switch (g.mode) {
+   case GameMode_Explore: gameUpdateExploreMode(g); break;
+   }
+}
+
+static void _frameStep(GameState& g) {
+   Milliseconds tickSize = 16;
+   //LOG("16 milis step");
+
+   //dudeUpdateState(g.maindude, tickSize);
+   //mainDudeCheckAttackCollisions(g.maindude, g.baddudes);
+
+   //dudeUpdateRotation(g.maindude);
+   //dudeUpdateVelocity(g.maindude);
+
+   //
+
+   //_buildPhySystem(g);
+}
+
+static void _milliStep(GameState& g) {
+   Milliseconds tickSize = 1;
+   //LOG("1 mili step");
+
+   //updatePhyPositions(g.phySys.objs);
+}
+
+static void _perRenderStep(GameState& g, Milliseconds ms) {
+   Milliseconds tickSize = ms;
+   //_cameraFollowPlayer(g);
+   //LOG("PerFrame step");
+}
+
+
+static const int LastUpdateMSCap = 32;
+static const int FrameLength = 16;
 
 void gameUpdate(GameState& g) {
    auto time = appGetTime();
    auto dt = time - g.lastUpdate;
    auto ms = dt.toMilliseconds();
+
+   _applyInputs(g);
+
+   if (ms > LastUpdateMSCap) {
+      // something bad happened and we spiked hard
+      ms = LastUpdateMSCap;
+      g.lastUpdate = time - timeMillis(ms);
+   }
+
+   g.lastUpdate += timeMillis(ms);
+
+   g.otherFrameClock += ms;
+   g.frameClock += ms;
+   g.gameClock += ms;
+
+   while (g.otherFrameClock > FrameLength * 2) {
+      _otherFrameStep(g);
+      g.otherFrameClock -= FrameLength * 2;
+
+      for (int i = 0; i < 2; ++i) {
+         if (g.frameClock > FrameLength) {
+            _frameStep(g);
+            g.frameClock -= FrameLength;
+         }
+
+         for (int j = 0; j < FrameLength; ++j) {
+            if (g.gameClock > 0) {
+               _milliStep(g);
+               --g.gameClock;
+            }
+         }
+      }
+   }
+
+   while (g.frameClock > FrameLength) {
+      _frameStep(g);
+      g.frameClock -= FrameLength;
+
+      for (int j = 0; j < FrameLength; ++j) {
+         if (g.gameClock > 0) {
+            _milliStep(g);
+            --g.gameClock;
+         }
+      }
+   }
+
+   while (g.gameClock > 0) {
+      _milliStep(g);
+      --g.gameClock;
+   }
+
+   _updateMode(g, ms);
+   _perRenderStep(g, ms);
 }
 
 

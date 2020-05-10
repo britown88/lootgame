@@ -296,14 +296,17 @@ static int viewerCount = 0;
 
 void appBeginNewGameInstance() {
    auto inst = new GameInstance();
+   inst->ega = egaTextureCreate(EGA_RES_WIDTH, EGA_RES_HEIGHT);
+   inst->egaOutputTexture = render::textureBuild({ EGA_RES_WIDTH, EGA_RES_HEIGHT });
+
    inst->outputFbo = render::fboBuild(Const.resolution);
    inst->winTitle = format("Viewer %d", viewerCount++ + 1);
    g_app->instances.push_back(inst);
    g_app->lastFocused = inst;
 
    LOG("Starting game instance in Viewer %d", viewerCount);
-
-   //gameStartActionMode(inst->state);
+   
+   gameBeginNewGame(inst->state);
    ImGui::SetWindowFocus(inst->winTitle.c_str());
 
    appAddGUI(inst->winTitle.c_str(), [=]()mutable {
@@ -317,6 +320,7 @@ void appCreateWindow(App* app, WindowConfig const& info) {
    assetsLoad();
    assetsStartup();
    Graphics.build(); 
+   egaStartup();
 
       
    //uiOpenAssetManager();
@@ -457,7 +461,7 @@ static void _updateDialogs(App* app) {
 
 bool _gameInstanceStep(GameInstance& g) {
    gameUpdate(g.state);
-   gameDraw(g.state,g.outputFbo);
+   gameDraw(g);
    return gameDoUIWindow(g);
 }
 

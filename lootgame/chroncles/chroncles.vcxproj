@@ -198,6 +198,7 @@ echo f | xcopy /y "$(TargetPath)" "$(TargetDir)codegen.exe"
     <ClCompile Include="lpp.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="math.cpp" />
+    <ClCompile Include="mode_explore.cpp" />
     <ClCompile Include="natsort.cpp" />
     <ClCompile Include="reflectgen.cpp" />
     <ClCompile Include="reflection.cpp" />

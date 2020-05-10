@@ -281,6 +281,29 @@ void render::shaderSetActive(ShaderHandle s) {
    g_activeShader = s;
 }
 
+static void _updatePixelData(Int2 const& sz, TextureFlag flags, ColorRGBA const* pixels) {
+   GLuint colorFormat = 0;
+   GLenum type = 0;
+   if (flags&TextureFlag_Color_SRGBA) {
+      colorFormat = GL_SRGB8_ALPHA8;
+      type = GL_UNSIGNED_BYTE;
+   }
+   else if (flags&TextureFlag_Color_RGBA8) {
+      colorFormat = GL_RGBA8;
+      type = GL_UNSIGNED_BYTE;
+   }
+   else if (!pixels && flags&TextureFlag_Color_RGBA16F) {
+      // only allowed if we didnt pass in a pixel buffer, since this assumes floats (used for fbos)
+      colorFormat = GL_RGBA16F;
+      type = GL_FLOAT;
+   }
+
+   if (colorFormat) {
+      //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+      glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, sz.x, sz.y, 0, GL_RGBA, type, pixels);
+   }
+}
+
 TextureHandle render::buildTextureHandle(Int2 const& sz, TextureFlag flags, ColorRGBA const* pixels) {
    TextureHandle out = 0;
 
@@ -307,27 +330,7 @@ TextureHandle render::buildTextureHandle(Int2 const& sz, TextureFlag flags, Colo
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
    }
 
-   GLuint colorFormat = 0;
-   GLenum type = 0;
-   if (flags&TextureFlag_Color_SRGBA) {
-      colorFormat = GL_SRGB8_ALPHA8;
-      type = GL_UNSIGNED_BYTE;
-   }
-   else if (flags&TextureFlag_Color_RGBA8) {
-      colorFormat = GL_RGBA8;
-      type = GL_UNSIGNED_BYTE;
-   }
-   else if (!pixels && flags&TextureFlag_Color_RGBA16F) {
-      // only allowed if we didnt pass in a pixel buffer, since this assumes floats (used for fbos)
-      colorFormat = GL_RGBA16F;
-      type = GL_FLOAT;
-   }
-
-   if (colorFormat) {
-      //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-      glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, sz.x, sz.y, 0, GL_RGBA, type, pixels);
-
-   }
+   _updatePixelData(sz, flags, pixels);
    
    glBindTexture(GL_TEXTURE_2D, 0);
    return out;
@@ -371,11 +374,16 @@ void render::textureRefreshFromFile(Texture&t) {
 
 void render::textureRefreshFromBuffer(Texture&t) {
    if (t.storedImageData) {
-      if (t.handle) {
-         render::textureHandleDestroy(t.handle);
+      if (!t.handle) {
+         // handle isnt made, build one
+         t.handle = buildTextureHandle(t.sz, t.flags, (ColorRGBA const*)t.storedImageData.data);         
       }
-      t.handle = buildTextureHandle(t.sz, t.flags, (ColorRGBA const*)t.storedImageData.data);
-      LOG("Refreshed texture [%s] from buffer", t.id);
+      else {
+         // udpate existing handle
+         glBindTexture(GL_TEXTURE_2D, t.handle);
+         _updatePixelData(t.sz, t.flags, (ColorRGBA const*)t.storedImageData.data);
+         glBindTexture(GL_TEXTURE_2D, 0);
+      }
    }   
 }
 

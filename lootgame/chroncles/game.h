@@ -3,6 +3,7 @@
 #include "math.h"
 #include "render.h"
 #include "coords.h"
+#include "ega.h"
 
 
 
@@ -12,7 +13,7 @@ struct GraphicObjects {
    ShaderHandle shader = 0;
 
    Mesh mesh, meshUncentered;
-   FBO scene;
+   //FBO scene;
 
    void build();
    bool reloadShaders();
@@ -106,6 +107,10 @@ struct GameStateUI {
    Coords rightClickMousePos;
 };
 
+enum GameMode {
+   GameMode_Explore
+};
+
 struct GameState {
 
    GameStateUI ui;
@@ -113,6 +118,8 @@ struct GameState {
    GameCamera camera;// = { { 0, 0, (float)Const.vpSize.x, (float)Const.vpSize.y } }; // viewport into the world
    Rectf vpScreenArea = { 0, 0, 1, 1 }; // screen coordinates or the viewer image within the UI
    
+   EGAPalette palette = { 0, 1, 2, 3, 4, 58, 20, 7, 56, 57, 60, 62, 63, 60, 62, 63 }; //the default CGA palette
+
    Time lastMouseMove;
 
    Time lastUpdate; // appGetTime of last gameUpdate
@@ -122,13 +129,20 @@ struct GameState {
    Milliseconds frameClock = 0; // ticks since last frame step
    Milliseconds otherFrameClock = 0; // ticks since last 'every other frame' step
 
+   GameMode mode = GameMode_Explore;
 };
 
 struct GameInstance {
    std::string winTitle;
    GameState state;
    FBO outputFbo;
+
+   EGATexture* ega;
+   Texture egaOutputTexture;
 };
+
+// called at the start of a new instance, should have all the default bootup behavior
+void gameBeginNewGame(GameState& g);
 
 extern GameState* DEBUG_CurrentGame;
 
@@ -138,5 +152,8 @@ typedef union SDL_Event SDL_Event;
 bool gameProcessEvent(GameState& g, SDL_Event* event);
 
 void gameUpdate(GameState& g);
-void gameDraw(GameState& g, FBO& output);
+void gameDraw(GameInstance& gi);
+
+void gameBeginExploreMode(GameState& g);
+void gameUpdateExploreMode(GameState& g);
 

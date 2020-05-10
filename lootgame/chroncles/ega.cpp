@@ -492,6 +492,12 @@ int egaTextureDecode(EGATexture *self, Texture* target, EGAPalette *palette) {
       return 0;
    }
 
+   if (!target->storedImageData) {
+      auto buff = new byte[self->pixelCount * sizeof(ColorRGBA)];
+      target->storedImageData = blobCreate(buff, self->pixelCount * sizeof(ColorRGBA));
+      delete[] buff;
+   }
+
    if (!self->decodePixels) {
       self->decodePixels = new ColorRGBA[self->w * self->h];
       self->dirty |= Tex_DECODE_DIRTY;

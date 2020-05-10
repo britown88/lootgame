@@ -111,6 +111,9 @@
     <ClCompile Include="ega.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="mode_explore.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h">
