@@ -12,11 +12,7 @@ struct GraphicObjects {
    ShaderHandle shader = 0;
 
    Mesh mesh, meshUncentered;
-   FBO
-      unlitScene,
-      lightLayer,
-      litScene,
-      UI;
+   FBO scene;
 
    void build();
    bool reloadShaders();

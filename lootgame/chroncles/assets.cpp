@@ -208,13 +208,7 @@ void GraphicObjects::build() {
    meshUncentered = render::meshBuild(vboUncentered, 6);
 
    auto& res = Const.resolution;
-   unlitScene = render::fboBuild(res, {
-      render::textureBuild(res, TextureFlag_FBODefaults),   // diffuse
-      render::textureBuild(res, TextureFlag_FBODefaults)    // normals
-      });
-   lightLayer = render::fboBuild(res);
-   litScene = render::fboBuild(res);
-   UI = render::fboBuild(res);
+   scene = render::fboBuild(res);
 }
 
 bool GraphicObjects::reloadShaders() {

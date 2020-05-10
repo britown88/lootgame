@@ -285,7 +285,7 @@ static void _loadReflectionTest() {
             init = true;
          }
 
-         //doTypeUI(&s);
+         doTypeUI(&s);
       }
       ImGui::End();
       return p_open;
@@ -315,7 +315,7 @@ void appBeginNewGameInstance() {
 void appCreateWindow(App* app, WindowConfig const& info) {
    _windowCreate(app, info);
    assetsLoad();
-   //assetsStartup();
+   assetsStartup();
    Graphics.build(); 
 
       
