@@ -81,10 +81,11 @@
       <SDLCheck>
       </SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(imgui)examples/;$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;D:/LivePP/API/;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(imgui)examples/;$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SDL_MAIN_HANDLED;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <PrecompiledHeader>Use</PrecompiledHeader>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -94,6 +95,7 @@
       <AdditionalDependencies>sdl2.lib;sdl2main.lib;glew32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OptimizeReferences>false</OptimizeReferences>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
     </Link>
     <PreBuildEvent>
       <Command>if exist "$(TargetDir)codegen.exe" (
@@ -146,7 +148,7 @@ echo f | xcopy /y "$(TargetPath)" "$(TargetDir)codegen.exe"
       <SDLCheck>
       </SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(imgui)examples/;$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(imgui)examples/;$(imgui);$(stb)include;$(sdl2)include;$(nowide)include;$(glew)include;D:/LivePP/API/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SDL_MAIN_HANDLED;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -159,6 +161,7 @@ echo f | xcopy /y "$(TargetPath)" "$(TargetDir)codegen.exe"
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(sdl2)lib;$(glew)lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>sdl2.lib;sdl2main.lib;glew32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PreBuildEvent>
       <Command>if exist "$(TargetDir)codegen.exe" (

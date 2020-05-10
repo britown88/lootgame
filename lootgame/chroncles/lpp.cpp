@@ -13,7 +13,7 @@ static void* g_lpp = nullptr;
 
 void lppStartup() {
 #ifdef _DEBUG
-   if (HMODULE livePP = lpp::lppLoadAndRegister(LPP_PATH, "lootgame")) {
+   if (HMODULE livePP = lpp::lppLoadAndRegister(LPP_PATH, "chroncles")) {
       lpp::lppEnableAllCallingModulesSync(livePP);
       lpp::lppInstallExceptionHandler(livePP);
       g_lpp = livePP;

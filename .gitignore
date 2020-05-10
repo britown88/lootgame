@@ -267,3 +267,5 @@ __pycache__/
 /lootgame/chroncles/log_telemetry_lootgame.txt
 /lootgame/chroncles/log_dev_lootgame.txt
 /lootgame/chroncles/chron.bin
+/lootgame/chroncles/log_telemetry_chroncles.txt
+/lootgame/chroncles/log_dev_chroncles.txt

@@ -5,6 +5,15 @@
 #include "reflection.h"
 
 
+// AssetType ----------------------------
+extern TypeMetadata* meta_AssetType;
+typedef enum AssetType AssetType;
+template<>
+struct Reflector<AssetType>{
+   static TypeMetadata const* type() { return meta_AssetType; }
+};
+
+
 // TextureFlag_ ----------------------------
 extern TypeMetadata* meta_TextureFlag_;
 typedef enum TextureFlag_ TextureFlag_;
@@ -93,6 +102,15 @@ extern TypeMetadata* meta_EngineState;
 template<>
 struct Reflector<EngineState>{
    static TypeMetadata const* type() { return meta_EngineState; }
+};
+
+
+// AssetRecord ----------------------------
+typedef struct AssetRecord AssetRecord;
+extern TypeMetadata* meta_AssetRecord;
+template<>
+struct Reflector<AssetRecord>{
+   static TypeMetadata const* type() { return meta_AssetRecord; }
 };
 
 

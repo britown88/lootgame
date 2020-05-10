@@ -83,6 +83,18 @@ struct GameCamera {
    
 };
 
+//@reflect{
+enum AssetType {
+   AssetType_Unknown = 0,
+   AssetType_EGATexture
+};//}
+
+//@reflect{
+struct AssetRecord {
+   AssetType type = AssetType_Unknown;
+   Blob data;
+};//}
+
 
 //@reflect{
 struct GameAssets {

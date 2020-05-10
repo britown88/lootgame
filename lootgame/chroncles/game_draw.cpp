@@ -3,7 +3,7 @@
 #include "game.h"
 
 static void _renderToEga(GameInstance& gi) {
-   egaClear(gi.ega, 1);
+   egaClear(gi.ega, 4);
 }
 
 static void _renderOutput(GameInstance& gi) {

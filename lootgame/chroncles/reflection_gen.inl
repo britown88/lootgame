@@ -10,8 +10,10 @@ TypeMetadata* meta_ColorRGBA = new TypeMetadata;
 TypeMetadata* meta_ColorRGBf = new TypeMetadata;
 TypeMetadata* meta_ColorHSV = new TypeMetadata;
 TypeMetadata* meta_ColorRGBAf = new TypeMetadata;
+TypeMetadata* meta_AssetType = new TypeMetadata;
 TypeMetadata* meta_EngineConstants = new TypeMetadata;
 TypeMetadata* meta_EngineState = new TypeMetadata;
+TypeMetadata* meta_AssetRecord = new TypeMetadata;
 TypeMetadata* meta_GameAssets = new TypeMetadata;
 TypeMetadata* meta_Int3 = new TypeMetadata;
 TypeMetadata* meta_Float2 = new TypeMetadata;
@@ -26,6 +28,33 @@ TypeMetadata* meta_FBO = new TypeMetadata;
 
 
 void reflectionStartup_generated() {
+   
+   {
+      auto& enumName = meta_AssetType;
+      enumName->name = intern("AssetType");
+      enumName->size = sizeof(AssetType);
+      enumName->variety = TypeVariety_Enum;
+      
+
+      
+      {
+         EnumEntryMetadata entry;
+         entry.name = intern("AssetType_Unknown");
+         entry.value = AssetType_Unknown;
+         enumName->enumEntries.push_back(entry);
+      }
+
+      
+      {
+         EnumEntryMetadata entry;
+         entry.name = intern("AssetType_EGATexture");
+         entry.value = AssetType_EGATexture;
+         enumName->enumEntries.push_back(entry);
+      }
+
+      
+   }
+
    
    {
       auto& enumName = meta_TextureFlag_;
@@ -559,6 +588,45 @@ void reflectionStartup_generated() {
          member.offset = offsetof(EngineState, reloadShaders);
          member.type = reflect<bool>();
          member.customUI = customUIRenderer<bool>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
+      auto& structName = meta_AssetRecord;
+      structName->name = intern("AssetRecord");
+      structName->size = sizeof(AssetRecord);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) AssetRecord;};
+      structName->funcs.destroy = [](void* data) {((AssetRecord*)data)->~AssetRecord(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("type");
+         member.offset = offsetof(AssetRecord, type);
+         member.type = reflect<AssetType>();
+         member.customUI = customUIRenderer<AssetType>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("data");
+         member.offset = offsetof(AssetRecord, data);
+         member.type = reflect<Blob>();
+         member.customUI = customUIRenderer<Blob>();
          
          
 
