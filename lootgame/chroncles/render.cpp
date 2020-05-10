@@ -171,7 +171,7 @@ void uber::bindTexture(Uniform u, TextureHandle handle) {
 
    auto slot = *(TextureSlot*)(((byte*)&g_uberShader.defaults) + data.offset);
    render::uSetTextureSlot(data.name, slot);
-   render::textureBind(handle, slot);
+   render::textureHandleBind(handle, slot);
 }
 
 void render::enableSRGB() {
@@ -328,13 +328,16 @@ TextureHandle render::buildTextureHandle(Int2 const& sz, TextureFlag flags, Colo
       glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, sz.x, sz.y, 0, GL_RGBA, type, pixels);
 
    }
-
    
    glBindTexture(GL_TEXTURE_2D, 0);
    return out;
 }
 
-void render::textureRefresh(Texture&t) {
+ColorRGBA const* render::textureGetPixels(Texture&t) {
+   return ((ColorRGBA*)t.storedImageData.data);
+}
+
+void render::textureRefreshFromFile(Texture&t) {
    if (!t.filepath.empty()) {
       int32_t comp = 0;
 
@@ -358,13 +361,22 @@ void render::textureRefresh(Texture&t) {
       free(mem);
 
       if (t.handle) {
-         render::textureDestroy(t.handle);
+         render::textureHandleDestroy(t.handle);
       }
-
       t.handle = buildTextureHandle(t.sz, t.flags, (ColorRGBA const*)t.storedImageData.data);
 
       LOG("Refreshed texture [%s] from file", t.id);
    }
+}
+
+void render::textureRefreshFromBuffer(Texture&t) {
+   if (t.storedImageData) {
+      if (t.handle) {
+         render::textureHandleDestroy(t.handle);
+      }
+      t.handle = buildTextureHandle(t.sz, t.flags, (ColorRGBA const*)t.storedImageData.data);
+      LOG("Refreshed texture [%s] from buffer", t.id);
+   }   
 }
 
 
@@ -378,13 +390,13 @@ Texture render::textureBuild(Int2 const& sz, TextureFlag flags, ColorRGBA const*
    return out;
 }
 
-void render::textureDestroy(TextureHandle& t) {
+void render::textureHandleDestroy(TextureHandle& t) {
    if (t) {
       glDeleteTextures(1, &t);
       t = 0;
    }
 }
-void render::textureBind(TextureHandle t, TextureSlot slot) {
+void render::textureHandleBind(TextureHandle t, TextureSlot slot) {
    glActiveTexture(GL_TEXTURE0 + slot);
    glBindTexture(GL_TEXTURE_2D, t);
 }
@@ -416,7 +428,7 @@ FBO render::fboBuild(Int2 sz, std::initializer_list<Texture> outputs) {
 
 void render::fboDestroy(FBO& fbo) {
    for (auto&&texture : fbo.out) {
-      textureDestroy(texture.handle);
+      textureHandleDestroy(texture.handle);
    }
 
    glDeleteFramebuffers(1, &fbo.fbo);

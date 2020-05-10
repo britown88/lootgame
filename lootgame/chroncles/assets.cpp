@@ -91,12 +91,12 @@ static void _textureInitHandle(Texture&t) {
       t.handle = render::buildTextureHandle(t.sz, t.flags, (ColorRGBA const*)t.storedImageData.data);
    }
    else {
-      render::textureRefresh(t);
+      render::textureRefreshFromFile(t);
    }
 }
 
 template<typename T> static void _preLoad(T& t) {}
-template<> static void _preLoad<Texture>(Texture& t) { render::textureDestroy(t.handle); }
+template<> static void _preLoad<Texture>(Texture& t) { render::textureHandleDestroy(t.handle); }
 
 template<typename T> static void _postLoad(T& t) {}
 template<> static void _postLoad<Texture>(Texture& t) { _textureInitHandle(t); }

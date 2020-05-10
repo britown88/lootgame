@@ -108,6 +108,9 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Precompiled</Filter>
     </ClCompile>
+    <ClCompile Include="ega.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h">
@@ -178,6 +181,9 @@
     </ClInclude>
     <ClInclude Include="assets_gen.h">
       <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="ega.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

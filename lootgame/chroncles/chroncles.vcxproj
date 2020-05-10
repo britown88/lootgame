@@ -190,6 +190,7 @@ echo f | xcopy /y "$(TargetPath)" "$(TargetDir)codegen.exe"
     <ClCompile Include="assets.cpp" />
     <ClCompile Include="colors.cpp" />
     <ClCompile Include="coords.cpp" />
+    <ClCompile Include="ega.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="game_draw.cpp" />
     <ClCompile Include="implementations.cpp" />
@@ -223,6 +224,7 @@ echo f | xcopy /y "$(TargetPath)" "$(TargetDir)codegen.exe"
     <ClInclude Include="coords.h" />
     <ClInclude Include="custom_ui_renders.h" />
     <ClInclude Include="defs.h" />
+    <ClInclude Include="ega.h" />
     <ClInclude Include="fsys.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="IconsFontAwesome.h" />
