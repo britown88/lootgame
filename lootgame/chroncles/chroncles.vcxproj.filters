@@ -78,9 +78,6 @@
     <ClCompile Include="scf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="shadows.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="stringformat.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

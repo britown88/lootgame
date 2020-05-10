@@ -106,7 +106,9 @@
 xcopy /y "$(glew)bin" "$(OutDir)"
 xcopy /y "$(sdl2)bin" "$(OutDir)"
 
-echo f | xcopy /y "$(TargetPath)" "$(TargetDir)codegen.exe"</Command>
+if not exist "$(TargetDir)codegen.exe" (
+echo f | xcopy /y "$(TargetPath)" "$(TargetDir)codegen.exe"
+)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -169,7 +171,9 @@ echo f | xcopy /y "$(TargetPath)" "$(TargetDir)codegen.exe"</Command>
 xcopy /y "$(glew)bin" "$(OutDir)"
 xcopy /y "$(sdl2)bin" "$(OutDir)"
 
-echo f | xcopy /y "$(TargetPath)" "$(TargetDir)codegen.exe"</Command>
+if not exist "$(TargetDir)codegen.exe" (
+echo f | xcopy /y "$(TargetPath)" "$(TargetDir)codegen.exe"
+)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -198,7 +202,6 @@ echo f | xcopy /y "$(TargetPath)" "$(TargetDir)codegen.exe"</Command>
     <ClCompile Include="reflection.cpp" />
     <ClCompile Include="render.cpp" />
     <ClCompile Include="scf.cpp" />
-    <ClCompile Include="shadows.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>

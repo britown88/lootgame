@@ -51,7 +51,7 @@ int main(int argc, char** argv)
    }
    else if (AppConfig.assetgen) {
       _loadConfig();
-      //reflectionStartup();
+      reflectionStartup();
 
       runAssetGen();
    }
@@ -59,7 +59,7 @@ int main(int argc, char** argv)
       lppStartup();
       _loadConfig();
 
-      //reflectionStartup();
+      reflectionStartup();
       
       auto app = appCreate();
       appCreateWindow(app, WindowConfig{ 1280, 720, "Making Games is Fucking Hard" });
