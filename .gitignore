@@ -264,3 +264,6 @@ __pycache__/
 /lootgame/lootgame/log_dev_lootgame.txt
 /lootgame/example/imgui.ini
 /lootgame/chroncles/imgui.ini
+/lootgame/chroncles/log_telemetry_lootgame.txt
+/lootgame/chroncles/log_dev_lootgame.txt
+/lootgame/chroncles/chron.bin
