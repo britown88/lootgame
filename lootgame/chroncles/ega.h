@@ -75,31 +75,27 @@ struct EGATexture {
    //}
 }; // }
 
-EGATexture *egaTextureCreate(uint32_t width, uint32_t height);
-EGATexture *egaTextureCreateCopy(EGATexture const *other);
-void egaTextureDestroy(EGATexture *self);
+EGATexture egaTextureCreate(uint32_t width, uint32_t height);
+EGATexture egaTextureCreateCopy(EGATexture const &other);
+void egaTextureDestroyContent(EGATexture &self);
 
 // encoding and decoding from an rgb texture
-EGATexture *egaTextureCreateFromTextureEncode(Texture *sourceTexture, EGAPalette *targetPalette, EGAPalette *resultPalette);
+EGATexture egaTextureCreateFromTextureEncode(Texture &sourceTexture, EGAPalette &targetPalette, EGAPalette &resultPalette);
 
 // target must exist and must match ega's size, returns !0 on success
-int egaTextureDecode(EGATexture *self, Texture* target, EGAPalette *palette);
+int egaTextureDecode(EGATexture &self, Texture& target, EGAPalette &palette);
 
-// binary serialization
-int egaTextureSerialize(EGATexture *self, byte **outBuff, uint64_t *size);
-EGATexture *egaTextureDeserialize(byte *buff, uint64_t size);
+Int2 egaTextureGetSize(EGATexture const &self);
 
-Int2 egaTextureGetSize(EGATexture const *self);
-
-void egaTextureResize(EGATexture *self, uint32_t width, uint32_t height);
+void egaTextureResize(EGATexture &self, uint32_t width, uint32_t height);
 
 
 
 // useful in certian circumstances, dont use this for normal calls
 // passing NULL to a render call will use this for the target automatically
-EGARegion *egaTextureGetFullRegion(EGATexture *self);
+EGARegion *egaTextureGetFullRegion(EGATexture &self);
 
-EGAPColor egaTextureGetColorAt(EGATexture *self, uint32_t x, uint32_t y, EGARegion *vp = nullptr);
+EGAPColor egaTextureGetColorAt(EGATexture &self, uint32_t x, uint32_t y, EGARegion *vp = nullptr);
 
 
 // The font factory manages fonts, theres only one "font" in EGA
@@ -113,25 +109,25 @@ Image must be:
 - solid 1 alpha (no transparency)
 - 2-color palette; 0 for background and 1 for foreground
 */
-EGAFontFactory *egaFontFactoryCreate(EGATexture *font);
+EGAFontFactory *egaFontFactoryCreate(EGATexture &font);
 void egaFontFactoryDestroy(EGAFontFactory *self);
 EGAFont *egaFontFactoryGetFont(EGAFontFactory *self, EGAColor bgColor, EGAColor fgColor);
 
 
-void egaClear(EGATexture *target, EGAPColor color, EGARegion *vp = nullptr);
-void egaClearAlpha(EGATexture *target);
-void egaColorReplace(EGATexture *target, EGAPColor oldCOlor, EGAPColor newColor);
-void egaRenderTexture(EGATexture *target, Int2 pos, EGATexture *tex, EGARegion *vp = nullptr);
-void egaRenderTexturePartial(EGATexture *target, Int2 pos, EGATexture *tex, Recti uv, EGARegion *vp = nullptr);
-void egaRenderPoint(EGATexture *target, Int2 pos, EGAPColor color, EGARegion *vp = nullptr);
-void egaRenderLine(EGATexture *target, Int2 pos1, Int2 pos2, EGAPColor color, EGARegion *vp = nullptr);
-void egaRenderLineRect(EGATexture *target, Recti r, EGAPColor color, EGARegion *vp = nullptr);
-void egaRenderRect(EGATexture *target, Recti r, EGAPColor color, EGARegion *vp = nullptr);
+void egaClear(EGATexture &target, EGAPColor color, EGARegion *vp = nullptr);
+void egaClearAlpha(EGATexture &target);
+void egaColorReplace(EGATexture &target, EGAPColor oldCOlor, EGAPColor newColor);
+void egaRenderTexture(EGATexture &target, Int2 pos, EGATexture &tex, EGARegion *vp = nullptr);
+void egaRenderTexturePartial(EGATexture &target, Int2 pos, EGATexture &tex, Recti uv, EGARegion *vp = nullptr);
+void egaRenderPoint(EGATexture &target, Int2 pos, EGAPColor color, EGARegion *vp = nullptr);
+void egaRenderLine(EGATexture &target, Int2 pos1, Int2 pos2, EGAPColor color, EGARegion *vp = nullptr);
+void egaRenderLineRect(EGATexture &target, Recti r, EGAPColor color, EGARegion *vp = nullptr);
+void egaRenderRect(EGATexture &target, Recti r, EGAPColor color, EGARegion *vp = nullptr);
 
-void egaRenderCircle(EGATexture *target, Int2 pos, int radius, EGAPColor color, EGARegion *vp = nullptr);
-void egaRenderEllipse(EGATexture *target, Recti r, EGAPColor color, EGARegion *vp = nullptr);
-void egaRenderEllipseQB(EGATexture *target, Int2 pos, int radius, double aspect, EGAPColor color, EGARegion *vp = nullptr);
+void egaRenderCircle(EGATexture &target, Int2 pos, int radius, EGAPColor color, EGARegion *vp = nullptr);
+void egaRenderEllipse(EGATexture &target, Recti r, EGAPColor color, EGARegion *vp = nullptr);
+void egaRenderEllipseQB(EGATexture &target, Int2 pos, int radius, double aspect, EGAPColor color, EGARegion *vp = nullptr);
 
-void egaRenderTextSingleChar(EGATexture *target, const char c, Int2 pos, EGAFont *font, int spaces);
-void egaRenderText(EGATexture *target, const char *text, Int2 pos, EGAFont *font);
-void egaRenderTextWithoutSpaces(EGATexture *target, const char *text, Int2 pos, EGAFont *font);
+void egaRenderTextSingleChar(EGATexture &target, const char c, Int2 pos, EGAFont *font, int spaces);
+void egaRenderText(EGATexture &target, const char *text, Int2 pos, EGAFont *font);
+void egaRenderTextWithoutSpaces(EGATexture &target, const char *text, Int2 pos, EGAFont *font);

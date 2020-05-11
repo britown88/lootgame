@@ -29,7 +29,7 @@ void gameDraw(GameInstance& gi) {
    _renderToEga(gi);
 
    // output the ega buffer to an rgba texture
-   egaTextureDecode(gi.ega, &gi.egaOutputTexture, &gi.state.palette);
+   egaTextureDecode(gi.ega, gi.egaOutputTexture, gi.state.palette);
 
    // render the texture to the output fbo
    render::shaderSetActive(Graphics.shader);

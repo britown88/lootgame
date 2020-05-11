@@ -149,7 +149,7 @@ struct GameInstance {
    GameState state;
    FBO outputFbo;
 
-   EGATexture* ega;
+   EGATexture ega;
    Texture egaOutputTexture;
 };
 
