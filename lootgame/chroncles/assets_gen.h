@@ -6,7 +6,7 @@
 
 
 enum Textures_{
-   Textures_DUMMY,
+   Textures_test2,
    
    Textures_COUNT
 };
@@ -14,12 +14,13 @@ enum Textures_{
 struct AssetTextures{
    EGATexture* array[Textures_COUNT] = { 0 };
 
+   EGATexture* test2 = nullptr;
    
 };
 extern AssetTextures Textures;
 
 enum Palettes_{
-   Palettes_DUMMY,
+   Palettes_test,
    
    Palettes_COUNT
 };
@@ -27,6 +28,7 @@ enum Palettes_{
 struct AssetPalettes{
    EGAPalette* array[Palettes_COUNT] = { 0 };
 
+   EGAPalette* test = nullptr;
    
 };
 extern AssetPalettes Palettes;

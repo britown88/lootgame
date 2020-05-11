@@ -96,7 +96,7 @@ static void _textureInitHandle(Texture&t) {
 }
 
 template<typename T> static void _preLoad(T& t) {}
-template<> static void _preLoad<Texture>(Texture& t) { render::textureHandleDestroy(t.handle); }
+template<> static void _preLoad<Texture>(Texture& t) { render::textureDestroyContent(t); }
 template<> static void _preLoad<EGATexture>(EGATexture& t) { egaTextureDestroyContent(t); }
 
 template<typename T> static void _postLoad(T& t) {}
@@ -165,20 +165,6 @@ static int _reloadShader(GraphicObjects &gfx) {
 
    gfx.shader = s;
    return 1;
-}
-
-
-static Texture _textureBuildFromFile(const char* path, TextureFlag flags = TextureFlag_Defaults) {
-   uint64_t sz = 0;
-   int32_t x, y, comp;
-   x = y = comp = 0;
-   auto mem = fileReadBinary(path, &sz);
-   auto png = stbi_load_from_memory(mem, (int32_t)sz, &x, &y, &comp, 4);
-   auto out = render::textureBuild({ x, y }, flags, (ColorRGBA*)png);
-
-   free(mem);
-   free(png);
-   return out;
 }
 
 void GraphicObjects::build() {

@@ -215,6 +215,7 @@ echo f | xcopy /y "$(TargetPath)" "$(TargetDir)codegen.exe"
     <ClCompile Include="symbol.cpp" />
     <ClCompile Include="ui.cpp" />
     <ClCompile Include="ui_asset_manager.cpp" />
+    <ClCompile Include="ui_bimp.cpp" />
     <ClCompile Include="ui_reflection.cpp" />
     <ClCompile Include="ui_viewer.cpp" />
     <ClCompile Include="vex.cpp" />

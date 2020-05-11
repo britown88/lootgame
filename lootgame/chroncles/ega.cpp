@@ -62,15 +62,15 @@ static void _freeTextureBuffers(EGATexture &self) {
    blobDestroy(self.pixels);
 }
 
-EGATexture egaTextureCreate(uint32_t width, uint32_t height) {
+EGATexture egaTextureCreate(Int2 sz) {
    EGATexture self;
 
-   egaTextureResize(self, width, height);
+   egaTextureResize(self, sz);
 
    return self;
 }
 EGATexture egaTextureCreateCopy(EGATexture const &other) {
-   auto out = egaTextureCreate(other.sz.x, other.sz.y);
+   auto out = egaTextureCreate(other.sz);
    memcpy(out.pixels.data, other.pixels.data, out.pixels.sz);
    return out;
 }
@@ -442,7 +442,7 @@ EGATexture egaTextureCreateFromTextureEncode(Texture &source, EGAPalette &target
 
    memcpy(resultPalette.colors, paletteOut, 16);
 
-   auto out = egaTextureCreate(texSize.x, texSize.y);
+   auto out = egaTextureCreate(texSize);
    egaClearAlpha(out);
    for (int i = 0; i < pixelCount; ++i) {
 
@@ -507,16 +507,16 @@ int egaTextureDecode(EGATexture &self, Texture& target, EGAPalette &palette) {
    return 1;
 }
 
-void egaTextureResize(EGATexture &self, uint32_t width, uint32_t height) {
-   if (width == self.sz.x && height == self.sz.y) {
+void egaTextureResize(EGATexture &self, Int2 sz) {
+   if (self.sz == sz) {
       return;
    }
 
    // copy over to new size if you have anything
    if (self.pixels) {
-      auto copyWidth = MIN(width, (uint32_t)self.sz.x);
-      auto copyHeight = MIN(height, (uint32_t)self.sz.y);
-      auto newPixelCount = width * height;
+      auto copyWidth = MIN(sz.x, (uint32_t)self.sz.x);
+      auto copyHeight = MIN(sz.y, (uint32_t)self.sz.y);
+      auto newPixelCount = sz.x * sz.y;
 
       auto newPixelData = new byte[newPixelCount];
       memset(newPixelData, EGA_ALPHA, newPixelCount);
@@ -525,12 +525,12 @@ void egaTextureResize(EGATexture &self, uint32_t width, uint32_t height) {
       byte *srcSL = (byte*)self.pixels.data;
       for (uint32_t y = 0; y < copyHeight; ++y) {
          memcpy(destSL, srcSL, copyWidth);
-         destSL += width;
+         destSL += sz.x;
          srcSL += self.sz.x;
       }
 
-      self.sz.x = width;
-      self.sz.y = height;
+      self.sz.x = sz.x;
+      self.sz.y = sz.y;
       self.pixels.sz = newPixelCount;
       delete[] self.pixels.data;
       self.pixels.data = newPixelData;
@@ -541,8 +541,8 @@ void egaTextureResize(EGATexture &self, uint32_t width, uint32_t height) {
       }
    }
    else {
-      self.sz.x = width;
-      self.sz.y = height;
+      self.sz.x = sz.x;
+      self.sz.y = sz.y;
       self.pixels.sz = self.sz.x * self.sz.y;
       self.pixels.data = new byte[self.pixels.sz];
    }

@@ -90,6 +90,13 @@ static void _statusBar(GameState&g) {
    ImGui::Text("Mouse (%0.1f, %0.1f)", mpos.x, mpos.y);
 }
 
+static void _debugger(GameState&g) {
+   ImGui::Text("Palette");
+   ImGui::Separator();
+   ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth());
+   uiPaletteEditor("##palette", g.palette);
+}
+
 static bool _showWindowedViewer(GameInstance& gi) {
    bool p_open = true;
    auto& g = gi.state;
@@ -98,6 +105,17 @@ static bool _showWindowedViewer(GameInstance& gi) {
       g.ui.focused = ImGui::IsWindowFocused();
 
       _viewerMenuBar(g);
+
+      
+      ImGui::Columns(2);
+      if (ImGui::IsWindowAppearing()) {
+         ImGui::SetColumnWidth(0, 250.0f);
+      }
+      ImGui::BeginChild("debugger");
+      _debugger(g);
+      ImGui::EndChild();            
+
+      ImGui::NextColumn();
 
       auto viewsz = ImGui::GetContentRegionAvail();
       viewsz.y -= ImGui::GetTextLineHeightWithSpacing();
@@ -122,7 +140,6 @@ static bool _showWindowedViewer(GameInstance& gi) {
          //_doRightClickMenu(g);
          ImGui::EndPopup();
       }
-
       auto a = g.vpScreenArea.Min();
       auto b = g.vpScreenArea.Max();
       ImGui::PushClipRect(a, b, false);
@@ -131,7 +148,7 @@ static bool _showWindowedViewer(GameInstance& gi) {
 
       ImGui::SetCursorPos(cPos);
       _statusBar(g);
-
+      ImGui::Columns();
    }
    ImGui::End();
 

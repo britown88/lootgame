@@ -44,8 +44,11 @@ struct Int2 {
    int32_t x, y;
 
    operator Float2() const { return { (float)x, (float)y }; }
+   bool operator==(Int2 const& b) { return x == b.x && y == b.y; }
 
 };//}
+
+
 
 Float3 vCross(Float3 a, Float3 b);
 float vDot(Float3 a, Float3 b);

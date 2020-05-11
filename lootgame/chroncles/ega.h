@@ -78,7 +78,7 @@ struct EGATexture {
    //}
 }; // }
 
-EGATexture egaTextureCreate(uint32_t width, uint32_t height);
+EGATexture egaTextureCreate(Int2 sz);
 EGATexture egaTextureCreateCopy(EGATexture const &other);
 void egaTextureDestroyContent(EGATexture &self);
 void egaTexturePostLoad(EGATexture &self); // call after deserialize to make sure the state is good
@@ -91,7 +91,7 @@ int egaTextureDecode(EGATexture &self, Texture& target, EGAPalette &palette);
 
 Int2 egaTextureGetSize(EGATexture const &self);
 
-void egaTextureResize(EGATexture &self, uint32_t width, uint32_t height);
+void egaTextureResize(EGATexture &self, Int2 sz);
 
 
 

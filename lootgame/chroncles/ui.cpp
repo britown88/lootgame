@@ -3,6 +3,7 @@
 #include "app.h"
 #include "game.h"
 #include "render.h"
+#include "ui.h"
 
 #include <misc/cpp/imgui_stdlib.h>
 #include <imgui_internal.h>
@@ -345,4 +346,190 @@ void doRootUI() {
       ImGui::EndChild();
    }
    ImGui::End();
+}
+
+
+uiModalResult uiModalPopup(StringView title, StringView msg, uiModalType type, StringView icon) {
+   uiModalResult result = uiModalResults_CLOSED;
+
+   if (ImGui::BeginPopupModal(title, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+      result = uiModalResults_OPEN;
+
+      if (icon) {
+         ImGui::Text(icon);
+         ImGui::SameLine();
+      }
+
+      ImGui::Text(msg);
+
+      switch (type) {
+      case uiModalTypes_YESNO: {
+         bool yes = ImGui::Button("Yes");
+         ImGui::SameLine();
+         bool no = ImGui::Button("No");
+
+         if (ImGui::IsKeyPressed(SDL_SCANCODE_ESCAPE)) {
+            no = true;
+         }
+
+         if (yes) { result = uiModalResults_YES; }
+         else if (no) { result = uiModalResults_NO; }
+         break; }
+
+      case uiModalTypes_YESNOCANCEL: {
+         bool yes = ImGui::Button("Yes");
+         ImGui::SameLine();
+         bool no = ImGui::Button("No");
+         ImGui::SameLine();
+         bool cancel = ImGui::Button("Cancel");
+
+         if (ImGui::IsKeyPressed(SDL_SCANCODE_ESCAPE)) {
+            cancel = true;
+         }
+
+         if (yes) { result = uiModalResults_YES; }
+         else if (no) { result = uiModalResults_NO; }
+         else if (cancel) { result = uiModalResults_CANCEL; }
+         break; }
+
+      case uiModalTypes_OK: {
+         bool ok = ImGui::Button("OK");
+
+         if (ImGui::IsKeyPressed(SDL_SCANCODE_RETURN) ||
+            ImGui::IsKeyPressed(SDL_SCANCODE_SPACE)) {
+            ok = true;
+         }
+
+         if (ok) { result = uiModalResults_OK; }
+         break; }
+
+      case uiModalTypes_OKCANCEL: {
+         bool ok = ImGui::Button("OK");
+         ImGui::SameLine();
+         bool cancel = ImGui::Button("Cancel");
+
+         if (ImGui::IsKeyPressed(SDL_SCANCODE_RETURN) ||
+            ImGui::IsKeyPressed(SDL_SCANCODE_SPACE)) {
+            ok = true;
+         }
+         if (ImGui::IsKeyPressed(SDL_SCANCODE_ESCAPE)) {
+            cancel = true;
+         }
+
+         if (ok) { result = uiModalResults_OK; }
+         else if (cancel) { result = uiModalResults_CANCEL; }
+         break; }
+      }
+
+      if (result != uiModalResults_OPEN) {
+         ImGui::CloseCurrentPopup();
+      }
+
+      ImGui::EndPopup();
+   }
+
+   return result;
+}
+
+static bool _paletteColorButton(ImVec4 color, ImVec2 sz = ImVec2(0,0), bool highlight = false) {
+   if (highlight) {
+      ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(200, 200, 200, 255));
+      ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 3.0f);
+      ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
+   }
+
+   auto out = ImGui::ColorButton("color", color, ImGuiColorEditFlags_NoTooltip, sz);
+
+   if (highlight) {
+      ImGui::PopStyleColor();
+      ImGui::PopStyleVar(2);
+   }
+
+   return out;
+}
+
+static uint8_t _palEditorOpenIndex = EGA_PALETTE_COLORS;
+static uint8_t _palEditorOpenStartColor = 0;
+
+bool uiPaletteEditor(const char* str_id, EGAPalette& pal, PaletteEditorFlags flags) {
+
+   auto w = ImGui::CalcItemWidth();
+   auto btnW = w / EGA_PALETTE_COLORS;
+   
+   bool value_changed = false;
+
+   for (int i = 0; i < 16; ++i) {
+      ImGui::PushID(i);
+      auto rgb = egaGetColor(pal.colors[i]);
+      auto imcol = ImVec4(rgb.r / 255.0f, rgb.g / 255.0f, rgb.b / 255.0f, 1.0f);
+
+      auto cposa = ImGui::GetCursorScreenPos();
+      auto cposb = cposa;
+      cposb.x += btnW;
+      cposb.y += ImGui::GetFrameHeight();
+
+      bool highlight = ImGui::IsMouseHoveringRect(cposa, cposb);
+
+      _paletteColorButton(imcol, ImVec2(btnW, 0), highlight);
+
+      if (ImGui::IsItemHovered()) {
+         ImGui::BeginTooltip();
+         ImGui::Text("Index #%d", i);
+         ImGui::Separator();
+         ImGui::ColorButton("##preview", imcol, 0, ImVec2(ImGui::GetFrameHeight() * 2, ImGui::GetFrameHeight() * 2));
+         ImGui::SameLine();
+         ImGui::Text("Color %d", pal.colors[i]);
+         ImGui::EndTooltip();
+      }
+      if (ImGui::BeginPopupContextItem("picker", 0)) {
+         if (ImGui::IsWindowAppearing()) {
+            _palEditorOpenStartColor = pal.colors[i];
+         }
+         if (!ImGui::IsWindowHovered()) {
+            value_changed = _palEditorOpenStartColor != pal.colors[i];
+            pal.colors[i] = _palEditorOpenStartColor;            
+         }
+         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+         // do a 8x8 grid of all colors
+         for (int y = 0; y < 8; ++y) {
+            ImGui::PushID(y);
+            for (int x = 0; x < 8; ++x) {
+               ImGui::PushID(x);
+               auto colidx = y * 8 + x;
+               auto rgb = egaGetColor(colidx);
+               auto imcol = ImVec4(rgb.r / 255.0f, rgb.g / 255.0f, rgb.b / 255.0f, 1.0f);
+
+               auto cposa = ImGui::GetCursorScreenPos();
+               auto cposb = cposa;
+               cposb.x += ImGui::GetFrameHeight();
+               cposb.y += ImGui::GetFrameHeight();
+               bool highlight = ImGui::IsMouseHoveringRect(cposa, cposb);
+
+               if (_paletteColorButton(imcol, ImVec2(0, 0), highlight)) {
+                  ImGui::CloseCurrentPopup();
+               }
+               if (ImGui::IsItemHovered()) {
+                  value_changed = pal.colors[i] != colidx;
+                  pal.colors[i] = colidx;                  
+               }
+               ImGui::SameLine(0, 0);
+               ImGui::PopID();
+            }
+            ImGui::NewLine();
+            ImGui::PopID();
+         }
+         
+         ImGui::SameLine();
+         ImGui::PopStyleVar();
+         ImGui::NewLine();
+         ImGui::Text("Color %d", pal.colors[i]);
+
+         ImGui::EndPopup();
+      }
+
+      ImGui::SameLine(0, 0);
+      ImGui::PopID();
+   }
+   ImGui::NewLine();
+   return value_changed;
 }

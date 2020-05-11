@@ -390,12 +390,30 @@ void render::textureRefreshFromBuffer(Texture&t) {
 
 
 // textures
+Texture render::textureBuildFromFile(const char* path, TextureFlag flags) {
+   uint64_t sz = 0;
+   int32_t x, y, comp;
+   x = y = comp = 0;
+   auto mem = fileReadBinary(path, &sz);
+   auto png = stbi_load_from_memory(mem, (int32_t)sz, &x, &y, &comp, 4);
+   auto out = render::textureBuild({ x, y }, flags, (ColorRGBA*)png);
+
+   free(mem);
+   free(png);
+   return out;
+}
+
 Texture render::textureBuild(Int2 const& sz, TextureFlag flags, ColorRGBA const* pixels) {
    Texture out;
    out.sz = sz;
    out.handle = buildTextureHandle(sz, flags, pixels);  
 
    return out;
+}
+
+void render::textureDestroyContent(Texture& t) {
+   blobDestroy(t.storedImageData);
+   textureHandleDestroy(t.handle);
 }
 
 void render::textureHandleDestroy(TextureHandle& t) {

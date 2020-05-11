@@ -13,6 +13,10 @@
 #include "ui.h"
 #include "render.h"
 
+
+bool customUIRender_EGAPalette(TypeMetadata const* type, void* data, StructMemberMetadata const* parent, const char* label) {
+   return uiPaletteEditor(label, *(EGAPalette*)data);
+}
 bool customUIRender_ColorRGBAf(TypeMetadata const* type, void* data, StructMemberMetadata const* parent, const char* label) {
    auto c = linearToSrgbf(*(ColorRGBAf*)data);
    if (ImGui::ColorEdit4(label ? label : parent->name, (float*)&c)) {

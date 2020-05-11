@@ -142,11 +142,14 @@ namespace render{
    // textures
    ColorRGBA const* textureGetPixels(Texture&t); // helper, returns the internal blob as a color-ptr
 
+   Texture textureBuildFromFile(const char* path, TextureFlag flags = TextureFlag_Defaults);
+
    void textureRefreshFromFile(Texture&t); // reloads the origin filepath into the pixel blob and then rebuilds the internal texture handle
    void textureRefreshFromBuffer(Texture&t); // rebuilds the internal texture handle from the existing buffer and options. Useful if you're modifying the pixel blob yourself
    Texture textureBuild(Int2 const& sz, TextureFlag flags = TextureFlag_Defaults, ColorRGBA const* pixels = nullptr);
    TextureHandle buildTextureHandle(Int2 const& sz, TextureFlag flags, ColorRGBA const* pixels);
 
+   void textureDestroyContent(Texture& t);
    void textureHandleDestroy(TextureHandle& t);
    void textureHandleBind(TextureHandle t, TextureSlot slot = 0);
 

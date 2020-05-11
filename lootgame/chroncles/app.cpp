@@ -296,7 +296,7 @@ static int viewerCount = 0;
 
 void appBeginNewGameInstance() {
    auto inst = new GameInstance();
-   inst->ega = egaTextureCreate(EGA_RES_WIDTH, EGA_RES_HEIGHT);
+   inst->ega = egaTextureCreate({ EGA_RES_WIDTH, EGA_RES_HEIGHT });
    inst->egaOutputTexture = render::textureBuild({ EGA_RES_WIDTH, EGA_RES_HEIGHT });
 
    inst->outputFbo = render::fboBuild(Const.resolution);
