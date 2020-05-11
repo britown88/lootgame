@@ -45,8 +45,8 @@ static TypeMetadata const* _createBasicTypeNonTrivial(Symbol* name) {
    return new TypeMetadata(out);
 }
 
-#define BASIC_TYPE_CREATE(Type) _createBasicType<Type>(intern(#Type))
-#define BASIC_TYPE_CREATE_NON_TRIVIAL(Type) _createBasicTypeNonTrivial<Type>(intern(#Type))
+#define BASIC_TYPE_CREATE(Type) _createBasicType<Type>(intern(#Type)) // no construct/destruct
+#define BASIC_TYPE_CREATE_NON_TRIVIAL(Type) _createBasicTypeNonTrivial<Type>(intern(#Type)) // requires constructor/destructor
 
 static void _createBasicTypes() {
    meta_blob = BASIC_TYPE_CREATE_NON_TRIVIAL(Blob);

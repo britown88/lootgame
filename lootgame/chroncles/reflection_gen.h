@@ -87,6 +87,24 @@ struct Reflector<ColorRGBAf>{
 };
 
 
+// EGAPalette ----------------------------
+typedef struct EGAPalette EGAPalette;
+extern TypeMetadata* meta_EGAPalette;
+template<>
+struct Reflector<EGAPalette>{
+   static TypeMetadata const* type() { return meta_EGAPalette; }
+};
+
+
+// EGATexture ----------------------------
+typedef struct EGATexture EGATexture;
+extern TypeMetadata* meta_EGATexture;
+template<>
+struct Reflector<EGATexture>{
+   static TypeMetadata const* type() { return meta_EGATexture; }
+};
+
+
 // EngineConstants ----------------------------
 typedef struct EngineConstants EngineConstants;
 extern TypeMetadata* meta_EngineConstants;

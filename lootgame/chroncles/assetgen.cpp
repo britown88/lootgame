@@ -57,7 +57,7 @@ static void _addMapSubstitions_impl(VexTemplate* t, std::unordered_map<Symbol*, 
 
 
 
-static void _generateHeader(Array<Symbol*> &textureIds, Array<Symbol*> &mapIds) {
+static void _generateHeader() {
    auto templt = fileReadString("assets_gen.h.temp");
    auto t = vexTemplateCreate(templt.c_str());
 
@@ -82,7 +82,7 @@ static void _generateHeader(Array<Symbol*> &textureIds, Array<Symbol*> &mapIds) 
 
 #define _addMapSubstitions_implHelper(t, map, str) _addMapSubstitions_impl(t, map, str, #map)
 
-static void _generateInl(Array<Symbol*> &textureIds, Array<Symbol*> &mapIds) {
+static void _generateInl() {
    auto templt = fileReadString("assets_gen.temp");
    auto t = vexTemplateCreate(templt.c_str());
      
@@ -110,20 +110,7 @@ static void _generateInl(Array<Symbol*> &textureIds, Array<Symbol*> &mapIds) {
 void runAssetGen() {
    assetsLoad();
 
-   Array<Symbol*> textureIds; 
-   Array<Symbol*> mapIds;
-
-   //for (auto&&tex : Assets.textures) {
-   //   textureIds.push_back(tex.first);
-   //}
-   //for (auto&&map : Assets.maps) {
-   //   mapIds.push_back(map.first);
-   //}
-
-   std::sort(textureIds.begin(), textureIds.end(), [](Symbol*a, Symbol*b) {return natstrcmp(a, b) < 0; });
-   std::sort(mapIds.begin(), mapIds.end(), [](Symbol*a, Symbol*b) {return natstrcmp(a, b) < 0; });
-
-   _generateHeader(textureIds, mapIds);
-   _generateInl(textureIds, mapIds);
+   _generateHeader();
+   _generateInl();
    
 }

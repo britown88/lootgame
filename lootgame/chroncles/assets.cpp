@@ -180,7 +180,7 @@ static Texture _textureBuildFromFile(const char* path, TextureFlag flags = Textu
 }
 
 void GraphicObjects::build() {
-   assetsBuildTextureHandles();
+   //assetsBuildTextureHandles();
 
    assert(_reloadShader(*this));
 

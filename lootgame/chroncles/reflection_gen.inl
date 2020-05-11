@@ -10,6 +10,8 @@ TypeMetadata* meta_ColorRGBA = new TypeMetadata;
 TypeMetadata* meta_ColorRGBf = new TypeMetadata;
 TypeMetadata* meta_ColorHSV = new TypeMetadata;
 TypeMetadata* meta_ColorRGBAf = new TypeMetadata;
+TypeMetadata* meta_EGAPalette = new TypeMetadata;
+TypeMetadata* meta_EGATexture = new TypeMetadata;
 TypeMetadata* meta_AssetType = new TypeMetadata;
 TypeMetadata* meta_EngineConstants = new TypeMetadata;
 TypeMetadata* meta_EngineState = new TypeMetadata;
@@ -509,6 +511,102 @@ void reflectionStartup_generated() {
          member.offset = offsetof(ColorRGBAf, a);
          member.type = reflect<float>();
          member.customUI = customUIRenderer<float>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
+      auto& structName = meta_EGAPalette;
+      structName->name = intern("EGAPalette");
+      structName->size = sizeof(EGAPalette);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) EGAPalette;};
+      structName->funcs.destroy = [](void* data) {((EGAPalette*)data)->~EGAPalette(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("id");
+         member.offset = offsetof(EGAPalette, id);
+         member.type = reflect<Symbol*>();
+         member.customUI = customUIRenderer<Symbol*>();
+         member.flags |= StructMemberFlags_ReadOnly;
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("colors");
+         member.offset = offsetof(EGAPalette, colors);
+         member.type = reflect<EGAColor>();
+         member.customUI = customUIRenderer<EGAColor>();
+         member.flags |= StructMemberFlags_StaticArray;
+         member.staticArraySize = EGA_PALETTE_COLORS;
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+   }
+
+   
+   {
+      auto& structName = meta_EGATexture;
+      structName->name = intern("EGATexture");
+      structName->size = sizeof(EGATexture);
+      structName->variety = TypeVariety_Struct;
+
+      structName->funcs.create = [](void* data) {new (data) EGATexture;};
+      structName->funcs.destroy = [](void* data) {((EGATexture*)data)->~EGATexture(); };
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("id");
+         member.offset = offsetof(EGATexture, id);
+         member.type = reflect<Symbol*>();
+         member.customUI = customUIRenderer<Symbol*>();
+         member.flags |= StructMemberFlags_ReadOnly;
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("pixels");
+         member.offset = offsetof(EGATexture, pixels);
+         member.type = reflect<Blob>();
+         member.customUI = customUIRenderer<Blob>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("sz");
+         member.offset = offsetof(EGATexture, sz);
+         member.type = reflect<Int2>();
+         member.customUI = customUIRenderer<Int2>();
+         member.flags |= StructMemberFlags_ReadOnly;
          
          
 

@@ -52,27 +52,6 @@ One byte per pixel, a palette index, unless it is EGA_ALPHA which means its tran
 a pixel cannot both have color and be transparent
 */
 
-enum Tex_ {
-   Tex_DECODE_DIRTY = (1 << 0),
-   Tex_OFFSET_DIRTY = (1 << 1),
-   Tex_ALL_DIRTY = (Tex_DECODE_DIRTY | Tex_OFFSET_DIRTY)
-};
-typedef byte TexCleanFlag;
-
-
-
-struct EGATexture {
-   uint32_t w = 0, h = 0;
-   uint32_t pixelCount = 0; //convenience
-   EGARegion fullRegion = { 0 };
-
-   byte *pixelData = nullptr;
-
-   ColorRGBA *decodePixels = nullptr;
-   EGAPalette lastDecodedPalette = { 0 };
-
-   TexCleanFlag dirty = Tex_ALL_DIRTY;
-};
 
 static void _freeTextureBuffers(EGATexture *self) {
    if (self->decodePixels) {
@@ -80,10 +59,7 @@ static void _freeTextureBuffers(EGATexture *self) {
       self->decodePixels = nullptr;
    }
 
-   if (self->pixelData) {
-      delete[] self->pixelData;
-      self->pixelData = nullptr;
-   }
+   blobDestroy(self->pixels);
 }
 
 EGATexture *egaTextureCreate(uint32_t width, uint32_t height) {
@@ -94,8 +70,8 @@ EGATexture *egaTextureCreate(uint32_t width, uint32_t height) {
    return self;
 }
 EGATexture *egaTextureCreateCopy(EGATexture const *other) {
-   auto out = egaTextureCreate(other->w, other->h);
-   memcpy(out->pixelData, other->pixelData, out->pixelCount);
+   auto out = egaTextureCreate(other->sz.x, other->sz.y);
+   memcpy(out->pixels.data, other->pixels.data, out->pixels.sz);
    return out;
 }
 void egaTextureDestroy(EGATexture *self) {
@@ -488,18 +464,18 @@ EGATexture *egaTextureCreateFromTextureEncode(Texture *source, EGAPalette *targe
 int egaTextureDecode(EGATexture *self, Texture* target, EGAPalette *palette) {
 
    auto texSize = target->sz;
-   if (texSize.x != self->w || texSize.y != self->h) {
+   if (texSize.x != self->sz.x || texSize.y != self->sz.y) {
       return 0;
    }
 
    if (!target->storedImageData) {
-      auto buff = new byte[self->pixelCount * sizeof(ColorRGBA)];
-      target->storedImageData = blobCreate(buff, self->pixelCount * sizeof(ColorRGBA));
+      auto buff = new byte[self->pixels.sz * sizeof(ColorRGBA)];
+      target->storedImageData = blobCreate(buff, self->pixels.sz * sizeof(ColorRGBA));
       delete[] buff;
    }
 
    if (!self->decodePixels) {
-      self->decodePixels = new ColorRGBA[self->w * self->h];
+      self->decodePixels = new ColorRGBA[self->pixels.sz];
       self->dirty |= Tex_DECODE_DIRTY;
    }
 
@@ -510,10 +486,10 @@ int egaTextureDecode(EGATexture *self, Texture* target, EGAPalette *palette) {
    }
 
    if (self->dirty&Tex_DECODE_DIRTY) {
-      memset(self->decodePixels, 0, self->pixelCount * sizeof(ColorRGBA));
+      memset(self->decodePixels, 0, self->pixels.sz * sizeof(ColorRGBA));
 
-      for (uint32_t i = 0; i < self->pixelCount; ++i) {
-         auto c = self->pixelData[i];
+      for (uint32_t i = 0; i < self->pixels.sz; ++i) {
+         auto c = ((byte*)self->pixels.data)[i];
          if (c < EGA_PALETTE_COLORS) {
             ColorRGB rgb = egaGetColor(palette->colors[c]);
             self->decodePixels[i] = ColorRGBA{ rgb.r, rgb.g, rgb.b, 255 };
@@ -523,7 +499,7 @@ int egaTextureDecode(EGATexture *self, Texture* target, EGAPalette *palette) {
    }
 
    // copy our pixels into the texture
-   memcpy(target->storedImageData.data, self->decodePixels, self->pixelCount * sizeof(ColorRGBA));
+   memcpy(target->storedImageData.data, self->decodePixels, self->pixels.sz * sizeof(ColorRGBA));
    render::textureRefreshFromBuffer(*target);
    return 1;
 }
@@ -536,32 +512,32 @@ EGATexture *egaTextureDeserialize(byte *buff, uint64_t size) {
 }
 
 void egaTextureResize(EGATexture *self, uint32_t width, uint32_t height) {
-   if (width == self->w && height == self->h) {
+   if (width == self->sz.x && height == self->sz.y) {
       return;
    }
 
    // copy over to new size if you have anything
-   if (self->pixelData) {
-      auto copyWidth = MIN(width, self->w);
-      auto copyHeight = MIN(height, self->h);
+   if (self->pixels) {
+      auto copyWidth = MIN(width, (uint32_t)self->sz.x);
+      auto copyHeight = MIN(height, (uint32_t)self->sz.y);
       auto newPixelCount = width * height;
 
       auto newPixelData = new byte[newPixelCount];
       memset(newPixelData, EGA_ALPHA, newPixelCount);
 
       byte *destSL = newPixelData;
-      byte *srcSL = self->pixelData;
+      byte *srcSL = (byte*)self->pixels.data;
       for (uint32_t y = 0; y < copyHeight; ++y) {
          memcpy(destSL, srcSL, copyWidth);
          destSL += width;
-         srcSL += self->w;
+         srcSL += self->sz.x;
       }
 
-      self->w = width;
-      self->h = height;
-      self->pixelCount = newPixelCount;
-      delete[] self->pixelData;
-      self->pixelData = newPixelData;
+      self->sz.x = width;
+      self->sz.y = height;
+      self->pixels.sz = newPixelCount;
+      delete[] self->pixels.data;
+      self->pixels.data = newPixelData;
 
       if (self->decodePixels) {
          delete[] self->decodePixels;
@@ -569,17 +545,17 @@ void egaTextureResize(EGATexture *self, uint32_t width, uint32_t height) {
       }
    }
    else {
-      self->w = width;
-      self->h = height;
-      self->pixelCount = self->w * self->h;
-      self->pixelData = new byte[self->pixelCount];
+      self->sz.x = width;
+      self->sz.y = height;
+      self->pixels.sz = self->sz.x * self->sz.y;
+      self->pixels.data = new byte[self->pixels.sz];
    }
 
-   self->fullRegion = EGARegion{ 0, 0, (int32_t)self->w, (int32_t)self->h };
+   self->fullRegion = EGARegion{ 0, 0, (int32_t)self->sz.x, (int32_t)self->sz.y };
    self->dirty = Tex_ALL_DIRTY;
 }
 
-Int2 egaTextureGetSize(EGATexture const *self) { return { (int32_t)self->w, (int32_t)self->h }; }
+Int2 egaTextureGetSize(EGATexture const *self) { return self->sz; }
 EGARegion *egaTextureGetFullRegion(EGATexture *self) { return &self->fullRegion; }
 
 EGAPColor egaTextureGetColorAt(EGATexture *self, uint32_t x, uint32_t y, EGARegion *vp) {
@@ -592,12 +568,12 @@ EGAPColor egaTextureGetColorAt(EGATexture *self, uint32_t x, uint32_t y, EGARegi
    x += vp->x;
    y += vp->y;
 
-   if (x >= self->w || y >= self->h ||
+   if (x >= (uint32_t)self->sz.x || y >= (uint32_t)self->sz.y ||
       x < 0 || y < 0) {
       return EGA_COLOR_UNDEFINED;
    }
 
-   auto c = self->pixelData[y * self->w + x];
+   auto c = ((byte*)self->pixels.data)[y * self->sz.x + x];
    if (c < EGA_PALETTE_COLORS) {
       return c;
    }
@@ -626,7 +602,7 @@ EGAFont *egaFontFactoryGetFont(EGAFontFactory *self, EGAColor bgColor, EGAColor 
 void egaClear(EGATexture *target, EGAPColor color, EGARegion *vp) {
    if (!vp) {
       //fast clear
-      memset(target->pixelData, color, target->pixelCount);
+      memset(target->pixels.data, color, target->pixels.sz);
       target->dirty = Tex_ALL_DIRTY;
    }
    else {
@@ -635,13 +611,13 @@ void egaClear(EGATexture *target, EGAPColor color, EGARegion *vp) {
    }
 }
 void egaClearAlpha(EGATexture *target) {
-   memset(target->pixelData, EGA_ALPHA, target->pixelCount);
+   memset(target->pixels.data, EGA_ALPHA, target->pixels.sz);
    target->dirty = Tex_ALL_DIRTY;
 }
 
 static void _renderTextureEX(EGATexture *dest, EGATexture *src, Recti const& srcRect, Int2 const& destPos) {
-   byte *srcPixels = src->pixelData + (srcRect.y * src->w + srcRect.x);
-   byte *destPixels = dest->pixelData + (destPos.y * dest->w + destPos.x);
+   byte *srcPixels = (byte*)src->pixels.data + (srcRect.y * src->sz.x + srcRect.x);
+   byte *destPixels = (byte*)dest->pixels.data + (destPos.y * dest->sz.x + destPos.x);
 
    for (int y = 0; y < srcRect.h; ++y) {
       byte *srcSL = srcPixels;
@@ -653,16 +629,16 @@ static void _renderTextureEX(EGATexture *dest, EGATexture *src, Recti const& src
          }
          ++srcSL; ++destSL;
       }
-      srcPixels += src->w;
-      destPixels += dest->w;
+      srcPixels += src->sz.x;
+      destPixels += dest->sz.x;
    }
    dest->dirty = Tex_ALL_DIRTY;
 }
 
 void egaColorReplace(EGATexture *target, EGAPColor oldColor, EGAPColor newColor) {
-   for (uint32_t i = 0; i < target->pixelCount; ++i) {
-      if (target->pixelData[i] == oldColor) {
-         target->pixelData[i] = newColor;
+   for (uint32_t i = 0; i < target->pixels.sz; ++i) {
+      if (((byte*)target->pixels.data)[i] == oldColor) {
+         ((byte*)target->pixels.data)[i] = newColor;
       }
    }
    target->dirty = Tex_ALL_DIRTY;
@@ -674,7 +650,7 @@ void egaRenderTexture(EGATexture *target, Int2 pos, EGATexture *tex, EGARegion *
    Int2 offsetPos = { pos.x + vp->x, pos.y + vp->y };
 
    if (offsetPos.x >= vp->w || offsetPos.y >= vp->h ||
-      offsetPos.x < -(int32_t)tex->w || offsetPos.y < -(int32_t)tex->h) {
+      offsetPos.x < -(int32_t)tex->sz.x || offsetPos.y < -(int32_t)tex->sz.y) {
       //outside bounds, return
       return;
    }
@@ -682,8 +658,8 @@ void egaRenderTexture(EGATexture *target, Int2 pos, EGATexture *tex, EGARegion *
    Recti srcRect = { 0 };
    srcRect.x = offsetPos.x < 0 ? -offsetPos.x : 0;
    srcRect.y = offsetPos.y < 0 ? -offsetPos.y : 0;
-   srcRect.w = MIN(vp->w, MIN(vp->w - offsetPos.x, (int32_t)tex->w - srcRect.x));
-   srcRect.h = MIN(vp->h, MIN(vp->h - offsetPos.y, (int32_t)tex->h - srcRect.y));
+   srcRect.w = MIN(vp->w, MIN(vp->w - offsetPos.x, (int32_t)tex->sz.x - srcRect.x));
+   srcRect.h = MIN(vp->h, MIN(vp->h - offsetPos.y, (int32_t)tex->sz.y - srcRect.y));
 
    Int2 destPos = { 0 };
    destPos.x = offsetPos.x < 0 ? 0 : pos.x;
@@ -725,12 +701,12 @@ void egaRenderPoint(EGATexture *target, Int2 pos, EGAPColor color, EGARegion *vp
    pos.x += vp->x;
    pos.y += vp->y;
 
-   if (pos.x >= (int32_t)target->w || pos.y >= (int32_t)target->h ||
+   if (pos.x >= (int32_t)target->sz.x || pos.y >= (int32_t)target->sz.y ||
       pos.x < 0 || pos.y < 0) {
       return;
    }
 
-   target->pixelData[pos.y * target->w + pos.x] = color;
+   ((byte*)target->pixels.data)[pos.y * target->sz.x + pos.x] = color;
    target->dirty = Tex_ALL_DIRTY;
 }
 void egaRenderLine(EGATexture *target, Int2 pos1, Int2 pos2, EGAPColor color, EGARegion *vp) {
@@ -814,10 +790,10 @@ void egaRenderRect(EGATexture *target, Recti r, EGAPColor color, EGARegion *vp) 
    drawRect.w = r.x < 0 ? MIN(vp->w, r.w + r.x) : MIN(r.w, vp->w - r.x);
    drawRect.h = r.y < 0 ? MIN(vp->h, r.h + r.y) : MIN(r.h, vp->h - r.y);
 
-   byte *destPixels = target->pixelData + (drawRect.y * target->w + drawRect.x);
+   byte *destPixels = (byte*)target->pixels.data + (drawRect.y * target->sz.x + drawRect.x);
    for (int y = 0; y < drawRect.h; ++y) {
       memset(destPixels, color, drawRect.w);
-      destPixels += target->w;
+      destPixels += target->sz.x;
    }
    target->dirty = Tex_ALL_DIRTY;
 }

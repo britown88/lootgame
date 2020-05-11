@@ -29,9 +29,14 @@
 // EGA Supports one of 64 colors
 typedef byte EGAColor;
 typedef byte EGAPColor; //(0-15)
-typedef struct {
+
+// @reflect{
+struct EGAPalette {
+   // @readonly
+   Symbol* id = nullptr;
+
    EGAColor colors[EGA_PALETTE_COLORS];
-} EGAPalette;
+}; // }
 
 void egaStartup();
 
@@ -40,10 +45,35 @@ void egaStartup();
 extern ColorRGB g_egaToRGBTable[64];
 #define egaGetColor(c) g_egaToRGBTable[c]
 
-// EGATextures are encoded images consistenting of 4 bits per pixel, referring to a palette index
-// These were stored in 4 seperate bit planes but are intervleaved on the backend here
-// The texture handles all transparency, byte offsets, and rendering
-typedef struct EGATexture EGATexture;
+enum Tex_ {
+   Tex_DECODE_DIRTY = (1 << 0),
+   Tex_OFFSET_DIRTY = (1 << 1),
+   Tex_ALL_DIRTY = (Tex_DECODE_DIRTY | Tex_OFFSET_DIRTY)
+};
+typedef byte TexCleanFlag;
+
+// EGARegions are passed to all draw calls
+// They define an origin and clipping rect for the draw
+typedef Recti EGARegion;
+
+// @reflect{
+struct EGATexture {
+   // @readonly
+   Symbol* id = nullptr;
+   Blob pixels;
+
+   // @readonly
+   Int2 sz = { 0, 0 };
+
+   // @ignore{
+   EGARegion fullRegion = { 0 };
+   ColorRGBA *decodePixels = nullptr;
+   EGAPalette lastDecodedPalette = { 0 };
+
+   TexCleanFlag dirty = Tex_ALL_DIRTY;
+   bool markForDelete = false;
+   //}
+}; // }
 
 EGATexture *egaTextureCreate(uint32_t width, uint32_t height);
 EGATexture *egaTextureCreateCopy(EGATexture const *other);
@@ -63,9 +93,7 @@ Int2 egaTextureGetSize(EGATexture const *self);
 
 void egaTextureResize(EGATexture *self, uint32_t width, uint32_t height);
 
-// EGARegions are passed to all draw calls
-// They define an origin and clipping rect for the draw
-typedef Recti EGARegion;
+
 
 // useful in certian circumstances, dont use this for normal calls
 // passing NULL to a render call will use this for the target automatically
