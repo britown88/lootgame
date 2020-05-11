@@ -323,7 +323,7 @@ void appCreateWindow(App* app, WindowConfig const& info) {
    egaStartup();
 
       
-   //uiOpenAssetManager();
+   uiOpenAssetManager();
    _openLogger();
    appBeginNewGameInstance();
 

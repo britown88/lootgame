@@ -78,6 +78,10 @@ void egaTextureDestroyContent(EGATexture &self) {
    _freeTextureBuffers(self);
 }
 
+void egaTexturePostLoad(EGATexture &self) {
+   self.fullRegion = Recti{ 0, 0, self.sz.x, self.sz.y };
+}
+
 #pragma region OLD ENCODING CODE
 
 struct PaletteColor;

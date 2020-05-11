@@ -36,6 +36,9 @@ struct EGAPalette {
    Symbol* id = nullptr;
 
    EGAColor colors[EGA_PALETTE_COLORS];
+
+   // @ignore{
+   bool markForDelete = false; // }
 }; // }
 
 void egaStartup();
@@ -78,6 +81,7 @@ struct EGATexture {
 EGATexture egaTextureCreate(uint32_t width, uint32_t height);
 EGATexture egaTextureCreateCopy(EGATexture const &other);
 void egaTextureDestroyContent(EGATexture &self);
+void egaTexturePostLoad(EGATexture &self); // call after deserialize to make sure the state is good
 
 // encoding and decoding from an rgb texture
 EGATexture egaTextureCreateFromTextureEncode(Texture &sourceTexture, EGAPalette &targetPalette, EGAPalette &resultPalette);

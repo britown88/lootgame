@@ -758,6 +758,32 @@ void reflectionStartup_generated() {
       }
 
       
+      {
+         StructMemberMetadata member;
+         member.name = intern("textures");
+         member.offset = offsetof(GameAssets, textures);
+         member.type = reflect<std::unordered_map<Symbol*, EGATexture>>();
+         member.customUI = customUIRenderer<std::unordered_map<Symbol*, EGATexture>>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
+      {
+         StructMemberMetadata member;
+         member.name = intern("palettes");
+         member.offset = offsetof(GameAssets, palettes);
+         member.type = reflect<std::unordered_map<Symbol*, EGAPalette>>();
+         member.customUI = customUIRenderer<std::unordered_map<Symbol*, EGAPalette>>();
+         
+         
+
+         structName->structMembers.push_back(member);
+      }
+
+      
    }
 
    

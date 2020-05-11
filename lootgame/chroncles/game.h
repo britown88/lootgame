@@ -100,6 +100,9 @@ struct AssetRecord {
 struct GameAssets {
    EngineConstants constants;
 
+   std::unordered_map<Symbol*, EGATexture> textures;
+   std::unordered_map<Symbol*, EGAPalette> palettes;
+
 };//}
 
 extern GameAssets Assets;

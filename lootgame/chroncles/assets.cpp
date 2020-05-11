@@ -42,8 +42,8 @@ void assetsSave() {
    auto assetCopy = Assets;
 
    // add markForDelete maps here
-   //_clearDeleted(assetCopy.textures);
-   //_clearDeleted(assetCopy.maps);
+   _clearDeleted(assetCopy.textures);
+   _clearDeleted(assetCopy.palettes);
    //_clearDeleted(assetCopy.sprites);
    //_clearDeleted(assetCopy.moveSets);
    //_clearDeleted(assetCopy.weapons);
@@ -97,9 +97,11 @@ static void _textureInitHandle(Texture&t) {
 
 template<typename T> static void _preLoad(T& t) {}
 template<> static void _preLoad<Texture>(Texture& t) { render::textureHandleDestroy(t.handle); }
+template<> static void _preLoad<EGATexture>(EGATexture& t) { egaTextureDestroyContent(t); }
 
 template<typename T> static void _postLoad(T& t) {}
 template<> static void _postLoad<Texture>(Texture& t) { _textureInitHandle(t); }
+template<> static void _postLoad<EGATexture>(EGATexture& t) { egaTexturePostLoad(t); }
 
 template<typename T>
 static void _mergeMap(std::unordered_map<Symbol*, T>& from, std::unordered_map<Symbol*, T>& to) {
@@ -125,8 +127,8 @@ void assetsReloadAll() {
       Const = reloaded.constants;
 
       // add reload merge maps here
-      //_mergeMap(reloaded.maps, Assets.maps);
-      //_mergeMap(reloaded.textures, Assets.textures);
+      _mergeMap(reloaded.palettes, Assets.palettes);
+      _mergeMap(reloaded.textures, Assets.textures);
       //_mergeMap(reloaded.sprites, Assets.sprites);
       //_mergeMap(reloaded.moveSets, Assets.moveSets);
       //_mergeMap(reloaded.weapons, Assets.weapons);

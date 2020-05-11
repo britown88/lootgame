@@ -6,6 +6,7 @@
 
 void doRootUI();
 bool gameDoUIWindow(GameInstance& instance);
+void uiOpenAssetManager();
 
 void beginDisabled();
 void endDisabled();

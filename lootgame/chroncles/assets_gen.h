@@ -5,5 +5,31 @@
 #include "game.h"
 
 
+enum Textures_{
+   Textures_DUMMY,
+   
+   Textures_COUNT
+};
+
+struct AssetTextures{
+   EGATexture* array[Textures_COUNT] = { 0 };
+
+   
+};
+extern AssetTextures Textures;
+
+enum Palettes_{
+   Palettes_DUMMY,
+   
+   Palettes_COUNT
+};
+
+struct AssetPalettes{
+   EGAPalette* array[Palettes_COUNT] = { 0 };
+
+   
+};
+extern AssetPalettes Palettes;
+
 
 void assetsStartup();

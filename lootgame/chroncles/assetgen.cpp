@@ -61,8 +61,8 @@ static void _generateHeader() {
    auto templt = fileReadString("assets_gen.h.temp");
    auto t = vexTemplateCreate(templt.c_str());
 
-   //_addMapSubstitions_header(t, Assets.textures, "Textures");
-   //_addMapSubstitions_header(t, Assets.sprites, "Sprites");
+   _addMapSubstitions_header(t, Assets.textures, "Textures");
+   _addMapSubstitions_header(t, Assets.palettes, "Palettes");
    //_addMapSubstitions_header(t, Assets.maps, "Maps");
    //_addMapSubstitions_header(t, Assets.weapons, "Weapons");
    //_addMapSubstitions_header(t, Assets.moveSets, "MoveSets");
@@ -86,8 +86,8 @@ static void _generateInl() {
    auto templt = fileReadString("assets_gen.temp");
    auto t = vexTemplateCreate(templt.c_str());
      
-   //_addMapSubstitions_implHelper(t, Assets.textures, "Textures");
-   //_addMapSubstitions_implHelper(t, Assets.sprites, "Sprites");
+   _addMapSubstitions_implHelper(t, Assets.textures, "Textures");
+   _addMapSubstitions_implHelper(t, Assets.palettes, "Palettes");
    //_addMapSubstitions_implHelper(t, Assets.maps, "Maps");
    //_addMapSubstitions_implHelper(t, Assets.weapons, "Weapons");
    //_addMapSubstitions_implHelper(t, Assets.moveSets, "MoveSets");
