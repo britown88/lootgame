@@ -3,7 +3,14 @@
 #include "game.h"
 
 static void _renderToEga(GameInstance& gi) {
-   egaClear(gi.ega, 4);
+   //egaClear(gi.ega, 0);
+
+   //egaRenderLine(gi.ega, { (int32_t)rand() % gi.ega.sz.x, (int32_t)rand() % gi.ega.sz.y }, { (int32_t)rand() % gi.ega.sz.x, (int32_t)rand() % gi.ega.sz.y }, rand()%EGA_PALETTE_COLORS);
+
+   //egaRenderPoint(gi.ega, { (int32_t)rand() % gi.ega.sz.x, (int32_t)rand() % gi.ega.sz.y }, rand() % EGA_PALETTE_COLORS);
+   //egaRenderLineRect(gi.ega, { (int32_t)rand() % gi.ega.sz.x, (int32_t)rand() % gi.ega.sz.y, (int32_t)rand() % gi.ega.sz.x, (int32_t)rand() % gi.ega.sz.y }, rand() % EGA_PALETTE_COLORS);
+
+   egaRenderCircle(gi.ega, { (int32_t)rand() % gi.ega.sz.x, (int32_t)rand() % gi.ega.sz.y }, (int32_t)rand() % gi.ega.sz.x + 1, rand() % EGA_PALETTE_COLORS);
 }
 
 static void _renderOutput(GameInstance& gi) {

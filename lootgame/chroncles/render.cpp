@@ -357,7 +357,7 @@ void render::textureRefreshFromFile(Texture&t) {
       if (!(t.flags&TextureFlag_DisablePremultiply)) {
          auto pixels = ((ColorRGBA*)t.storedImageData.data);
          for (int i = 0; i < t.sz.x*t.sz.y; ++i) {
-            pixels[i] = srgbPremultipleAlpha(pixels[i]);
+            pixels[i] = srgbPremultiplyAlpha(pixels[i]);
          }
       }
 

@@ -823,7 +823,7 @@ ColorRGBAf linearToSrgbf(ColorRGBAf const& lin) {
    return { lin2s(lin.r), lin2s(lin.g), lin2s(lin.b), lin.a };
 }
 
-ColorRGBA srgbPremultipleAlpha(ColorRGBA const& srgb) {
+ColorRGBA srgbPremultiplyAlpha(ColorRGBA const& srgb) {
    auto alphaScale = srgb.a * i255;
 
    return 

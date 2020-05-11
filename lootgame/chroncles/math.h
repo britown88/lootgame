@@ -167,7 +167,7 @@ ColorRGBAf colorLerp(ColorRGBAf const& a, ColorRGBAf const& b, float t);
 
 ColorRGBA linearToSrgb(ColorRGBAf const& lin);
 ColorRGBAf linearToSrgbf(ColorRGBAf const& lin);
-ColorRGBA srgbPremultipleAlpha(ColorRGBA const& srgb);
+ColorRGBA srgbPremultiplyAlpha(ColorRGBA const& srgb);
 
 struct  Matrix {
    float data[16];

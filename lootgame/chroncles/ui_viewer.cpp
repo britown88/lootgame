@@ -55,16 +55,6 @@ static void _showFullScreenViewer(GameInstance& g) {
    ImGui::End();
 
    ImGui::PopStyleVar(3);
-
-   // handle hotkeys todo: this will be handled by gamestate later
-   auto& io = ImGui::GetIO();
-   auto& keys = io.KeyMap;
-   if (ImGui::IsKeyPressed(keys[ImGuiKey_Escape])) {
-      appClose();
-   }
-   if (io.KeyCtrl && ImGui::IsKeyPressed(keys[ImGuiKey_Enter])) {
-      g.state.ui.fullscreen = false;
-   }
 }
 
 static void _viewerMenuBar(GameState& g) {
@@ -162,10 +152,24 @@ static bool _showWindowedViewer(GameInstance& gi) {
 
 
 bool gameDoUIWindow(GameInstance& inst) {
+   bool out = false;
    if (inst.state.ui.fullscreen) {
       _showFullScreenViewer(inst);
-      return true;
+      out =  true;
    }
-   return _showWindowedViewer(inst);   
+   else {
+      out = _showWindowedViewer(inst);
+   }
+
+   // handle hotkeys todo: this will be handled by gamestate later
+   auto& io = ImGui::GetIO();
+   auto& keys = io.KeyMap;
+   if (ImGui::IsKeyPressed(keys[ImGuiKey_Escape])) {
+      appClose();
+   }
+   if (io.KeyCtrl && ImGui::IsKeyPressed(keys[ImGuiKey_Enter])) {
+      inst.state.ui.fullscreen = !inst.state.ui.fullscreen;
+   }
+   return out;
 }
 
