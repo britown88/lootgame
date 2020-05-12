@@ -173,6 +173,9 @@ static void _windowCreate(App* app, WindowConfig const& info) {
    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+
+   SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
+
    SDL_DisplayMode current;
    SDL_GetCurrentDisplayMode(0, &current);
    SDL_Window* window = SDL_CreateWindow(info.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, info.w, info.h, winFlags);
@@ -299,7 +302,7 @@ void appBeginNewGameInstance() {
    inst->ega = egaTextureCreate({ EGA_RES_WIDTH, EGA_RES_HEIGHT });
    inst->egaOutputTexture = render::textureBuild({ EGA_RES_WIDTH, EGA_RES_HEIGHT });
 
-   inst->outputFbo = render::fboBuild(Const.resolution);
+   inst->outputFbo = render::fboBuild({ EGA_RES_WIDTH, EGA_RES_HEIGHT });
    inst->winTitle = format("Viewer %d", viewerCount++ + 1);
    g_app->instances.push_back(inst);
    g_app->lastFocused = inst;

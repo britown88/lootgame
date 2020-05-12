@@ -19,7 +19,11 @@ static ImGuiWindowFlags BorderlessFlags =
 
 static void _renderViewerFBO(GameState& g, FBO& output, ImVec2 sz) {
 
-   auto rect = getProportionallyFitRect(output.sz, { (int32_t)sz.x, (int32_t)sz.y });
+   auto fboSz = output.sz;
+   fboSz.x *= EGA_PIXEL_WIDTH;
+   fboSz.y *= EGA_PIXEL_HEIGHT;
+
+   auto rect = getProportionallyFitRect(fboSz, { (int32_t)sz.x, (int32_t)sz.y });
 
    ImDrawList* draw_list = ImGui::GetWindowDrawList();
    const ImVec2 p = ImGui::GetCursorScreenPos();
@@ -29,6 +33,8 @@ static void _renderViewerFBO(GameState& g, FBO& output, ImVec2 sz) {
    g.vpScreenArea = { a.x, a.y, b.x - a.x, b.y - a.y };
 
    draw_list->AddRectFilled(a, b, IM_COL32_BLACK);
+
+   // this assumes all fbos are linear, and forces to convert them on the final render to the imgui window
    draw_list->AddCallback([](auto, auto) { render::enableSRGB();  }, nullptr);
    draw_list->AddImage((ImTextureID)(intptr_t)output.out[0].handle, a, b);
    draw_list->AddCallback([](auto, auto) { render::disableSRGB(); }, nullptr);
@@ -44,6 +50,7 @@ static void _showFullScreenViewer(GameInstance& g) {
    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2());
    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+   ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32_BLACK_TRANS);
 
    ImGui::SetNextWindowPos(vp->Pos, ImGuiCond_Always);
    ImGui::SetNextWindowSize(vp->Size, ImGuiCond_Always);
@@ -54,6 +61,7 @@ static void _showFullScreenViewer(GameInstance& g) {
    }
    ImGui::End();
 
+   ImGui::PopStyleColor();
    ImGui::PopStyleVar(3);
 }
 
