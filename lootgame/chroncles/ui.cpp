@@ -471,62 +471,91 @@ bool uiPaletteEditor(const char* str_id, EGAPalette& pal, PaletteEditorFlags fla
       bool highlight = ImGui::IsMouseHoveringRect(cposa, cposb);
 
       _paletteColorButton(imcol, ImVec2(btnW, 0), highlight);
+      bool dragdrop = false;
 
-      if (ImGui::IsItemHovered()) {
-         ImGui::BeginTooltip();
+      if (ImGui::BeginDragDropSource()) {
+         ImGui::SetDragDropPayload(UI_DRAGDROP_PALCOLOR, &pal.colors[i], 1);
+
          ImGui::Text("Index #%d", i);
          ImGui::Separator();
          ImGui::ColorButton("##preview", imcol, 0, ImVec2(ImGui::GetFrameHeight() * 2, ImGui::GetFrameHeight() * 2));
          ImGui::SameLine();
          ImGui::Text("Color %d", pal.colors[i]);
-         ImGui::EndTooltip();
+
+         ImGui::EndDragDropSource();
+         dragdrop = true;
       }
-      if (ImGui::BeginPopupContextItem("picker", 0)) {
-         if (ImGui::IsWindowAppearing()) {
-            _palEditorOpenStartColor = pal.colors[i];
-         }
-         if (!ImGui::IsWindowHovered()) {
-            value_changed = _palEditorOpenStartColor != pal.colors[i];
-            pal.colors[i] = _palEditorOpenStartColor;            
-         }
-         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-         // do a 8x8 grid of all colors
-         for (int y = 0; y < 8; ++y) {
-            ImGui::PushID(y);
-            for (int x = 0; x < 8; ++x) {
-               ImGui::PushID(x);
-               auto colidx = y * 8 + x;
-               auto rgb = egaGetColor(colidx);
-               auto imcol = ImVec4(rgb.r / 255.0f, rgb.g / 255.0f, rgb.b / 255.0f, 1.0f);
 
-               auto cposa = ImGui::GetCursorScreenPos();
-               auto cposb = cposa;
-               cposb.x += ImGui::GetFrameHeight();
-               cposb.y += ImGui::GetFrameHeight();
-               bool highlight = ImGui::IsMouseHoveringRect(cposa, cposb);
+      if (ImGui::BeginDragDropTarget()) {
+         if (auto pload = ImGui::AcceptDragDropPayload(UI_DRAGDROP_PALCOLOR)) {
+            pal.colors[i] = *(EGAColor*)pload->Data;
+         }
+         if (auto ddpal = typeMetadataImGuiPayloadAccept<EGAPalette>()) {
+            pal = *ddpal;
+         }
+         ImGui::EndDragDropTarget();
+         dragdrop = true;
+      }
 
-               if (_paletteColorButton(imcol, ImVec2(0, 0), highlight)) {
-                  ImGui::CloseCurrentPopup();
+      if (!dragdrop) {
+         if (ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            ImGui::Text("Index #%d", i);
+            ImGui::Separator();
+            ImGui::ColorButton("##preview", imcol, 0, ImVec2(ImGui::GetFrameHeight() * 2, ImGui::GetFrameHeight() * 2));
+            ImGui::SameLine();
+            ImGui::Text("Color %d", pal.colors[i]);
+            ImGui::EndTooltip();
+         }
+         if (ImGui::BeginPopupContextItem("picker", 0)) {
+            if (ImGui::IsWindowAppearing()) {
+               _palEditorOpenStartColor = pal.colors[i];
+            }
+            if (!ImGui::IsWindowHovered()) {
+               value_changed = _palEditorOpenStartColor != pal.colors[i];
+               pal.colors[i] = _palEditorOpenStartColor;
+            }
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+            // do a 8x8 grid of all colors
+            for (int y = 0; y < 8; ++y) {
+               ImGui::PushID(y);
+               for (int x = 0; x < 8; ++x) {
+                  ImGui::PushID(x);
+                  auto colidx = y * 8 + x;
+                  auto rgb = egaGetColor(colidx);
+                  auto imcol = ImVec4(rgb.r / 255.0f, rgb.g / 255.0f, rgb.b / 255.0f, 1.0f);
+
+                  auto cposa = ImGui::GetCursorScreenPos();
+                  auto cposb = cposa;
+                  cposb.x += ImGui::GetFrameHeight();
+                  cposb.y += ImGui::GetFrameHeight();
+                  bool highlight = ImGui::IsMouseHoveringRect(cposa, cposb);
+
+                  if (_paletteColorButton(imcol, ImVec2(0, 0), highlight)) {
+                     ImGui::CloseCurrentPopup();
+                  }
+                  if (ImGui::IsItemHovered()) {
+                     value_changed = pal.colors[i] != colidx;
+                     pal.colors[i] = colidx;
+                  }
+                  ImGui::SameLine(0, 0);
+                  ImGui::PopID();
                }
-               if (ImGui::IsItemHovered()) {
-                  value_changed = pal.colors[i] != colidx;
-                  pal.colors[i] = colidx;                  
-               }
-               ImGui::SameLine(0, 0);
+               ImGui::NewLine();
                ImGui::PopID();
             }
-            ImGui::NewLine();
-            ImGui::PopID();
-         }
-         
-         ImGui::SameLine();
-         ImGui::PopStyleVar();
-         ImGui::NewLine();
-         ImGui::Text("Color %d", pal.colors[i]);
 
-         ImGui::EndPopup();
+            ImGui::SameLine();
+            ImGui::PopStyleVar();
+            ImGui::NewLine();
+            ImGui::Text("Color %d", pal.colors[i]);
+
+            ImGui::EndPopup();
+         }
+
       }
 
+      
       ImGui::SameLine(0, 0);
       ImGui::PopID();
    }

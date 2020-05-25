@@ -13,7 +13,7 @@ static void _renderToEga(GameInstance& gi) {
    static Int2 cursor = { 0,0 };
    static Int2 cursorVec = {1,1 };
 
-   for (int i = 0; i < 100; ++i) {
+   for (int i = 0; i < 5000; ++i) {
       cursor.x += cursorVec.x;
       cursor.y += cursorVec.y;
       if (cursor.x < 0) { cursor.x = 0; cursorVec.x = 1; }
@@ -22,6 +22,7 @@ static void _renderToEga(GameInstance& gi) {
       if (cursor.y >= EGA_RES_HEIGHT) { cursorVec.y = -1; }
 
       egaRenderPoint(gi.ega, cursor, cursor.x % EGA_PALETTE_COLORS);
+      egaRenderPoint(gi.ega, {cursor.x, cursor.y+1}, EGA_PALETTE_COLORS);
    }
    
 
